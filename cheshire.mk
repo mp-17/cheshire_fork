@@ -134,8 +134,6 @@ VLEN ?= $$(($(NR_LANES) * 32))
 
 # From Ara
 CVA6_TARGET := cv64a6_imafdcv_sv39
-# From Cheshire
-# CVA6_TARGET := cv64a6_imafdcsclic_sv39 
 BENDER_DEFS := 
 BENDER_DEFS += --define ARIANE_ACCELERATOR_PORT=1
 # Ara requires CVA6 to implment an write-trough cache
