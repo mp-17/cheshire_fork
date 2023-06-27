@@ -30,15 +30,17 @@ VIVADOENV ?=  PROJECT=$(PROJECT)            \
 
 # select IIS-internal tool commands if we run on IIS machines
 ifneq (,$(wildcard /etc/iis.version))
-	VIVADO ?= vitis-2022.1 vivado
+	VIVADO ?= vitis-2020.1 vivado
 else
 	VIVADO ?= vivado
 endif
 
 VIVADOFLAGS ?= -nojournal -mode batch
+# VIVADOFLAGS ?= -nojournal -mode tcl
 
 ip-dir  := xilinx
 ips     :=  xlnx_mig_7_ddr3.xci
+# ips     +=  xlnx_vio.xci 
 
 all: $(mcs)
 
@@ -47,6 +49,9 @@ $(mcs): $(bit)
 	$(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/write_cfgmem.tcl -tclargs $@ $^
 
 $(bit): $(ips)
+	# Updade scripts/add_sources.tcl
+	-rm -v scripts/add_sources.tcl
+	make -C ../../ xilinx-all
 	@mkdir -p $(out)
 	$(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/prologue.tcl -source scripts/run.tcl
 	cp $(PROJECT).runs/impl_1/$(PROJECT)* ./$(out)
@@ -65,7 +70,11 @@ program:
 	$(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/program.tcl
 
 clean:
-	rm -rf *.log *.jou *.str *.mif *.xci *.xpr .Xil/ $(out) $(PROJECT).cache $(PROJECT).hw $(PROJECT).ioplanning $(PROJECT).ip_user_files $(PROJECT).runs $(PROJECT).sim
+# Save IPs from clean
+	rm -rf *.log *.jou *.str *.mif *.xpr .Xil/ $(out) $(PROJECT).cache $(PROJECT).hw $(PROJECT).ioplanning $(PROJECT).ip_user_files $(PROJECT).runs $(PROJECT).sim
+
+clean_ips:
+	rm -rf *.xci
 
 .PHONY:
 	clean

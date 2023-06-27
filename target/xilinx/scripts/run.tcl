@@ -19,6 +19,7 @@ if {$::env(BOARD) eq "genesys2"} {
 read_ip { \
       "xilinx/xlnx_mig_7_ddr3/xlnx_mig_7_ddr3.srcs/sources_1/ip/xlnx_mig_7_ddr3/xlnx_mig_7_ddr3.xci" \
 }
+# "xilinx/xlnx_mig_7_ddr3/xlnx_mig_7_ddr3.srcs/sources_1/ip/xlnx_vio/xlnx_vio.xci" \
 
 source scripts/add_sources.tcl
 
@@ -29,11 +30,16 @@ update_compile_order -fileset sources_1
 add_files -fileset constrs_1 -norecurse constraints/$project.xdc
 
 set_property strategy Flow_PerfOptimized_high [get_runs synth_1]
+# This is necessary for the genesys2
 set_property strategy Performance_ExtraTimingOpt [get_runs impl_1]
+# set_property strategy Flow_RuntimeOptimized [get_runs impl_1]
+# set_property strategy Flow_Quick [get_runs impl_1]
 
 set_property XPM_LIBRARIES XPM_MEMORY [current_project]
 
 synth_design -rtl -name rtl_1
+# Debug, analyze the design while running synthesis
+start_gui
 
 set_property STEPS.SYNTH_DESIGN.ARGS.RETIMING true [get_runs synth_1]
 

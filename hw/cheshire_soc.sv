@@ -551,12 +551,18 @@ module cheshire_soc import cheshire_pkg::*; #(
   axi_cva6_req_t core_out_req, core_ur_req;
   axi_cva6_rsp_t core_out_rsp, core_ur_rsp;
 
+  //////////
+  // CVA6 //
+  //////////
+
   // Currently, we support only one core
   cva6 #(
     .ArianeCfg      ( Cva6Cfg ),
     .AxiAddrWidth   ( Cfg.AddrWidth ),
     .AxiDataWidth   ( Cfg.AxiDataWidth ),
     .AxiIdWidth     ( Cva6IdWidth ),
+    .cvxif_req_t    ( acc_pkg::accelerator_req_t  ),
+    .cvxif_resp_t   ( acc_pkg::accelerator_resp_t ),
     .axi_ar_chan_t  ( axi_cva6_ar_chan_t ),
     .axi_aw_chan_t  ( axi_cva6_aw_chan_t ),
     .axi_w_chan_t   ( axi_cva6_w_chan_t  ),
@@ -571,22 +577,61 @@ module cheshire_soc import cheshire_pkg::*; #(
     .ipi_i            ( ipi[0] ),
     .time_irq_i       ( time_irq[0] ),
     .debug_req_i      ( dbg_int_req[0] ),
-    .clic_irq_valid_i ( '0 ),
-    .clic_irq_id_i    ( '0 ),
-    .clic_irq_level_i ( '0 ),
-    .clic_irq_priv_i  ( '0 ),
-    .clic_irq_shv_i   ( '0 ),
-    .clic_irq_ready_o ( ),
-    .clic_kill_req_i  ( '0 ),
-    .clic_kill_ack_o  ( ),
+    // Remove CLIC interface
+    // .clic_irq_valid_i ( '0 ),
+    // .clic_irq_id_i    ( '0 ),
+    // .clic_irq_level_i ( '0 ),
+    // .clic_irq_priv_i  ( '0 ),
+    // .clic_irq_shv_i   ( '0 ),
+    // .clic_irq_ready_o ( ),
+    // .clic_kill_req_i  ( '0 ),
+    // .clic_kill_ack_o  ( ),
     .rvfi_o           ( ),
+    // Accelerator ports
     .cvxif_req_o      ( ),
     .cvxif_resp_i     ( '0 ),
+    // ?
     .l15_req_o        ( ),
     .l15_rtrn_i       ( '0 ),
+    // Invalidation requests
+    .acc_cons_en_o    (  ),
+    .inval_addr_i     ( '0 ), // debug
+    .inval_valid_i    ( '0 ), // debug
+    .inval_ready_o    (  ),
     .axi_req_o        ( core_out_req ),
     .axi_resp_i       ( core_out_rsp )
   );
+
+  // TODO: connect Ara
+  /////////
+  // ARA //
+  /////////  
+  
+  // ara #(
+  //   .NrLanes     (NrLanes         ),
+  //   .FPUSupport  (FPUSupport      ),
+  //   .FPExtSupport(FPExtSupport    ),
+  //   .FixPtSupport(FixPtSupport    ),
+  //   .AxiDataWidth(AxiWideDataWidth),
+  //   .AxiAddrWidth(AxiAddrWidth    ),
+  //   .axi_ar_t    (ara_axi_ar_t    ),
+  //   .axi_r_t     (ara_axi_r_t     ),
+  //   .axi_aw_t    (ara_axi_aw_t    ),
+  //   .axi_w_t     (ara_axi_w_t     ),
+  //   .axi_b_t     (ara_axi_b_t     ),
+  //   .axi_req_t   (ara_axi_req_t   ),
+  //   .axi_resp_t  (ara_axi_resp_t  )
+  // ) i_ara (
+  //   .clk_i           (clk_i         ),
+  //   .rst_ni          (rst_ni        ),
+  //   .scan_enable_i   (scan_enable_i ),
+  //   .scan_data_i     (1'b0          ),
+  //   .scan_data_o     (/* Unused */  ),
+  //   .acc_req_i       (acc_req       ),
+  //   .acc_resp_o      (acc_resp      ),
+  //   .axi_req_o       (ara_axi_req   ),
+  //   .axi_resp_i      (ara_axi_resp  )
+  // );
 
   // Map user to AMO domain as we are an atomics-capable master.
   // As we are core 0, the core 1 and serial link AMO bits should *not* be set.

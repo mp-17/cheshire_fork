@@ -122,12 +122,33 @@ $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.sv: $(CHS_ROOT)/hw/bootrom/cheshire_boot
 
 chs-bootrom-all: $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.sv $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.dump
 
+###########
+# Ara/RVV #
+###########
+NR_LANES ?= 2
+VLEN ?= $$(($(NR_LANES) * 32))
+
+##########
+# Bender #
+##########
+
+# From Ara
+CVA6_TARGET := cv64a6_imafdcv_sv39
+# From Cheshire
+# CVA6_TARGET := cv64a6_imafdcsclic_sv39 
+BENDER_DEFS := 
+BENDER_DEFS += --define ARIANE_ACCELERATOR_PORT=1
+# Ara requires CVA6 to implment an write-trough cache
+BENDER_DEFS += --define WT_CACHE=1
+BENDER_DEFS += --define NR_LANES=$(NR_LANES)  
+BENDER_DEFS += --define VLEN=$(VLEN)
+
 ##############
 # Simulation #
 ##############
 
 $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl: Bender.yml
-	$(BENDER) script vsim -t sim -t cv64a6_imafdcsclic_sv39 -t test -t cva6 --vlog-arg="$(VLOG_ARGS)" > $@
+	$(BENDER) script vsim $(BENDER_DEFS) -t sim -t $(CVA6_TARGET) -t test -t cva6 --vlog-arg="$(VLOG_ARGS)" > $@
 	echo 'vlog "$(CURDIR)/$(CHS_ROOT)/target/sim/src/elfloader.cpp" -ccflags "-std=c++11"' >> $@
 
 $(CHS_ROOT)/target/sim/models:
@@ -153,6 +174,13 @@ chs-sim-all: $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl
 #############
 
 $(CHS_ROOT)/target/xilinx/scripts/add_sources.tcl: Bender.yml
-	$(BENDER) script vivado -t fpga -t cv64a6_imafdcsclic_sv39 -t cva6 > $@
+	$(BENDER) script vivado $(BENDER_DEFS) -t fpga -t $(CVA6_TARGET) -t cva6 > $@
 
 chs-xilinx-all: $(CHS_ROOT)/target/xilinx/scripts/add_sources.tcl
+
+clean:
+	-rm -v $(CHS_ROOT)/target/xilinx/scripts/add_sources.tcl
+	-rm -v $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl
+# rm -v $(CHS_ROOT)/target/sim/models/s25fs512s.v
+# rm -v $(CHS_ROOT)/target/sim/models/24FC1025.v
+# rm -v $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.sv $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.dump

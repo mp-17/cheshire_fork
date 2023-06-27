@@ -11,7 +11,7 @@ CHS_ROOT ?= .
 include cheshire.mk
 
 # Inside the repo, forward (prefixed) all and nonfree targets
-all:
+all: patches
 	@$(MAKE) chs-all
 
 %-all:
@@ -19,3 +19,10 @@ all:
 
 nonfree-%:
 	@$(MAKE) chs-nonfree-$*
+
+# This is a temporary solution to avoid a mess with bender
+# NOTE: the patches will only apply if the checkout commits match
+patches: 
+	bender udpate
+	patch bender/git/checkouts/ara-3d82a1a7b2edcb34/Bender.yml.patch 	bender/git/checkouts/ara-3d82a1a7b2edcb34/Bender.yml
+	patch bender/git/checkouts/cva6-ff020a9331463757/Bender.yml.patch  	bender/git/checkouts/cva6-ff020a9331463757/Bender.yml

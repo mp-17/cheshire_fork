@@ -399,8 +399,9 @@ package cheshire_pkg;
       CachedRegionLength    : {SizeSpm, SizeLlcOut,             cfg.Cva6ExtCieLength},
       AxiCompliant          : 1,
       SwapEndianess         : 0,
-      CLICNumInterruptSrc   : 0,
-      CLICIntCtlBits        : 0,
+      // Remove CLIC interface
+      // CLICNumInterruptSrc   : 0,
+      // CLICIntCtlBits        : 0,
       DmBaseAddress         : AmDbg,
       NrPMPEntries          : cfg.Cva6NrPMPEntries
     };
