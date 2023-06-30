@@ -554,6 +554,31 @@ module cheshire_soc import cheshire_pkg::*; #(
   //////////
   // CVA6 //
   //////////
+  // CVA6 + Ara AXI connection (Data Width)
+  // v0.1: Lane-limited Ara
+  // NOTE: requires NrLanes=2 -> Ara Data Width = 32 * NrLanes = 64 -> no need for axi_dw_converter
+  //                                              __________
+  //  ARA -(64)--> i_axi_inval_filter -----(64)->|          |
+  //                  |                          |          |
+  //                  v                          | axi_xbar |
+  //                CVA6 ------------------(64)->|          |
+  //                                             |__________|
+
+  // // TODO: extend this for axi_ara_data > axi_data_t
+  // // For now, this is indentical a CVA6's
+  // `CHESHIRE_TYPEDEF_AXI_CT(axi_ara , addr_t, cva6_id_t, axi_data_t, axi_strb_t, axi_user_t)
+  // axi_ara_req_t     axi_ara_req_inval, axi_ara_req;
+  // axi_ara_rsp_t    axi_ara_resp_inval, axi_ara_resp;
+
+  // // Accelerator ports
+  // acc_pkg::accelerator_req_t            acc_req;
+  // acc_pkg::accelerator_resp_t           acc_resp;
+  // logic                                 acc_resp_valid;
+  // logic                                 acc_resp_ready;
+  // logic                                 acc_cons_en;
+  // logic             [Cfg.AddrWidth-1:0] inval_addr;
+  // logic                                 inval_valid;
+  // logic                                 inval_ready;
 
   // Currently, we support only one core
   cva6 #(
@@ -577,60 +602,78 @@ module cheshire_soc import cheshire_pkg::*; #(
     .ipi_i            ( ipi[0] ),
     .time_irq_i       ( time_irq[0] ),
     .debug_req_i      ( dbg_int_req[0] ),
-    // Remove CLIC interface
-    // .clic_irq_valid_i ( '0 ),
-    // .clic_irq_id_i    ( '0 ),
-    // .clic_irq_level_i ( '0 ),
-    // .clic_irq_priv_i  ( '0 ),
-    // .clic_irq_shv_i   ( '0 ),
-    // .clic_irq_ready_o ( ),
-    // .clic_kill_req_i  ( '0 ),
-    // .clic_kill_ack_o  ( ),
     .rvfi_o           ( ),
-    // Accelerator ports
-    .cvxif_req_o      ( ),
-    .cvxif_resp_i     ( '0 ),
-    // ?
     .l15_req_o        ( ),
     .l15_rtrn_i       ( '0 ),
-    // Invalidation requests
-    .acc_cons_en_o    (  ),
-    .inval_addr_i     ( '0 ), // debug
-    .inval_valid_i    ( '0 ), // debug
-    .inval_ready_o    (  ),
+    // // Accelerator ports
+    // .cvxif_req_o      ( acc_req      ),
+    // .cvxif_resp_i     ( acc_resp     ),
+    // // Invalidation requests
+    // .acc_cons_en_o    ( acc_cons_en  ),
+    // .inval_addr_i     ( inval_addr   ),
+    // .inval_valid_i    ( inval_valid  ),
+    // .inval_ready_o    ( inval_ready  ),
+    // DEBUG
+    // Accelerator ports
+    .cvxif_req_o      (       ),
+    .cvxif_resp_i     ( '0     ),
+    // L1$ invalidation requests
+    // .acc_cons_en_o    (   ),
+    // .inval_addr_i     ( '0  ),
+    // .inval_valid_i    ( '0  ),
+    // .inval_ready_o    (   ),
+    // AXI interface
     .axi_req_o        ( core_out_req ),
     .axi_resp_i       ( core_out_rsp )
   );
 
-  // TODO: connect Ara
   /////////
   // ARA //
   /////////  
-  
+  // axi_inval_filter #(
+  //   .MaxTxns    ( 4                               ),
+  //   .AddrWidth  ( AxiAddrWidth                    ),
+  //   .L1LineWidth( ariane_pkg::DCACHE_LINE_WIDTH/8 ),
+  //   .aw_chan_t  ( axi_ara_aw_t                    ),
+  //   .req_t      ( axi_ara_req_t                   ),
+  //   .resp_t     ( axi_ara_resp_t                  )
+  // ) i_axi_inval_filter (
+  //   .clk_i        ( clk_i              ),
+  //   .rst_ni       ( rst_ni             ),
+  //   .en_i         ( acc_cons_en        ),
+  //   .slv_req_i    ( axi_ara_req        ),
+  //   .slv_resp_o   ( axi_ara_resp       ),
+  //   .mst_req_o    ( axi_ara_req_inval  ),
+  //   .mst_resp_i   ( axi_ara_resp_inval ),
+  //   .inval_addr_o ( inval_addr         ),
+  //   .inval_valid_o( inval_valid        ),
+  //   .inval_ready_i( inval_ready        )
+  // );
+
   // ara #(
-  //   .NrLanes     (NrLanes         ),
-  //   .FPUSupport  (FPUSupport      ),
-  //   .FPExtSupport(FPExtSupport    ),
-  //   .FixPtSupport(FixPtSupport    ),
-  //   .AxiDataWidth(AxiWideDataWidth),
-  //   .AxiAddrWidth(AxiAddrWidth    ),
-  //   .axi_ar_t    (ara_axi_ar_t    ),
-  //   .axi_r_t     (ara_axi_r_t     ),
-  //   .axi_aw_t    (ara_axi_aw_t    ),
-  //   .axi_w_t     (ara_axi_w_t     ),
-  //   .axi_b_t     (ara_axi_b_t     ),
-  //   .axi_req_t   (ara_axi_req_t   ),
-  //   .axi_resp_t  (ara_axi_resp_t  )
+  //   .NrLanes     ( NrLanes          ),
+  //   .FPUSupport  ( FPUSupport       ),
+  //   .FPExtSupport( FPExtSupport     ),
+  //   .FixPtSupport( FixPtSupport     ),
+  //   .AxiDataWidth( AxiWideDataWidth ),
+  //   .AxiAddrWidth( AxiAddrWidth     ),
+  //   .axi_ar_t    ( axi_ara_ar_t     ),
+  //   .axi_r_t     ( axi_ara_r_t      ),
+  //   .axi_aw_t    ( axi_ara_aw_t     ),
+  //   .axi_w_t     ( axi_ara_w_t      ),
+  //   .axi_b_t     ( axi_ara_b_t      ),
+  //   .axi_req_t   ( axi_ara_req_t    ),
+  //   .axi_resp_t  ( axi_ara_resp_t   )
   // ) i_ara (
-  //   .clk_i           (clk_i         ),
-  //   .rst_ni          (rst_ni        ),
-  //   .scan_enable_i   (scan_enable_i ),
-  //   .scan_data_i     (1'b0          ),
-  //   .scan_data_o     (/* Unused */  ),
-  //   .acc_req_i       (acc_req       ),
-  //   .acc_resp_o      (acc_resp      ),
-  //   .axi_req_o       (ara_axi_req   ),
-  //   .axi_resp_i      (ara_axi_resp  )
+  //   .clk_i           ( clk_i         ),
+  //   .rst_ni          ( rst_ni        ),
+  //   .scan_enable_i   ( scan_enable_i ),
+  //   .scan_data_i     ( 1'b0          ),
+  //   .scan_data_o     ( /* Unused */  ),
+  //   .acc_req_i       ( acc_req       ),
+  //   .acc_resp_o      ( acc_resp      ),
+  //   .axi_req_o       ( axi_ara_req   ),
+  //   .axi_resp_i      ( axi_ara_resp  )
   // );
 
   // Map user to AMO domain as we are an atomics-capable master.

@@ -31,6 +31,7 @@ VIVADOENV ?=  PROJECT=$(PROJECT)            \
 # select IIS-internal tool commands if we run on IIS machines
 ifneq (,$(wildcard /etc/iis.version))
 	VIVADO ?= vitis-2020.1 vivado
+# VIVADO ?= vitis-2022.1 vivado
 else
 	VIVADO ?= vivado
 endif
@@ -67,10 +68,11 @@ gui:
 
 program:
 	@echo "Programming board $(BOARD) ($(XILINX_PART))"
-	$(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/program.tcl
+# hw_server in IIS bordcomputer is v2020.2
+	$(VIVADOENV) vitis-2020.2 vivado $(VIVADOFLAGS) -source scripts/program.tcl
 
 clean:
-# Save IPs from clean
+# Spare IPs from clean
 	rm -rf *.log *.jou *.str *.mif *.xpr .Xil/ $(out) $(PROJECT).cache $(PROJECT).hw $(PROJECT).ioplanning $(PROJECT).ip_user_files $(PROJECT).runs $(PROJECT).sim
 
 clean_ips:

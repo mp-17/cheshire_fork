@@ -82,6 +82,7 @@ module cheshire_top_xilinx
     AddrWidth         : 48,
     AxiDataWidth      : 64,
     AxiUserWidth      : 2,  // Convention: bit 0 for core(s), bit 1 for serial link
+    // AxiUserWidth      : ariane_pkg::DCACHE_USER_WIDTH,  // WT cache only supports this    
     AxiMstIdWidth     : 2,
     AxiMaxMstTrans    : 8,
     AxiMaxSlvTrans    : 8,
@@ -165,6 +166,18 @@ module cheshire_top_xilinx
 
   // R Channel user
   assign dram_resp.r.user      = '0;
+
+
+  /////////////////
+  // Virtual I/O //
+  /////////////////
+  // NOTE: just imported as-is from branch fpga/vcu128
+  // logic vio_reset;
+  // xlnx_vio i_xlnx_vio_reset (
+  //   .clk(soc_clk),
+  //   .probe_out0(vio_reset)
+  // );
+  // assign sys_rst = cpu_reset | vio_reset;
 
   ///////////////////
   // Clock Divider //

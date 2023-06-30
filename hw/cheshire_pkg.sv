@@ -432,6 +432,7 @@ package cheshire_pkg;
     AddrWidth         : 48,
     AxiDataWidth      : 64,
     AxiUserWidth      : 2,  // Convention: bit 0 for core(s), bit 1 for serial link
+    // AxiUserWidth      : ariane_pkg::DCACHE_USER_WIDTH,  // WT cache only supports this
     AxiMstIdWidth     : 2,
     AxiMaxMstTrans    : 8,
     AxiMaxSlvTrans    : 8,
