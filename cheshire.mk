@@ -45,7 +45,7 @@ include $(CHS_ROOT)/.deps
 ######################
 
 CHS_NONFREE_REMOTE ?= git@iis-git.ee.ethz.ch:pulp-restricted/cheshire-nonfree.git
-CHS_NONFREE_COMMIT ?= 86fa0ba
+CHS_NONFREE_COMMIT ?= 4f66616c
 
 nonfree-init:
 	git clone $(CHS_NONFREE_REMOTE) nonfree
@@ -171,8 +171,9 @@ chs-sim-all: $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl
 # FPGA Flow #
 #############
 
+# Goto ./target/xilinx/Makefile to change the target board, or to build from there
 $(CHS_ROOT)/target/xilinx/scripts/add_sources.tcl: Bender.yml
-	$(BENDER) script vivado $(BENDER_DEFS) -t fpga -t $(CVA6_TARGET) -t cva6 > $@
+	make -C target/xilinx scripts/add_sources.tcl
 
 chs-xilinx-all: $(CHS_ROOT)/target/xilinx/scripts/add_sources.tcl
 
