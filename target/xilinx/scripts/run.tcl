@@ -12,6 +12,7 @@ switch $::env(BOARD) {
   }
   default {
       exit 1
+  }
 }
 
 # Ips selection
@@ -64,9 +65,9 @@ set_property strategy Performance_ExtraTimingOpt [get_runs impl_1]
 
 set_property XPM_LIBRARIES XPM_MEMORY [current_project]
 
-# synth_design -rtl -name rtl_1
-# # Debug, analyze the design while running synthesis
-# start_gui
+synth_design -rtl -name rtl_1
+# Debug, analyze the design while running synthesis
+start_gui
 
 set_property STEPS.SYNTH_DESIGN.ARGS.RETIMING true [get_runs synth_1]
 
