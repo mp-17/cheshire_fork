@@ -14,7 +14,28 @@ PROJECT      ?= cheshire
 BOARD        ?= zcu102
 XILINX_PORT  ?= 3332
 XILINX_HOST  ?= bordcomputer
-FPGA_PATH    ?= xilinx_tcf/Digilent/200300A8C60DB
+
+# Select board specific variables
+ifeq ($(BOARD),vcu128)
+    # The bordcomputer only has hw-server 2020.2 for now
+	VIVADO         ?= vitis-2020.2 vivado
+	XILINX_PART    ?= xcvu37p-fsvh2892-2L-e
+	XILINX_BOARD   ?= xilinx.com:vcu128:part0:1.0
+	ips-names      := xlnx_vio.xci xlnx_mig_ddr4.xci
+	BENDER_TARGETS += -t bscane
+endif
+ifeq ($(BOARD),genesys2)
+	XILINX_PART  ?= xc7k325tffg900-2
+	XILINX_BOARD ?= digilentinc.com:genesys2:part0:1.1
+	ips-names    := xlnx_mig_7_ddr3.xci
+	FPGA_PATH    ?= xilinx_tcf/Digilent/200300A8C60DB
+endif
+ifeq ($(BOARD),zcu102)
+	VIVADO 		   ?= vitis-2020.2 vivado
+	XILINX_PART    ?= xczu9eg-ffvb1156-2-e
+	XILINX_BOARD   ?= xilinx.com:zcu102:part0:3.3
+	ips-names      := xlnx_mig_ddr4.xci
+endif
 ip-dir       := xilinx
 
 # Derive from board
@@ -62,8 +83,7 @@ VIVADOENV ?=  PROJECT=$(PROJECT)            \
 
 # select IIS-internal tool commands if we run on IIS machines
 ifneq (,$(wildcard /etc/iis.version))
-	VIVADO ?= vitis-2020.1 vivado
-# VIVADO ?= vitis-2022.1 vivado
+	VIVADO ?= vitis-2022.1 vivado
 else
 	VIVADO ?= vivado
 endif
@@ -72,6 +92,7 @@ MODE        ?= batch
 VIVADOFLAGS ?= -nojournal -mode $(MODE)
 
 all: $(bit)
+ip-dir  := xilinx
 
 # Include Xilinx IPs simulation makefile
 include sim/simulate.mk
@@ -81,7 +102,7 @@ $(mcs): $(bit)
 	$(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/write_cfgmem.tcl -tclargs $@ $^
 
 $(bit): $(ips) scripts/add_sources.tcl
-	echo $(ips)
+	echo $(ips) BENDER_TARGETS=$(BENDER_TARGETS)
 	@mkdir -p $(out)
 	$(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/prologue.tcl -source scripts/run.tcl
 	cp $(PROJECT).runs/impl_1/$(PROJECT)* ./$(out)
@@ -102,7 +123,7 @@ program: #$(bit)
 
 clean:
 # Spare IPs from clean
-	rm -rf *.log *.jou *.str *.mif *.xpr .Xil/ $(out) $(PROJECT).cache $(PROJECT).hw $(PROJECT).ioplanning $(PROJECT).ip_user_files $(PROJECT).runs $(PROJECT).sim
+	rm -rf scripts/add_sources.tcl *.log *.jou *.str *.mif *.xpr .Xil/ $(out) $(PROJECT).cache $(PROJECT).hw $(PROJECT).ioplanning $(PROJECT).ip_user_files $(PROJECT).runs $(PROJECT).sim
 
 clean_ips:
 	rm -rf *.xci

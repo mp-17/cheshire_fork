@@ -108,7 +108,8 @@ module cheshire_top_xilinx
     CoreMaxTxns       : 8,
     CoreMaxTxnsPerId  : 4,
     // Interconnect
-    AddrWidth         : 48,
+    // AddrWidth         : 48,
+    AddrWidth         : 64, // Needed by CVA6 and ARA
     AxiDataWidth      : 64,
     // AxiUserWidth      : 2,  // Convention: bit 0 for core(s), bit 1 for serial link
     AxiUserWidth      : ariane_pkg::DCACHE_USER_WIDTH,  // WT cache only supports this    

@@ -125,28 +125,29 @@ chs-bootrom-all: $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.sv $(CHS_ROOT)/hw/bootr
 ###########
 # Ara/RVV #
 ###########
-NR_LANES ?= 2
-VLEN ?= $$(($(NR_LANES) * 32))
+ARA_NR_LANES ?= 2
+VLEN ?= $$(($(ARA_NR_LANES) * 1024))
 
 ##########
 # Bender #
 ##########
 
 # From Ara
-CVA6_TARGET := cv64a6_imafdcv_sv39
-BENDER_DEFS := 
-# BENDER_DEFS += --define ARIANE_ACCELERATOR_PORT=1
-# # Ara requires CVA6 to implment an write-trough cache
-# BENDER_DEFS += --define WT_CACHE=1
-# BENDER_DEFS += --define NR_LANES=$(NR_LANES)  
-# BENDER_DEFS += --define VLEN=$(VLEN)
+BENDER_TARGETS ?=
+CVA6_TARGETS += -t cv64a6_imafdcv_sv39
+BENDER_DEFS ?= 
+BENDER_DEFS += --define ARIANE_ACCELERATOR_PORT=1
+# Ara requires CVA6 to implment an write-trough cache
+BENDER_DEFS += --define WT_CACHE=1
+BENDER_DEFS += --define ARA_NR_LANES=$(ARA_NR_LANES)  
+BENDER_DEFS += --define VLEN=$(VLEN)
 
 ##############
 # Simulation #
 ##############
 
 $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl: Bender.yml
-	$(BENDER) script vsim $(BENDER_DEFS) -t sim -t $(CVA6_TARGET) -t test -t cva6 --vlog-arg="$(VLOG_ARGS)" > $@
+	$(BENDER) script vsim $(BENDER_DEFS) -t sim $(CVA6_TARGETS) -t test -t cva6 --vlog-arg="$(VLOG_ARGS)" > $@
 	echo 'vlog "$(CURDIR)/$(CHS_ROOT)/target/sim/src/elfloader.cpp" -ccflags "-std=c++11"' >> $@
 
 $(CHS_ROOT)/target/sim/models:

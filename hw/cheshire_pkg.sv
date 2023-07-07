@@ -46,13 +46,13 @@ package cheshire_pkg;
   };
 
   // Bit vector types for parameters.
-  //We limit range to keep parameters sane.
+  //We limit range to keep parameters sane. (This is not a good idea)
   typedef bit [ 7:0] byte_bt;
   typedef bit [15:0] shrt_bt;
   typedef bit [31:0] word_bt;
   typedef bit [63:0] doub_bt;
   typedef bit [ 9:0] dw_bt;   // data widths
-  typedef bit [ 5:0] aw_bt;   // address, ID widths or small buffers
+  typedef bit [ 6:0] aw_bt;   // address, ID widths or small buffers
 
   // Externally controllable parameters
   typedef struct packed {
@@ -429,10 +429,11 @@ package cheshire_pkg;
     CoreMaxTxns       : 8,
     CoreMaxTxnsPerId  : 4,
     // Interconnect
-    AddrWidth         : 48,
+    // AddrWidth         : 48,
+    AddrWidth         : 64, // Needed by CVA6 and ARA
     AxiDataWidth      : 64,
-    AxiUserWidth      : 2,  // Convention: bit 0 for core(s), bit 1 for serial link
-    // AxiUserWidth      : ariane_pkg::DCACHE_USER_WIDTH,  // WT cache only supports this
+    // AxiUserWidth      : 2,  // Convention: bit 0 for core(s), bit 1 for serial link
+    AxiUserWidth      : ariane_pkg::DCACHE_USER_WIDTH,  // WT cache only supports this
     AxiMstIdWidth     : 2,
     AxiMaxMstTrans    : 8,
     AxiMaxSlvTrans    : 8,
