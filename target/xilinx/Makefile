@@ -16,32 +16,7 @@ BENDER      	?= bender
 BENDER_DEFS 	?= 
 BENDER_TARGETS 	:= -t cva6
 
-#######
-# ARA #
-#######
-
-# Ara-capable CVA6
-BENDER_TARGETS += -t cv64a6_imafdcv_sv39 
-
-# Ara-required CVA6 configs
-ARA ?= 1
-ARA_NR_LANES ?= 0
-ifeq ($(ARA),1)
-	ifneq ( $(ARA), 0 ) 
-		ARA_NR_LANES ?= 2
-		VLEN ?= $$(($(ARA_NR_LANES) * 1024))
-		BENDER_DEFS += --define ARA
-		BENDER_DEFS += --define ARIANE_ACCELERATOR_PORT=1
-		BENDER_DEFS += --define WT_CACHE=1
-		BENDER_DEFS += --define ARA_NR_LANES=$(ARA_NR_LANES)  
-		BENDER_DEFS += --define VLEN=$(VLEN)
-#		BENDER_DEFS += --define ARA_INTEGRATION_v0_1=1
-		BENDER_DEFS += --define ARA_INTEGRATION_v0_2=1
-		PROJECT := $(PROJECT)_ara_$(ARA_NR_LANES)_lanes
-	endif
-else
-	PROJECT := $(PROJECT)_no_ara
-endif
+include ../common.mk
 
 # Board in      {vcu128, genesys2, zcu102(not working)}
 BOARD        ?= vcu128

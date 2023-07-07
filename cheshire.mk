@@ -122,32 +122,17 @@ $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.sv: $(CHS_ROOT)/hw/bootrom/cheshire_boot
 
 chs-bootrom-all: $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.sv $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.dump
 
-###########
-# Ara/RVV #
-###########
-ARA_NR_LANES ?= 2
-VLEN ?= $$(($(ARA_NR_LANES) * 1024))
-
-##########
-# Bender #
-##########
-
-# From Ara
-BENDER_TARGETS ?=
-CVA6_TARGETS += -t cv64a6_imafdcv_sv39
-BENDER_DEFS ?= 
-# BENDER_DEFS += --define ARIANE_ACCELERATOR_PORT=1
-# # Ara requires CVA6 to implment an write-trough cache
-# BENDER_DEFS += --define WT_CACHE=1
-# BENDER_DEFS += --define ARA_NR_LANES=$(ARA_NR_LANES)  
-# BENDER_DEFS += --define VLEN=$(VLEN)
-
 ##############
 # Simulation #
 ##############
 
+BENDER_TARGETS ?= 
+BENDER_DEFS ?= 
+
+include target/common.mk
+
 $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl: Bender.yml
-	$(BENDER) script vsim $(BENDER_DEFS) -t sim $(CVA6_TARGETS) -t test -t cva6 --vlog-arg="$(VLOG_ARGS)" > $@
+	$(BENDER) script vsim $(BENDER_DEFS) $(BENDER_TARGETS) -t sim -t test -t cva6 $(CVA6_TARGETS) --vlog-arg="$(VLOG_ARGS)" > $@
 	echo 'vlog "$(CURDIR)/$(CHS_ROOT)/target/sim/src/elfloader.cpp" -ccflags "-std=c++11"' >> $@
 
 $(CHS_ROOT)/target/sim/models:
@@ -174,7 +159,7 @@ chs-sim-all: $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl
 
 # Goto ./target/xilinx/Makefile to change the target board, or to build from there
 $(CHS_ROOT)/target/xilinx/scripts/add_sources.tcl: Bender.yml
-	make -C target/xilinx scripts/add_sources.tcl BENDER_DEFS=$(BENDER_DEFS)
+	make -C target/xilinx scripts/add_sources.tcl
 
 chs-xilinx-all: $(CHS_ROOT)/target/xilinx/scripts/add_sources.tcl
 
