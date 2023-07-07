@@ -111,3 +111,29 @@ set_max_delay -datapath -from [get_pins i_dram_wrapper/i_axi_cdc_mig/i_axi_cdc_*
 
 set_max_delay -from $SOC_RST_SRC $SOC_TCK
 set_false_path -hold -from $SOC_RST_SRC
+
+
+########
+# QSPI #
+########
+# From https://github.com/AlSaqr-platform/he-soc/blob/master/hardware/fpga/alsaqr/tcl/constraints.xdc#L38
+# tested on vivado-2018.2
+# SPI-STARTUPE3 Ultrascale+
+# Following are the SPI device parameters
+set tco_max 7
+set tco_min 1
+set tsu 2
+set th 3
+set tdata_trace_delay_max 0.25
+set tdata_trace_delay_min 0.25
+set tclk_trace_delay_max 0.2
+set tclk_trace_delay_min 0.2
+create_generated_clock -name clk_sck -source [get_pins -hierarchical *axi_quad_spi_0/ext_spi_clk] [get_pins -hierarchical */CCLK] -edges {3 5 7}
+set_input_delay -clock clk_sck -max [expr $tco_max + $tdata_trace_delay_max + $tclk_trace_delay_max] [get_pins -hierarchical *STARTUP*/DATA_IN[*]] -clock_fall;
+set_input_delay -clock clk_sck -min [expr $tco_min + $tdata_trace_delay_min + $tclk_trace_delay_min] [get_pins -hierarchical *STARTUP*/DATA_IN[*]] -clock_fall;
+set_multicycle_path 2 -setup -from clk_sck -to [get_clocks -of_objects [get_pins -hierarchical */ext_spi_clk]]
+set_multicycle_path 1 -hold -end -from clk_sck -to [get_clocks -of_objects [get_pins -hierarchical */ext_spi_clk]]
+set_output_delay -clock clk_sck -max [expr $tsu + $tdata_trace_delay_max -$tclk_trace_delay_min] [get_pins -hierarchical *STARTUP*/DATA_OUT[*]];
+set_output_delay -clock clk_sck -min [expr $tdata_trace_delay_min -$th -$tclk_trace_delay_max] [get_pins -hierarchical *STARTUP*/DATA_OUT[*]];
+set_multicycle_path 2 -setup -start -from [get_clocks -of_objects [get_pins -hierarchical */ext_spi_clk]] -to clk_sck
+set_multicycle_path 1 -hold -from [get_clocks -of_objects [get_pins -hierarchical */ext_spi_clk]] -to clk_sck

@@ -136,11 +136,11 @@ VLEN ?= $$(($(ARA_NR_LANES) * 1024))
 BENDER_TARGETS ?=
 CVA6_TARGETS += -t cv64a6_imafdcv_sv39
 BENDER_DEFS ?= 
-BENDER_DEFS += --define ARIANE_ACCELERATOR_PORT=1
-# Ara requires CVA6 to implment an write-trough cache
-BENDER_DEFS += --define WT_CACHE=1
-BENDER_DEFS += --define ARA_NR_LANES=$(ARA_NR_LANES)  
-BENDER_DEFS += --define VLEN=$(VLEN)
+# BENDER_DEFS += --define ARIANE_ACCELERATOR_PORT=1
+# # Ara requires CVA6 to implment an write-trough cache
+# BENDER_DEFS += --define WT_CACHE=1
+# BENDER_DEFS += --define ARA_NR_LANES=$(ARA_NR_LANES)  
+# BENDER_DEFS += --define VLEN=$(VLEN)
 
 ##############
 # Simulation #
@@ -174,7 +174,7 @@ chs-sim-all: $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl
 
 # Goto ./target/xilinx/Makefile to change the target board, or to build from there
 $(CHS_ROOT)/target/xilinx/scripts/add_sources.tcl: Bender.yml
-	make -C target/xilinx scripts/add_sources.tcl
+	make -C target/xilinx scripts/add_sources.tcl BENDER_DEFS=$(BENDER_DEFS)
 
 chs-xilinx-all: $(CHS_ROOT)/target/xilinx/scripts/add_sources.tcl
 

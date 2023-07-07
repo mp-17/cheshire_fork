@@ -213,6 +213,7 @@ package cheshire_pkg;
   typedef struct packed {
     aw_bt cores;
     aw_bt dbg;
+    aw_bt ara;
     aw_bt dma;
     aw_bt slink;
     aw_bt vga;
@@ -223,6 +224,9 @@ package cheshire_pkg;
   function automatic axi_in_t gen_axi_in(cheshire_cfg_t cfg);
     axi_in_t ret = '{cores: 0, dbg: 1, default: '0};
     int unsigned i = 1;
+  `ifdef ARA
+    ret.ara = ++i;
+  `endif // ARA
     if (cfg.Dma)        begin i++; ret.dma   = i; end
     if (cfg.SerialLink) begin i++; ret.slink = i; end
     if (cfg.Vga)        begin i++; ret.vga   = i; end
@@ -243,6 +247,7 @@ package cheshire_pkg;
   typedef struct packed {
     aw_bt dbg;
     aw_bt reg_demux;
+    aw_bt xlnx_qspi;
     aw_bt llc;
     aw_bt spm;
     aw_bt dma;
@@ -259,6 +264,14 @@ package cheshire_pkg;
     int unsigned i = 1, r = 1;
     ret.map[0] = '{0, AmDbg,   AmDbg + 'h40000};
     ret.map[1] = '{1, 'h0200_0000, 'h0800_0000};
+
+    // xlnx_qspi
+    // TODO: actual memory map here
+    // TODO: check r and i
+    i++; 
+    r++;
+    ret.map[2] = '{2, -1, -1}; 
+
     // Whether we have an LLC or a bypass, the output port is has its
     // own Xbar output with the specified region iff it is connected.
     if (cfg.LlcOutConnect) begin i++; r++; ret.llc = i;

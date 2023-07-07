@@ -128,7 +128,9 @@ module cheshire_top_xilinx
     Bootrom           : 1,
     Uart              : 1,
     I2c               : 1,
-    SpiHost           : 1,
+    // Disable OpenTitan SPI core
+    // SpiHost           : 1,
+    SpiHost           : 0,
     Gpio              : 1,
     Dma               : 1,
     SerialLink        : 0,
@@ -197,6 +199,187 @@ module cheshire_top_xilinx
   (* dont_touch = "yes" *) wire dram_sync_reset;
   (* dont_touch = "yes" *) wire soc_clk;
   (* dont_touch = "yes" *) wire rst_n;
+
+  ///////////////////////
+  //  Xilinx AXI QSPI  //
+  ///////////////////////
+
+`ifdef TARGET_XLNX_QSPI
+
+`ifdef QSPI_AXI_LITE
+  // UNTESTED
+  
+  // // AXI types
+  // // Define types needed
+  // // `CHESHIRE_TYPEDEF_AXI_CT(axi_lite_qspi, addr_t, axi_slv_id_t, logic [31:0], logic [3:0], axi_user_t) 
+  // // AXI-lite
+  //   `AXI_LITE_TYPEDEF_ALL ( axi_lite_qspi, logic [6:0], logic [31:0], logic [3:0] )
+  //   axi_lite_qspi_req_t  axi_lite_qspi_req;
+  //   axi_lite_qspi_resp_t axi_lite_qspi_resp;
+  // // AXI-full 32bit
+  //   `AXI_TYPEDEF_ALL      ( axi_qspi_d32 , addr_t, axi_slv_id_t, logic [31:0], logic [3:0], axi_user_t )
+  //   axi_qspi_d32_req_t axi_qspi_d32_req;
+  //   axi_qspi_d32_resp_t axi_qspi_d32_rsp;
+  // // AXI-full full width
+  //   axi_slv_req_t axi_qspi_req;
+  //   axi_slv_rsp_t axi_qspi_rsp;
+
+  // AXI-Lite
+  // // Connects as a 32-bit slave on either AXI4-Lite (or AXI4 interface)
+  //   xlnx_qspi i_axi_lite_quad_spi(
+  //     .ext_spi_clk   ( clk_i             ), // in Occamy BD: 100MHz
+  //     .s_axi4_aclk    ( clk_i             ), // in Occamy BD: 25MHz
+  //     .s_axi4_aresetn ( rst_ni            ), // in Occamy BD: peripheral reset 
+  //     .s_axi4_awaddr  ( axi_lite_qspi_req .aw.addr  ), // ( spi_lite.aw_addr  ),
+  //     .s_axi4_awvalid ( axi_lite_qspi_req .aw_valid ), // ( spi_lite.aw_valid ),
+  //     .s_axi4_awready ( axi_lite_qspi_resp.aw_ready ), // ( spi_lite.aw_ready ),
+  //     .s_axi4_wdata   ( axi_lite_qspi_req .w.data   ), // ( spi_lite.w_data   ),
+  //     .s_axi4_wstrb   ( axi_lite_qspi_req .w.strb   ), // ( spi_lite.w_strb   ),
+  //     .s_axi4_wvalid  ( axi_lite_qspi_req .w_valid  ), // ( spi_lite.w_valid  ),
+  //     .s_axi4_wready  ( axi_lite_qspi_resp.w_ready  ), // ( spi_lite.w_ready  ),
+  //     .s_axi4_bresp   ( axi_lite_qspi_resp.b.axi_qspi_resp   ), // ( spi_lite.b_resp   ),
+  //     .s_axi4_bvalid  ( axi_lite_qspi_resp.b_valid  ), // ( spi_lite.b_valid  ),
+  //     .s_axi4_bready  ( axi_lite_qspi_req .b_ready  ), // ( spi_lite.b_ready  ),
+  //     .s_axi4_araddr  ( axi_lite_qspi_req .ar.addr  ), // ( spi_lite.ar_addr  ),
+  //     .s_axi4_arvalid ( axi_lite_qspi_req .ar_valid ), // ( spi_lite.ar_valid ),
+  //     .s_axi4_arready ( axi_lite_qspi_resp.ar_ready ), // ( spi_lite.ar_ready ),
+  //     .s_axi4_rdata   ( axi_lite_qspi_resp.r.data   ), // ( spi_lite.r_data   ),
+  //     .s_axi4_rresp   ( axi_lite_qspi_resp.r.axi_qspi_resp   ), // ( spi_lite.r_resp   ),
+  //     .s_axi4_rvalid  ( axi_lite_qspi_resp.r_valid  ), // ( spi_lite.r_valid  ),
+  //     .s_axi4_rready  ( axi_lite_qspi_req .r_ready  ), // ( spi_lite.r_ready  ),
+  //     .cfgclk        (                   ),
+  //     .cfgmclk       (                   ),
+  //     .eos           (                   ),
+  //     .preq          (                   ),
+  //     .gsr           ( 1'b0              ), 
+  //     .gts           ( 1'b1              ), in Occamy BD: 1'b0
+  //     .keyclearb     ( 1'b1              ), 
+  //     .usrcclkts     ( 1'b0              ), 
+  //     .usrdoneo      ( 1'b1              ), 
+  //     .usrdonets     ( 1'b1              ), 
+  // // .ip2intc_irpt  ( irq_sources[0]    ) //TODO: connect this to plic
+  //     .ip2intc_irpt  (                   ) //TODO: connect this to plic
+  //   );
+      
+  // // Convert AXI Lite to AXI
+  //   axi_to_axi_lite #(
+  //     .AxiAddrWidth    ( Cfg.AddrWidth        ),
+  //     .AxiDataWidth    ( 32                   ),
+  //     .AxiIdWidth      ( AxiSlvIdWidth        ),
+  //     .AxiUserWidth    ( Cfg.AxiUserWidth     ),
+  //     .AxiMaxReadTxns  ( 1                    ),       
+  //     .AxiMaxWriteTxns ( 1                    ),
+  //     .FallThrough     ( 1'b0                 ),
+  //     .full_req_t      ( axi_slv_req_t        ),
+  //     .full_resp_t     ( axi_slv_rsp_t        ),
+  //     .lite_req_t      ( axi_lite_qspi_req_t  ),
+  //     .lite_resp_t     ( axi_lite_qspi_resp_t )
+  //   ) i_axi_to_axi_lite (
+  //     .clk_i      ( clk_i              ),
+  //     .rst_ni     ( rst_ni             ),
+  //     .test_i     ( 1'b0               ),
+  //     .slv_req_i  ( axi_qspi_req       ),
+  //     .slv_resp_o ( axi_qspi_rsp       ),
+  //     .mst_req_o  ( axi_lite_qspi_req  ),
+  //     .mst_resp_i ( axi_lite_qspi_resp )
+  //   ); 
+
+  // // Convert AXI full 32-bit to full width
+  //   axi_dw_converter #(
+  //     .AxiSlvPortDataWidth ( Cfg.AxiDataWidth         ),
+  //     .AxiMstPortDataWidth ( 32                       ),
+  //     .AxiAddrWidth        ( Cfg.AddrWidth            ),
+  //     .AxiIdWidth          ( AxiSlvIdWidth        ),
+  //     .AxiMaxReads         ( 4                        ),
+  //     .ar_chan_t           ( axi_qspi_d32_ar_chan_t   ),
+  //     .mst_r_chan_t        ( axi_qspi_d32_r_chan_t    ),
+  //     .slv_r_chan_t        ( axi_slv_r_chan_t         ),
+  //     .aw_chan_t           ( axi_qspi_d32_aw_chan_t   ),
+  //     .b_chan_t            ( axi_qspi_d32_b_chan_t    ),
+  //     .mst_w_chan_t        ( axi_qspi_d32_w_chan_t    ),
+  //     .slv_w_chan_t        ( axi_slv_w_chan_t         ),
+  //     .axi_mst_req_t       ( axi_qspi_d32_req_t       ),
+  //     .axi_mst_resp_t      ( axi_qspi_d32_resp_t      ),
+  //     .axi_slv_req_t       ( axi_slv_req_t            ),
+  //     .axi_slv_resp_t      ( axi_slv_rsp_t            )
+  //   ) i_ariane_axi_dwc (
+  //     .clk_i      ( clk_i            ),
+  //     .rst_ni     ( rst_ni           ),
+  //     .slv_req_i  ( axi_qspi_req     ),
+  //     .slv_resp_o ( axi_qspi_rsp     ),
+  //     .mst_req_o  ( axi_qspi_d32_req ),
+  //     .mst_resp_i ( axi_qspi_d32_rsp )
+  //   );
+
+`endif // QSPI_AXI_LITE
+
+`ifdef QSPI_AXI4
+
+  axi_slv_req_t axi_qspi_req;
+  axi_slv_rsp_t axi_qspi_rsp;
+
+  // AXI4 Full
+  xlnx_qspi i_axi_full_quad_spi (
+    .ext_spi_clk     ( clk_i                   ), // input wire ext_spi_clk
+    .s_axi4_aclk     ( clk_i                   ), // input wire s_axi4_aclk
+    .s_axi4_aresetn  ( rst_ni                  ), // input wire s_axi4_aresetn
+    .s_axi4_awid     ( axi_qspi_req .aw.id     ), // input wire [3 : 0]
+    .s_axi4_awaddr   ( axi_qspi_req .aw.addr   ), // input wire [23 : 0]
+    .s_axi4_awlen    ( axi_qspi_req .aw.len    ), // input wire [7 : 0]
+    .s_axi4_awsize   ( axi_qspi_req .aw.size   ), // input wire [2 : 0]
+    .s_axi4_awburst  ( axi_qspi_req .aw.burst  ), // input wire [1 : 0]
+    .s_axi4_awlock   ( axi_qspi_req .aw.lock   ), // input wire s_axi4_awlock
+    .s_axi4_awcache  ( axi_qspi_req .aw.cache  ), // input wire [3 : 0]
+    .s_axi4_awprot   ( axi_qspi_req .aw.prot   ), // input wire [2 : 0]
+    .s_axi4_awvalid  ( axi_qspi_req .aw.valid  ), // input wire s_axi4_wvalid
+    .s_axi4_awready  ( axi_qspi_resp.aw_ready  ), // output wire s_axi4_awready
+    .s_axi4_wdata    ( axi_qspi_req .w.data     ), // input wire [31 : 0]
+    .s_axi4_wstrb    ( axi_qspi_req .w.strb     ), // input wire [3 : 0]
+    .s_axi4_wlast    ( axi_qspi_req .w.last     ), // input wire s_axi4_wlast
+    .s_axi4_wvalid   ( axi_qspi_req .w_valid    ), // input wire s_axi4_wvalid
+    .s_axi4_wready   ( axi_qspi_resp.w_ready   ), // output wire s_axi4_wready
+    .s_axi4_bid      ( axi_qspi_resp.b.id      ), // output wire [3 : 0]
+    .s_axi4_bresp    ( axi_qspi_resp.b.resp    ), // output wire [1 : 0]
+    .s_axi4_bvalid   ( axi_qspi_resp.b_valid   ), // output wire s_axi4_bvalid
+    .s_axi4_bready   ( axi_qspi_req .b_ready   ), // input wire s_axi4_bready
+    .s_axi4_arid     ( axi_qspi_req .ar.id     ), // input wire [3 : 0]
+    .s_axi4_araddr   ( axi_qspi_req .ar.addr   ), // input wire [23 : 0]
+    .s_axi4_arlen    ( axi_qspi_req .ar.len    ), // input wire [7 : 0]
+    .s_axi4_arsize   ( axi_qspi_req .ar.size   ), // input wire [2 : 0]
+    .s_axi4_arburst  ( axi_qspi_req .ar.burst  ), // input wire [1 : 0]
+    .s_axi4_arlock   ( axi_qspi_req .ar.lock   ), // input wire s_axi4_arlock
+    .s_axi4_arcache  ( axi_qspi_req .ar.cache  ), // input wire [3 : 0]
+    .s_axi4_arprot   ( axi_qspi_req .ar.prot   ), // input wire [2 : 0]
+    .s_axi4_arvalid  ( axi_qspi_req .ar_valid  ), // input wire s_axi4_arvalid
+    .s_axi4_arready  ( axi_qspi_resp.ar_ready  ), // output wire s_axi4_arready
+    .s_axi4_rid      ( axi_qspi_resp.r.id      ), // output wire [3 : 0]
+    .s_axi4_rdata    ( axi_qspi_resp.r.data    ), // output wire [31 : 0]
+    .s_axi4_rresp    ( axi_qspi_resp.r.resp    ), // output wire [1 : 0]
+    .s_axi4_rlast    ( axi_qspi_resp.r.last    ), // output wire s_axi4_rlast
+    .s_axi4_rvalid   ( axi_qspi_resp.r_valid   ), // output wire s_axi4_rvalid
+    .s_axi4_rready   ( axi_qspi_req .r_ready   ), // input wire s_axi4_rready
+    .cfgclk         (                         ), // output wire cfgclk
+    .cfgmclk        (                         ), // output wire cfgmclk
+    .eos            (                         ), // output wire eos
+    .preq           (                         ), // output wire preq
+    .gsr            ( 1'b0                    ), // input wire gsr
+    .gts            ( 1'b0                    ), // input wire gts // in Occamy BD: 1'b0 
+    // .gts            ( 1'b1                    ), // input wire gts // in AlSaqr: 1'b1 
+    .keyclearb      ( 1'b1                    ), // input wire keyclearb
+    .usrcclkts      ( 1'b0                    ), // input wire usrcclkts
+    .usrdoneo       ( 1'b1                    ), // input wire usrdoneo
+    .usrdonets      ( 1'b1                    ), // input wire usrdonets
+    // TODO: connect to PLIC
+    .ip2intc_irpt   (                         ) // output wire ip2intc_irpt
+  );
+  
+`endif // QSPI_AXI
+
+  // Assign to Cheshire external slave
+  // assign ? = axi_qspi_req;
+  // assign ? = axi_qspi_rsp;
+
+`endif // TARGET_XLNX_QSPI
 
   ///////////////////
   // VIOs          // 
@@ -436,6 +619,7 @@ module cheshire_top_xilinx
   // Cheshire SoC //
   //////////////////
 
+  // TODO: connect to xlxn_qspi as external slave
   cheshire_soc #(
     .Cfg                ( FPGACfg ),
     .ExtHartinfo        ( '0 ),

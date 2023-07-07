@@ -422,8 +422,8 @@ module cheshire_soc import cheshire_pkg::*; #(
     axi_slv_req_t axi_llc_amo_req;
     axi_slv_rsp_t axi_llc_amo_rsp;
 
-    // Shim atomics, which are not supported by LLC
-    // TODO: This should be a filter, but how do we filter RISC-V atomics?
+ // Shim atomics, which are not supported by LLC
+ // TODO: This should be a filter, but how do we filter RISC-V atomics?
     axi_riscv_atomics_structs #(
       .AxiAddrWidth     ( Cfg.AddrWidth    ),
       .AxiDataWidth     ( Cfg.AxiDataWidth ),
@@ -472,8 +472,8 @@ module cheshire_soc import cheshire_pkg::*; #(
     axi_slv_req_t axi_llc_remap_req;
     axi_slv_rsp_t axi_llc_remap_rsp;
 
-    // Remap both cached and uncached accesses to single base.
-    // This is necessary for routing in the LLC-internal interconnect.
+ // Remap both cached and uncached accesses to single base.
+ // This is necessary for routing in the LLC-internal interconnect.
     always_comb begin
       axi_llc_remap_req = axi_llc_cut_req;
       if (axi_llc_cut_req.aw.addr & ~AmSpmRegionMask == AmSpmBaseUncached & ~AmSpmRegionMask)
@@ -551,35 +551,214 @@ module cheshire_soc import cheshire_pkg::*; #(
   axi_cva6_req_t core_out_req, core_ur_req;
   axi_cva6_rsp_t core_out_rsp, core_ur_rsp;
 
-  //////////
-  // CVA6 //
-  //////////
-  // CVA6 + Ara AXI connection (Data Width)
+  /////////
+  // ARA //
+  /////////  
+
+  // Accelerator ports
+  acc_pkg::accelerator_req_t            acc_req;
+  acc_pkg::accelerator_resp_t           acc_resp;
+
+`ifdef ARA
+
+`ifdef ARIANE_ACCELERATOR_PORT
+  logic                                 acc_cons_en;
+  logic             [Cfg.AddrWidth-1:0] inval_addr;
+  logic                                 inval_valid;
+  logic                                 inval_ready;
+`endif // ARIANE_ACCELERATOR_PORT
+
+`ifdef ARA_INTEGRATION_v0_1
+  // CVA6 + Ara AXI connection (Data Width/ID Width)
   // v0.1: Lane-limited Ara
   // NOTE: requires NrLanes=2 -> Ara Data Width = 32 * NrLanes = 64 -> no need for axi_dw_converter
-  //                                              __________
-  //  ARA -(64)--> i_axi_inval_filter -----(64)->|          |
-  //                  |                          |          |
-  //                  v                          | axi_xbar |
-  //                CVA6 ------------------(64)->|          |
-  //                                             |__________|
+  //                                                                                                                 __________
+  //  ARA -(64/Cfg.AxiMstIdWidth)--> i_axi_inval_filter ------------------------------------(64/Cfg.AxiMstIdWidth)->|          |
+  //                                         |                                                                      | axi_xbar |
+  //                                         V                                                                      |          |
+  //                                       CVA6 ---(64/Cva6IdWidth)--> i_axi_id_serialize --(64/Cfg.AxiMstIdWidth)->|__________|
+  //                                                                           
 
-  // // TODO: extend this for axi_ara_data > axi_data_t
-  // // For now, this is indentical a CVA6's
+  // For now, this is indentical a CVA6's
   // `CHESHIRE_TYPEDEF_AXI_CT(axi_ara , addr_t, cva6_id_t, axi_data_t, axi_strb_t, axi_user_t)
-  // axi_ara_req_t     axi_ara_req_inval, axi_ara_req;
-  // axi_ara_rsp_t    axi_ara_resp_inval, axi_ara_resp;
+  
+  // Configure Ara with narrow AXI id width
+  axi_mst_req_t axi_ara_req_inval, axi_ara_req;
+  axi_mst_rsp_t axi_ara_resp_inval, axi_ara_resp;
 
-  // // Accelerator ports
-  // acc_pkg::accelerator_req_t            acc_req;
-  // acc_pkg::accelerator_resp_t           acc_resp;
-  // logic                                 acc_resp_valid;
-  // logic                                 acc_resp_ready;
-  // logic                                 acc_cons_en;
-  // logic             [Cfg.AddrWidth-1:0] inval_addr;
-  // logic                                 inval_valid;
-  // logic                                 inval_ready;
+  ara #(
+    .NrLanes      ( `ARA_NR_LANES     ),
+    .AxiDataWidth ( Cfg.AxiDataWidth  ),
+    .AxiAddrWidth ( Cfg.AddrWidth     ),
+    .axi_ar_t     ( axi_ara_ar_chan_t ),
+    .axi_r_t      ( axi_ara_r_chan_t  ),
+    .axi_aw_t     ( axi_ara_aw_chan_t ),
+    .axi_w_t      ( axi_ara_w_chan_t  ),
+    .axi_b_t      ( axi_ara_b_chan_t  ),
+    .axi_req_t    ( axi_ara_req_t     ),
+    .axi_resp_t   ( axi_ara_rsp_t     )
+  ) i_ara (
+    .clk_i         ( clk_i         ),
+    .rst_ni        ( rst_ni        ),
+    .scan_enable_i ( scan_enable_i ),
+    .scan_data_i   ( 1'b0          ),
+    .scan_data_o   ( /* Unused */  ),
+    .acc_req_i     ( acc_req       ),
+    .acc_resp_o    ( acc_resp      ),
+    .axi_req_o     ( axi_ara_req   ),
+    .axi_resp_i    ( axi_ara_resp  )
+  );
 
+  // Issue invalidations to CVA6 L1D$
+  axi_inval_filter #(
+    .MaxTxns     ( 4                               ), // TODO: tune.axi_dw_converter.AxiMaxReads w.r.t. ARA_NR_LANES
+    .AddrWidth   ( Cfg.AddrWidth                   ),
+    .L1LineWidth ( ariane_pkg::DCACHE_LINE_WIDTH/8 ),
+    .aw_chan_t   ( axi_ara_aw_chan_t               ),
+    .req_t       ( axi_ara_req_t                   ),
+    .resp_t      ( axi_ara_rsp_t                   )
+  ) i_ara_axi_inval_filter (
+    .clk_i         ( clk_i              ),
+    .rst_ni        ( rst_ni             ),
+    .en_i          ( acc_cons_en        ),
+    .slv_req_i     ( axi_ara_req        ),
+    .slv_resp_o    ( axi_ara_resp       ),
+    .mst_req_o     ( axi_ara_req_inval  ),
+    .mst_resp_i    ( axi_ara_resp_inval ),
+    .inval_addr_o  ( inval_addr         ),
+    .inval_valid_o ( inval_valid        ),
+    .inval_ready_i ( inval_ready        )
+  );
+
+  assign axi_in_req[AxiIn.ara] = axi_ara_req_inval;
+  assign axi_in_rsp[AxiIn.ara] = axi_ara_resp_inval;
+
+`endif // ARA_INTEGRATION_v0_1
+
+`ifdef ARA_INTEGRATION_v0_2
+  // CVA6 + Ara AXI connection (Data Width)
+  // v0.2: axi data with converter
+  // NOTE: might reduce Ara's load/store throughput
+  // NOTE: tune.axi_dw_converter.AxiMaxReads w.r.t. ARA_NR_LANES
+  //
+  //        axi_ara_wide                  axi_ara_wide_req_inval                axi_ara_narrow __________
+  //  ARA -(32*NrLanes)--> i_axi_inval_filter -(32*NrLanes)-> axi_dw_converter ----(64)------>|          |
+  //                           |                                                              |          |
+  //                           v                                                              | axi_xbar |
+  //                         CVA6 ---(64)---> i_axi_id_serialize ------------------(64)------>|          |
+  //                                
+
+  // Configure Ara with the right AXI id width
+  typedef logic [Cfg.AxiMstIdWidth-1:0] ara_id_t;
+  // Default Ara AXI data width
+  localparam int unsigned AraDataWideWidth = 32 * `ARA_NR_LANES;
+  typedef logic [AraDataWideWidth   -1 : 0] axi_ara_wide_data_t;
+  typedef logic [AraDataWideWidth/8 -1 : 0] axi_ara_wide_strb_t;
+  // `CHESHIRE_TYPEDEF_AXI_CT(axi_ara_wide , addr_t, ara_id_t, axi_ara_wide_data_t, axi_ara_wide_strb_t, axi_user_t)
+  `AXI_TYPEDEF_ALL(axi_ara_wide, addr_t, ara_id_t, axi_ara_wide_data_t, axi_ara_wide_strb_t, axi_user_t)
+  axi_ara_wide_req_t     axi_ara_wide_req_inval, axi_ara_wide_req;
+  axi_ara_wide_resp_t    axi_ara_wide_resp_inval, axi_ara_wide_resp;
+
+  // `CHESHIRE_TYPEDEF_AXI_CT(axi_ara_narrow , addr_t, ara_id_t, axi_data_t, axi_strb_t, axi_user_t)
+  // axi_ara_narrow_req_t     axi_ara_narrow_req;
+  // axi_ara_narrow_rsp_t     axi_ara_narrow_resp;
+  axi_mst_req_t     axi_ara_narrow_req;
+  axi_mst_rsp_t     axi_ara_narrow_resp;
+
+  ara #(
+    .NrLanes      ( `ARA_NR_LANES          ),
+    .AxiDataWidth ( Cfg.AxiDataWidth       ),
+    .AxiAddrWidth ( Cfg.AddrWidth          ),
+    .axi_ar_t     ( axi_ara_wide_ar_chan_t ),
+    .axi_r_t      ( axi_ara_wide_r_chan_t  ),
+    .axi_aw_t     ( axi_ara_wide_aw_chan_t ),
+    .axi_w_t      ( axi_ara_wide_w_chan_t  ),
+    .axi_b_t      ( axi_ara_wide_b_chan_t  ),
+    .axi_req_t    ( axi_ara_wide_req_t     ),
+    .axi_resp_t   ( axi_ara_wide_resp_t    )
+  ) i_ara (
+    .clk_i           ( clk_i             ),
+    .rst_ni          ( rst_ni            ),
+    .scan_enable_i   ( 1'b0              ),
+    .scan_data_i     ( 1'b0              ),
+    .scan_data_o     ( /* Unused */      ),
+    .acc_req_i       ( acc_req           ),
+    .acc_resp_o      ( acc_resp          ),
+    .axi_req_o       ( axi_ara_wide_req  ),
+    .axi_resp_i      ( axi_ara_wide_resp )
+  );
+
+  // Issue invalidations to CVA6 L1D$
+  axi_inval_filter #(
+    .MaxTxns    ( 4                               ),
+    .AddrWidth  ( Cfg.AddrWidth                   ),
+    .L1LineWidth( ariane_pkg::DCACHE_LINE_WIDTH/8 ),
+    .aw_chan_t  ( axi_ara_wide_aw_chan_t          ),
+    .req_t      ( axi_ara_wide_req_t              ),
+    .resp_t     ( axi_ara_wide_resp_t             )
+  ) i_ara_axi_inval_filter (
+    .clk_i        ( clk_i                   ),
+    .rst_ni       ( rst_ni                  ),
+    .en_i         ( acc_cons_en             ),
+    .slv_req_i    ( axi_ara_wide_req        ),
+    .slv_resp_o   ( axi_ara_wide_resp       ),
+    .mst_req_o    ( axi_ara_wide_req_inval  ),
+    .mst_resp_i   ( axi_ara_wide_resp_inval ),
+    .inval_addr_o ( inval_addr              ),
+    .inval_valid_o( inval_valid             ),
+    .inval_ready_i( inval_ready             )
+  );
+
+  // Convert from AraDataWideWidth (axi_ara_wide) to Cfg.AxiDataWidth (axi_ara_narrow)
+  axi_dw_converter #(
+    .AxiSlvPortDataWidth ( AraDataWideWidth       ),
+    .AxiMstPortDataWidth ( Cfg.AxiDataWidth       ),
+    .AxiMaxReads         ( 4                      ), // TODO: Tune this w.r.t. ARA_NR_LANES
+    .AxiAddrWidth        ( Cfg.AddrWidth          ),
+    .AxiIdWidth          ( Cfg.AxiMstIdWidth      ),
+    .aw_chan_t           ( axi_ara_wide_aw_chan_t ), 
+    .mst_w_chan_t        ( axi_mst_w_chan_t       ),
+    .slv_w_chan_t        ( axi_ara_wide_w_chan_t  ),
+    .b_chan_t            ( axi_ara_wide_b_chan_t  ),
+    .ar_chan_t           ( axi_ara_wide_ar_chan_t ),
+    .mst_r_chan_t        ( axi_mst_r_chan_t       ),
+    .slv_r_chan_t        ( axi_ara_wide_r_chan_t  ),
+    .axi_mst_req_t       ( axi_mst_req_t          ),
+    .axi_mst_resp_t      ( axi_mst_rsp_t          ),
+    .axi_slv_req_t       ( axi_ara_wide_req_t     ),
+    .axi_slv_resp_t      ( axi_ara_wide_resp_t    ) 
+  ) i_ara_axi_dw_converter (
+    .clk_i      ( clk_i                   ),
+    .rst_ni     ( rst_ni                  ),
+    .slv_req_i  ( axi_ara_wide_req_inval  ),
+    .slv_resp_o ( axi_ara_wide_resp_inval ),
+    .mst_req_o  ( axi_ara_narrow_req      ),
+    .mst_resp_i ( axi_ara_narrow_resp     )
+  );
+
+  // Assign to crossbar input/master
+  assign axi_in_req[AxiIn.ara] = axi_ara_narrow_req;
+  assign axi_in_rsp[AxiIn.ara] = axi_ara_narrow_resp;
+
+
+`endif // ARA_INTEGRATION_v0_2
+
+`else // ARA
+  // Accelerator port 
+  // Ingnore output acc_req
+  // Tie input ot zero
+  assign acc_resp = '0; 
+  
+  // Crossbar
+  // Ingnore output axi_in_rsp[AxiIn.ara] and axi_ara_narrow_resp
+  // Tie input ot zero
+  assign axi_in_req[AxiIn.ara] = '0;
+`endif // ARA
+
+  //////////
+  // CVA6 //
+  //////////  
+  
   // Currently, we support only one core
   cva6 #(
     .ArianeCfg      ( Cva6Cfg ),
@@ -605,76 +784,20 @@ module cheshire_soc import cheshire_pkg::*; #(
     .rvfi_o           ( ),
     .l15_req_o        ( ),
     .l15_rtrn_i       ( '0 ),
-    // // Accelerator ports
-    // .cvxif_req_o      ( acc_req      ),
-    // .cvxif_resp_i     ( acc_resp     ),
-    // // Invalidation requests
-    // .acc_cons_en_o    ( acc_cons_en  ),
-    // .inval_addr_i     ( inval_addr   ),
-    // .inval_valid_i    ( inval_valid  ),
-    // .inval_ready_o    ( inval_ready  ),
-    // DEBUG
-    // Accelerator ports
-    .cvxif_req_o      (       ),
-    .cvxif_resp_i     ( '0     ),
-    // L1$ invalidation requests
-    // .acc_cons_en_o    (   ),
-    // .inval_addr_i     ( '0  ),
-    // .inval_valid_i    ( '0  ),
-    // .inval_ready_o    (   ),
-    // AXI interface
+ // Accelerator ports
+    .cvxif_req_o      ( acc_req      ),
+    .cvxif_resp_i     ( acc_resp     ),
+`ifdef ARIANE_ACCELERATOR_PORT
+ // Invalidation requests
+    .acc_cons_en_o    ( acc_cons_en  ),
+    .inval_addr_i     ( inval_addr   ),
+    .inval_valid_i    ( inval_valid  ),
+    .inval_ready_o    ( inval_ready  ),
+`endif // ARIANE_ACCELERATOR_PORT
+ // AXI interface
     .axi_req_o        ( core_out_req ),
     .axi_resp_i       ( core_out_rsp )
   );
-
-  /////////
-  // ARA //
-  /////////  
-  // axi_inval_filter #(
-  //   .MaxTxns    ( 4                               ),
-  //   .AddrWidth  ( AxiAddrWidth                    ),
-  //   .L1LineWidth( ariane_pkg::DCACHE_LINE_WIDTH/8 ),
-  //   .aw_chan_t  ( axi_ara_aw_t                    ),
-  //   .req_t      ( axi_ara_req_t                   ),
-  //   .resp_t     ( axi_ara_resp_t                  )
-  // ) i_axi_inval_filter (
-  //   .clk_i        ( clk_i              ),
-  //   .rst_ni       ( rst_ni             ),
-  //   .en_i         ( acc_cons_en        ),
-  //   .slv_req_i    ( axi_ara_req        ),
-  //   .slv_resp_o   ( axi_ara_resp       ),
-  //   .mst_req_o    ( axi_ara_req_inval  ),
-  //   .mst_resp_i   ( axi_ara_resp_inval ),
-  //   .inval_addr_o ( inval_addr         ),
-  //   .inval_valid_o( inval_valid        ),
-  //   .inval_ready_i( inval_ready        )
-  // );
-
-  // ara #(
-  //   .NrLanes     ( NrLanes          ),
-  //   .FPUSupport  ( FPUSupport       ),
-  //   .FPExtSupport( FPExtSupport     ),
-  //   .FixPtSupport( FixPtSupport     ),
-  //   .AxiDataWidth( AxiWideDataWidth ),
-  //   .AxiAddrWidth( AxiAddrWidth     ),
-  //   .axi_ar_t    ( axi_ara_ar_t     ),
-  //   .axi_r_t     ( axi_ara_r_t      ),
-  //   .axi_aw_t    ( axi_ara_aw_t     ),
-  //   .axi_w_t     ( axi_ara_w_t      ),
-  //   .axi_b_t     ( axi_ara_b_t      ),
-  //   .axi_req_t   ( axi_ara_req_t    ),
-  //   .axi_resp_t  ( axi_ara_resp_t   )
-  // ) i_ara (
-  //   .clk_i           ( clk_i         ),
-  //   .rst_ni          ( rst_ni        ),
-  //   .scan_enable_i   ( scan_enable_i ),
-  //   .scan_data_i     ( 1'b0          ),
-  //   .scan_data_o     ( /* Unused */  ),
-  //   .acc_req_i       ( acc_req       ),
-  //   .acc_resp_o      ( acc_resp      ),
-  //   .axi_req_o       ( axi_ara_req   ),
-  //   .axi_resp_i      ( axi_ara_resp  )
-  // );
 
   // Map user to AMO domain as we are an atomics-capable master.
   // As we are core 0, the core 1 and serial link AMO bits should *not* be set.
@@ -988,7 +1111,7 @@ module cheshire_soc import cheshire_pkg::*; #(
     .rst_ni,
     .reg_req_i  ( reg_out_req[RegOut.plic] ),
     .reg_rsp_o  ( reg_out_rsp[RegOut.plic] ),
-    .intr_src_i ( intr[NumIntIntrs+NumExtIntrs-1:0] ),  // Do not connect Ext IOMSB if it exists
+    .intr_src_i ( intr[NumIntIntrs+NumExtIntrs-1:0] ), // Do not connect Ext IOMSB if it exists
     .irq_o      ( irq ),
     .irq_id_o   ( ),
     .msip_o     ( )
@@ -1018,11 +1141,11 @@ module cheshire_soc import cheshire_pkg::*; #(
 
   if (Cfg.AxiRt) begin : gen_axi_rt
 
-    // Connect AXI RT units, one for each master
+ // Connect AXI RT units, one for each master
     axi_rt_reg_pkg::axi_rt_hw2reg_t axi_rt_hw2reg;
     axi_rt_reg_pkg::axi_rt_reg2hw_t axi_rt_reg2hw;
 
-    // Rule type
+ // Rule type
     typedef struct packed {
       logic [0:0] idx;
       addr_t      start_addr;
@@ -1112,7 +1235,7 @@ module cheshire_soc import cheshire_pkg::*; #(
     logic         bootrom_req,  bootrom_req_q;
     logic         bootrom_we,   bootrom_we_q;
 
-    // Delay response by one cycle to fulfill mem protocol
+ // Delay response by one cycle to fulfill mem protocol
     `FF(bootrom_data_q, bootrom_data, '0, clk_i, rst_ni)
     `FF(bootrom_req_q,  bootrom_req,  '0, clk_i, rst_ni)
     `FF(bootrom_we_q,   bootrom_we,   '0, clk_i, rst_ni)
@@ -1409,7 +1532,7 @@ module cheshire_soc import cheshire_pkg::*; #(
     axi_mst_req_t slink_tx_idr_req;
     axi_mst_rsp_t slink_tx_idr_rsp;
 
-    // TX outgoing channels: Remap address and set serial link user bit
+ // TX outgoing channels: Remap address and set serial link user bit
     always_comb begin
       slink_tx_uar_req          = axi_out_req[AxiOut.slink];
       slink_tx_uar_req.aw.addr  = (Cfg.SlinkTxAddrDomain    & ~Cfg.SlinkTxAddrMask) |
@@ -1421,14 +1544,14 @@ module cheshire_soc import cheshire_pkg::*; #(
       slink_tx_uar_req.w.user  |= (addr_t'(1) << Cfg.SlinkUserAmoBit);
     end
 
-    // TX incoming channels: unset serial link user bit
+ // TX incoming channels: unset serial link user bit
     always_comb begin
       axi_out_rsp[AxiOut.slink]         = slink_tx_uar_rsp;
       axi_out_rsp[AxiOut.slink].r.user &= ~(addr_t'(1) << Cfg.SlinkUserAmoBit);
       axi_out_rsp[AxiOut.slink].b.user &= ~(addr_t'(1) << Cfg.SlinkUserAmoBit);
     end
 
-    // TX: Remap wider slave ID to narrower master ID
+ // TX: Remap wider slave ID to narrower master ID
     axi_id_remap #(
       .AxiSlvPortIdWidth    ( AxiSlvIdWidth         ),
       .AxiSlvPortMaxUniqIds ( Cfg.SlinkMaxUniqIds   ),
