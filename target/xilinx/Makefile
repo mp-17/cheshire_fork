@@ -21,6 +21,8 @@ include ../common.mk
 # Board in      {vcu128, genesys2, zcu102(not working)}
 BOARD        ?= vcu128
 XILINX_HOST  ?= bordcomputer
+# TODO: check this
+FLASH_OFFSET = 0x0
 
 # Select board specific variables
 ifeq ($(BOARD),vcu128)
@@ -28,11 +30,12 @@ ifeq ($(BOARD),vcu128)
 	VIVADO       ?= vitis-2020.2 vivado
 	XILINX_PART  ?= xcvu37p-fsvh2892-2L-e
 	XILINX_BOARD ?= xilinx.com:vcu128:part0:1.0
-	# VCU128-01
-    XILINX_PORT	 ?= 3231 
-	# VCU128-02
-    # XILINX_PORT	 ?= 3232
-    FPGA_PATH	 ?= xilinx_tcf/Xilinx/091847100576A 
+# VCU128-01 (broken flash)
+# XILINX_PORT	 ?= 3231 
+# FPGA_PATH	 ?= xilinx_tcf/Xilinx/091847100576A 
+# 	VCU128-02
+    XILINX_PORT	 ?= 3232
+    FPGA_PATH	 ?= xilinx_tcf/Xilinx/091847100638A 
 	FPGA_DEVICE	 ?= xcvu37p_0
 	IPS_NAMES    := xlnx_vio xlnx_mig_ddr4 xlnx_qspi
 	BENDER_TARGETS := $(BENDER_TARGETS) -t bscane
@@ -55,12 +58,6 @@ endif
 # 	IPS_NAMES      := xlnx_mig_ddr4
 # endif
 
-
-out := $(PROJECT)
-bit := $(out)/cheshire_top_xilinx.bit
-mcs := $(out)/cheshire_top_xilinx.mcs
-BIT ?= $(bit)
-
 ##########
 # Vivado #
 ##########
@@ -68,9 +65,19 @@ BIT ?= $(bit)
 # Define TARGET_<ip> macro with bender
 IPS := $(addsuffix .xci ,$(basename $(IPS_NAMES)))
 BENDER_TARGETS += $(addprefix -t ,$(basename $(IPS)))
+# Define QSPI IP configuration (mutually exclusive)
+# NOTE: This could be embedded in the IPs generation
+# BENDER_DEFS += --define QSPI_AXI_LITE
+BENDER_DEFS += --define QSPI_AXI4
 IP_DIR := xilinx
 
 DEBUG_RUN ?= 1
+IMPL_STRATEGY ?= Performance_ExtraTimingOpt
+PROJECT := $(PROJECT)_$(IMPL_STRATEGY)
+out := $(PROJECT)
+bit := $(out)/$(PROJECT).bit
+mcs := $(out)/$(PROJECT).mcs
+
 VIVADOENV ?=  PROJECT=$(PROJECT)            \
               BOARD=$(BOARD)                \
               XILINX_PART=$(XILINX_PART)    \
@@ -78,8 +85,12 @@ VIVADOENV ?=  PROJECT=$(PROJECT)            \
               PORT=$(XILINX_PORT)           \
               HOST=$(XILINX_HOST)           \
               FPGA_PATH=$(FPGA_PATH)        \
-              BIT=$(BIT) 					\
-			  DEBUG_RUN=$(DEBUG_RUN)
+              FPGA_DEVICE=$(FPGA_DEVICE)    \
+              BIT=$(bit) 					\
+              IMPL_STRATEGY=$(IMPL_STRATEGY) \
+			  DEBUG_RUN=$(DEBUG_RUN)		\
+			  FLASH_OFFSET=$(FLASH_OFFSET)	\
+			  MCS=$(mcs)
 MODE        ?= batch
 VIVADOFLAGS ?= -nojournal -mode $(MODE)
 # Define TARGET_$(BOARD) macro with bender
@@ -91,14 +102,15 @@ all: $(bit)
 include sim/simulate.mk
 
 # Generate mcs from bitstream
+write_cfgmem: $(mcs)
 $(mcs): $(bit)
-	$(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/write_cfgmem.tcl -tclargs $@ $^
+	cd $(PROJECT); $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/write_cfgmem.tcl -tclargs $@ $^
 
+bit: $(bit)
 $(bit): $(IPS) scripts/add_sources.tcl
 	mkdir -p $(out)
-	mkdir -p $(PROJECT)
 	cd $(PROJECT); $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source ../scripts/run.tcl 
-	cp $(PROJECT)/$(PROJECT).runs/impl_1/$(PROJECT)* ./$(out)
+	cp $(PROJECT)/$(PROJECT).runs/impl_1/cheshire_top_xilinx.bit ./out/$(PROJECT).bit
 	cd $(PROJECT); $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) $(PROJECT).xpr -source ../scripts/get_run_info.tcl > reports/report.tmp
 	grep " cheshire_top_xilinx " $(PROJECT)/reports/$(PROJECT).utilization.rpt | sed -E "s/.+top\) //g" >> reports/report.tmp
 
@@ -111,13 +123,28 @@ ips: $(IPS)
 	cp $(IP_DIR)/$(basename $@)/$(basename $@).srcs/sources_1/ip/$(basename $@)/$@ $@
 
 gui:
-	@echo "Starting $(vivado) GUI"
-	$(VIVADOENV) $(VIVADO) -nojournal -mode gui $(PROJECT)/$(PROJECT).xpr &
+	@echo "Starting $(VIVADO) GUI"
+	cd $(PROJECT); $(VIVADOENV) $(VIVADO) -nojournal -mode gui $(PROJECT).xpr &
+
+tcl:
+	@echo "Starting $(VIVADO) TCL"
+	cd $(PROJECT); $(VIVADOENV) $(VIVADO) -nojournal -mode tcl $(PROJECT).xpr
 
 program: #$(bit)
 	@echo "Programming board $(BOARD) ($(XILINX_PART))"
 # hw_server in IIS bordcomputer is v2020.2
 	$(VIVADOENV) vitis-2020.2 vivado $(VIVADOFLAGS) -source scripts/program.tcl
+
+flash_spi:
+	@echo "Flashing QSPI for board $(BOARD) ($(XILINX_PART))"
+	$(VIVADOENV) vitis-2020.2 vivado $(VIVADOFLAGS) -source scripts/flash_spi.tcl
+# From occamy
+# flash-u-boot:
+# 	${MAKE} flash FILE=${UBOOT_ITB} OFFSET=0x6000000
+# flash-uimage:
+# 	${MAKE} flash FILE=${LINUX_UIMAGE} OFFSET=0x6100000
+
+clean:
 
 # Spare IPS from clean
 clean:
@@ -126,7 +153,7 @@ clean:
 		*.log *.jou *.str *.mif .Xil/ \
 		$(out) $(PROJECT)
 
-clean_IPS:
+clean_ips:
 	rm -rf *.xci
 	cd xilinx; $(foreach ip, $(IPS_NAMES), make -C $(ip) clean;)
 
