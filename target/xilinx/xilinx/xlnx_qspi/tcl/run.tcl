@@ -25,17 +25,22 @@ create_ip -name axi_quad_spi -vendor xilinx.com -library ip -version 3.2 -module
                             CONFIG.C_TYPE_OF_AXI4_INTERFACE {0} \
                         ] [get_ips ${ipName}]
 # From occamy BD (vivado-2020.2) https://github.com/pulp-platform/snitch/blob/master/hw/system/occamy/fpga/occamy_vcu128_bd.tcl#L311
+# NOTE: CONFIG.C_S_AXI4_ID_WIDTH {5} must match $bits(axi_slv_id_t)
 set_property -dict [ list \
             CONFIG.C_FIFO_DEPTH {16} \
             CONFIG.C_SCK_RATIO {2} \
             CONFIG.C_SPI_MEMORY {2} \
             CONFIG.C_SPI_MODE {2} \
             CONFIG.C_TYPE_OF_AXI4_INTERFACE {1} \
+            CONFIG.C_S_AXI4_ID_WIDTH {5} \
             CONFIG.C_USE_STARTUP {1} \
             CONFIG.C_USE_STARTUP_INT {1} \
             CONFIG.FIFO_INCLUDED {1} \
             CONFIG.Master_mode {1} \
             ] [get_ips ${ipName}]
+
+            set_property -dict [list] [get_ips xlnx_qspi]
+
 
 generate_target {instantiation_template} \
 [get_files ./$ipName.srcs/sources_1/ip/$ipName/$ipName.xci]

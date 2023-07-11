@@ -95,8 +95,30 @@ module cheshire_top_xilinx
 
 );
 
+  // Declare interrupt array
+  logic [iomsb(NumExtIntrs):0] intr_ext_chs;
+
+  // Add an external slave for the QSPI
+  localparam int unsigned AxiNumExtMst = 0;
+  localparam int unsigned AxiNumExtSlv = 1;
+
+  // Declare QSPI memory map
+  // TODO: this must be tuned
+  localparam byte_bt QSPIExtSlvIdx       = 8'd7;
+  localparam doub_bt QSPIExtRegionStart  = 64'h0000_0000_5000_0000;
+  localparam doub_bt QSPIExtRegionSize   = 64'h0000_0000_0080_0000;
+  localparam doub_bt QSPIExtRegionEnd    = QSPIExtRegionStart + QSPIExtRegionSize;
+
   // Configure cheshire for FPGA mapping
   localparam cheshire_cfg_t FPGACfg = '{
+    // External AXI ports (at most 8 ports and rules)
+    AxiExtNumMst      : AxiNumExtMst, // bit     [2:0]  AxiExtNumMst;
+    AxiExtNumSlv      : AxiNumExtSlv, // bit     [3:0]  AxiExtNumSlv;
+    AxiExtNumRules    : AxiNumExtSlv, // bit     [3:0]  AxiExtNumRules;
+    // External AXI region map
+    AxiExtRegionIdx   : '{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, QSPIExtSlvIdx      }, // byte_bt [15:0] 
+    AxiExtRegionStart : '{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, QSPIExtRegionStart }, // doub_bt [15:0] 
+    AxiExtRegionEnd   : '{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, QSPIExtRegionEnd   }, // doub_bt [15:0] 
     // CVA6 parameters
     Cva6RASDepth      : ariane_pkg::ArianeDefaultConfig.RASDepth,
     Cva6BTBEntries    : ariane_pkg::ArianeDefaultConfig.BTBEntries,
@@ -127,16 +149,18 @@ module cheshire_top_xilinx
     // Features
     Bootrom           : 1,
     Uart              : 1,
-    I2c               : 1,
-    // Disable OpenTitan SPI core
-    // SpiHost           : 1,
-    SpiHost           : 0,
-    Gpio              : 1,
-    Dma               : 1,
+    // I2c               : 1, // Disable
+    // SpiHost           : 1, // Disable OpenTitan SPI core
+    // Gpio              : 1, // Disable 
+    // Dma               : 1, // Disable
     SerialLink        : 0,
-    Vga               : 1,
+    // Vga               : 1, // Disable
     // Debug
-    DbgIdCode         : CheshireIdCode,
+`ifdef TARGET_BSCANE
+    DbgIdCode         : '0, // Unused wih BSCANE
+`else
+    DbgIdCode         : CheshireIdCode, 
+`endif // TARGET_VCU128 
     DbgMaxReqs        : 4,
     DbgMaxReadTxns    : 4,
     DbgMaxWriteTxns   : 4,
@@ -222,7 +246,7 @@ module cheshire_top_xilinx
   //   axi_qspi_d32_resp_t axi_qspi_d32_rsp;
   // // AXI-full full width
   //   axi_slv_req_t axi_qspi_req;
-  //   axi_slv_rsp_t axi_qspi_rsp;
+  //   axi_slv_rsp_t axi_qspi_resp;
 
   // AXI-Lite
   // // Connects as a 32-bit slave on either AXI4-Lite (or AXI4 interface)
@@ -237,14 +261,14 @@ module cheshire_top_xilinx
   //     .s_axi4_wstrb   ( axi_lite_qspi_req .w.strb   ), // ( spi_lite.w_strb   ),
   //     .s_axi4_wvalid  ( axi_lite_qspi_req .w_valid  ), // ( spi_lite.w_valid  ),
   //     .s_axi4_wready  ( axi_lite_qspi_resp.w_ready  ), // ( spi_lite.w_ready  ),
-  //     .s_axi4_bresp   ( axi_lite_qspi_resp.b.axi_qspi_resp   ), // ( spi_lite.b_resp   ),
+  //     .s_axi4_bresp   ( axi_lite_qspi_resp.b.axi_qspi_resp  ), // ( spi_lite.b_resp   ),
   //     .s_axi4_bvalid  ( axi_lite_qspi_resp.b_valid  ), // ( spi_lite.b_valid  ),
   //     .s_axi4_bready  ( axi_lite_qspi_req .b_ready  ), // ( spi_lite.b_ready  ),
   //     .s_axi4_araddr  ( axi_lite_qspi_req .ar.addr  ), // ( spi_lite.ar_addr  ),
   //     .s_axi4_arvalid ( axi_lite_qspi_req .ar_valid ), // ( spi_lite.ar_valid ),
   //     .s_axi4_arready ( axi_lite_qspi_resp.ar_ready ), // ( spi_lite.ar_ready ),
   //     .s_axi4_rdata   ( axi_lite_qspi_resp.r.data   ), // ( spi_lite.r_data   ),
-  //     .s_axi4_rresp   ( axi_lite_qspi_resp.r.axi_qspi_resp   ), // ( spi_lite.r_resp   ),
+  //     .s_axi4_rresp   ( axi_lite_qspi_resp.r.axi_qspi_resp  ), // ( spi_lite.r_resp   ),
   //     .s_axi4_rvalid  ( axi_lite_qspi_resp.r_valid  ), // ( spi_lite.r_valid  ),
   //     .s_axi4_rready  ( axi_lite_qspi_req .r_ready  ), // ( spi_lite.r_ready  ),
   //     .cfgclk        (                   ),
@@ -279,7 +303,7 @@ module cheshire_top_xilinx
   //     .rst_ni     ( rst_ni             ),
   //     .test_i     ( 1'b0               ),
   //     .slv_req_i  ( axi_qspi_req       ),
-  //     .slv_resp_o ( axi_qspi_rsp       ),
+  //     .slv_resp_o ( axi_qspi_resp      ),
   //     .mst_req_o  ( axi_lite_qspi_req  ),
   //     .mst_resp_i ( axi_lite_qspi_resp )
   //   ); 
@@ -306,7 +330,7 @@ module cheshire_top_xilinx
   //     .clk_i      ( clk_i            ),
   //     .rst_ni     ( rst_ni           ),
   //     .slv_req_i  ( axi_qspi_req     ),
-  //     .slv_resp_o ( axi_qspi_rsp     ),
+  //     .slv_resp_o ( axi_qspi_resp    ),
   //     .mst_req_o  ( axi_qspi_d32_req ),
   //     .mst_resp_i ( axi_qspi_d32_rsp )
   //   );
@@ -316,14 +340,20 @@ module cheshire_top_xilinx
 `ifdef QSPI_AXI4
 
   axi_slv_req_t axi_qspi_req;
-  axi_slv_rsp_t axi_qspi_rsp;
+  axi_slv_rsp_t axi_qspi_resp;
+  logic         qspi_intr;
 
   // AXI4 Full
+  localparam C_S_AXI4_ID_WIDTH = 5;
+  if ( C_S_AXI4_ID_WIDTH != $bits(axi_slv_id_t) ) {
+    $error("xlnx_qspi AXI ID width connection (%d) not matched by axi_slv_id_t (%d):"
+            "see property CONFIG.C_S_AXI4_ID_WIDTH", C_S_AXI4_ID_WIDTH, $bits(axi_slv_id_t) );
+  }  
   xlnx_qspi i_axi_full_quad_spi (
     .ext_spi_clk     ( clk_i                   ), // input wire ext_spi_clk
     .s_axi4_aclk     ( clk_i                   ), // input wire s_axi4_aclk
     .s_axi4_aresetn  ( rst_ni                  ), // input wire s_axi4_aresetn
-    .s_axi4_awid     ( axi_qspi_req .aw.id     ), // input wire [3 : 0]
+    .s_axi4_awid     ( axi_qspi_req .aw.id     ), // input wire [4 : 0]
     .s_axi4_awaddr   ( axi_qspi_req .aw.addr   ), // input wire [23 : 0]
     .s_axi4_awlen    ( axi_qspi_req .aw.len    ), // input wire [7 : 0]
     .s_axi4_awsize   ( axi_qspi_req .aw.size   ), // input wire [2 : 0]
@@ -331,18 +361,18 @@ module cheshire_top_xilinx
     .s_axi4_awlock   ( axi_qspi_req .aw.lock   ), // input wire s_axi4_awlock
     .s_axi4_awcache  ( axi_qspi_req .aw.cache  ), // input wire [3 : 0]
     .s_axi4_awprot   ( axi_qspi_req .aw.prot   ), // input wire [2 : 0]
-    .s_axi4_awvalid  ( axi_qspi_req .aw.valid  ), // input wire s_axi4_wvalid
+    .s_axi4_awvalid  ( axi_qspi_req .aw_valid  ), // input wire s_axi4_awvalid
     .s_axi4_awready  ( axi_qspi_resp.aw_ready  ), // output wire s_axi4_awready
-    .s_axi4_wdata    ( axi_qspi_req .w.data     ), // input wire [31 : 0]
-    .s_axi4_wstrb    ( axi_qspi_req .w.strb     ), // input wire [3 : 0]
-    .s_axi4_wlast    ( axi_qspi_req .w.last     ), // input wire s_axi4_wlast
-    .s_axi4_wvalid   ( axi_qspi_req .w_valid    ), // input wire s_axi4_wvalid
+    .s_axi4_wdata    ( axi_qspi_req .w.data    ), // input wire [31 : 0]
+    .s_axi4_wstrb    ( axi_qspi_req .w.strb    ), // input wire [3 : 0]
+    .s_axi4_wlast    ( axi_qspi_req .w.last    ), // input wire s_axi4_wlast
+    .s_axi4_wvalid   ( axi_qspi_req .w_valid   ), // input wire s_axi4_wvalid
     .s_axi4_wready   ( axi_qspi_resp.w_ready   ), // output wire s_axi4_wready
     .s_axi4_bid      ( axi_qspi_resp.b.id      ), // output wire [3 : 0]
     .s_axi4_bresp    ( axi_qspi_resp.b.resp    ), // output wire [1 : 0]
     .s_axi4_bvalid   ( axi_qspi_resp.b_valid   ), // output wire s_axi4_bvalid
     .s_axi4_bready   ( axi_qspi_req .b_ready   ), // input wire s_axi4_bready
-    .s_axi4_arid     ( axi_qspi_req .ar.id     ), // input wire [3 : 0]
+    .s_axi4_arid     ( axi_qspi_req .ar.id     ), // input wire [4 : 0]
     .s_axi4_araddr   ( axi_qspi_req .ar.addr   ), // input wire [23 : 0]
     .s_axi4_arlen    ( axi_qspi_req .ar.len    ), // input wire [7 : 0]
     .s_axi4_arsize   ( axi_qspi_req .ar.size   ), // input wire [2 : 0]
@@ -358,26 +388,21 @@ module cheshire_top_xilinx
     .s_axi4_rlast    ( axi_qspi_resp.r.last    ), // output wire s_axi4_rlast
     .s_axi4_rvalid   ( axi_qspi_resp.r_valid   ), // output wire s_axi4_rvalid
     .s_axi4_rready   ( axi_qspi_req .r_ready   ), // input wire s_axi4_rready
-    .cfgclk         (                         ), // output wire cfgclk
-    .cfgmclk        (                         ), // output wire cfgmclk
-    .eos            (                         ), // output wire eos
-    .preq           (                         ), // output wire preq
-    .gsr            ( 1'b0                    ), // input wire gsr
-    .gts            ( 1'b0                    ), // input wire gts // in Occamy BD: 1'b0 
-    // .gts            ( 1'b1                    ), // input wire gts // in AlSaqr: 1'b1 
-    .keyclearb      ( 1'b1                    ), // input wire keyclearb
-    .usrcclkts      ( 1'b0                    ), // input wire usrcclkts
-    .usrdoneo       ( 1'b1                    ), // input wire usrdoneo
-    .usrdonets      ( 1'b1                    ), // input wire usrdonets
-    // TODO: connect to PLIC
-    .ip2intc_irpt   (                         ) // output wire ip2intc_irpt
+    .cfgclk          (                         ), // output wire cfgclk
+    .cfgmclk         (                         ), // output wire cfgmclk
+    .eos             (                         ), // output wire eos
+    .preq            (                         ), // output wire preq
+    .gsr             ( 1'b0                    ), // input wire gsr
+    .gts             ( 1'b0                    ), // input wire gts // in Occamy BD: 1'b0 
+    // .gts             ( 1'b1                    ), // input wire gts // in AlSaqr: 1'b1 (but axi lite)
+    .keyclearb       ( 1'b1                    ), // input wire keyclearb
+    .usrcclkts       ( 1'b0                    ), // input wire usrcclkts
+    .usrdoneo        ( 1'b1                    ), // input wire usrdoneo
+    .usrdonets       ( 1'b1                    ), // input wire usrdonets
+    .ip2intc_irpt    ( qspi_intr               ) // output wire ip2intc_irpt
   );
   
 `endif // QSPI_AXI
-
-  // Assign to Cheshire external slave
-  // assign ? = axi_qspi_req;
-  // assign ? = axi_qspi_rsp;
 
 `endif // TARGET_XLNX_QSPI
 
@@ -405,7 +430,7 @@ module cheshire_top_xilinx
   logic         testmode_i;
   logic [1:0]   boot_mode_i;
   assign testmode_i  = '0;
-  assign boot_mode_i = 2'b00;
+  assign boot_mode_i = 2'b00; // Passive boot (see cheshire_regs.json)
 `endif
 
   // Give VDD and GND to JTAG
@@ -618,19 +643,25 @@ module cheshire_top_xilinx
   //////////////////
   // Cheshire SoC //
   //////////////////
+  axi_slv_req_t [iomsb(FPGACfg.AxiExtNumSlv):0] axi_ext_req;
+  axi_slv_rsp_t [iomsb(FPGACfg.AxiExtNumSlv):0] axi_ext_resp;
 
+  assign intr_ext_chs = {'0, qspi_intr    };
+  assign axi_qspi_req = axi_ext_req[0];
+  assign axi_ext_resp = {'0, axi_qspi_resp};
+  
   // TODO: connect to xlxn_qspi as external slave
   cheshire_soc #(
-    .Cfg                ( FPGACfg ),
-    .ExtHartinfo        ( '0 ),
-    .axi_ext_llc_req_t  ( axi_llc_req_t ),
-    .axi_ext_llc_rsp_t  ( axi_llc_rsp_t ),
-    .axi_ext_mst_req_t  ( axi_mst_req_t ),
-    .axi_ext_mst_rsp_t  ( axi_mst_rsp_t ),
-    .axi_ext_slv_req_t  ( axi_slv_req_t ),
-    .axi_ext_slv_rsp_t  ( axi_slv_rsp_t ),
-    .reg_ext_req_t      ( reg_req_t ),
-    .reg_ext_rsp_t      ( reg_req_t )
+    .Cfg               ( FPGACfg ),
+    .ExtHartinfo       ( '0 ),
+    .axi_ext_llc_req_t ( axi_llc_req_t ),
+    .axi_ext_llc_rsp_t ( axi_llc_rsp_t ),
+    .axi_ext_mst_req_t ( axi_mst_req_t ),
+    .axi_ext_mst_rsp_t ( axi_mst_rsp_t ),
+    .axi_ext_slv_req_t ( axi_slv_req_t ),
+    .axi_ext_slv_rsp_t ( axi_slv_rsp_t ),
+    .reg_ext_req_t     ( reg_req_t ),
+    .reg_ext_rsp_t     ( reg_req_t )
   ) i_cheshire_soc (
     .clk_i              ( soc_clk ),
     .rst_ni             ( rst_n   ),
@@ -641,11 +672,11 @@ module cheshire_top_xilinx
     .axi_llc_mst_rsp_i  ( axi_llc_mst_rsp ),
     .axi_ext_mst_req_i  ( '0 ),
     .axi_ext_mst_rsp_o  ( ),
-    .axi_ext_slv_req_o  ( ),
-    .axi_ext_slv_rsp_i  ( '0 ),
+    .axi_ext_slv_req_o  ( axi_ext_req    ),
+    .axi_ext_slv_rsp_i  ( axi_ext_resp   ),
     .reg_ext_slv_req_o  ( ),
     .reg_ext_slv_rsp_i  ( '0 ),
-    .intr_ext_i         ( '0 ),
+    .intr_ext_i         ( intr_ext_chs   ),
     .meip_ext_o         ( ),
     .seip_ext_o         ( ),
     .mtip_ext_o         ( ),
