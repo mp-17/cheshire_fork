@@ -26,8 +26,8 @@ FLASH_OFFSET = 0x0
 
 # Select board specific variables
 ifeq ($(BOARD),vcu128)
-    # The bordcomputer only has hw-server 2020.2 for now
 	VIVADO       ?= vitis-2020.2 vivado
+# VIVADO       ?= vitis-2022.1 vivado
 	XILINX_PART  ?= xcvu37p-fsvh2892-2L-e
 	XILINX_BOARD ?= xilinx.com:vcu128:part0:1.0
 # VCU128-01 (broken flash)
@@ -73,7 +73,10 @@ IP_DIR := xilinx
 
 DEBUG_RUN ?= 1
 IMPL_STRATEGY ?= Performance_ExtraTimingOpt
-PROJECT := $(PROJECT)_$(IMPL_STRATEGY)
+SYNTH_STRATEGY ?= Flow_RuntimeOptimized
+ifneq ($(DEBUG_RUN),1) 
+	PROJECT := $(PROJECT)_$(IMPL_STRATEGY)
+endif
 out := $(PROJECT)
 bit := $(out)/$(PROJECT).bit
 mcs := $(out)/$(PROJECT).mcs
@@ -88,8 +91,8 @@ VIVADOENV ?=  PROJECT=$(PROJECT)            \
               FPGA_DEVICE=$(FPGA_DEVICE)    \
               BIT=$(bit) 					\
               IMPL_STRATEGY=$(IMPL_STRATEGY) \
+              SYNTH_STRATEGY=$(SYNTH_STRATEGY) \
 			  DEBUG_RUN=$(DEBUG_RUN)		\
-			  FLASH_OFFSET=$(FLASH_OFFSET)	\
 			  MCS=$(mcs)
 MODE        ?= batch
 VIVADOFLAGS ?= -nojournal -mode $(MODE)
@@ -102,7 +105,6 @@ all: $(bit)
 include sim/simulate.mk
 
 # Generate mcs from bitstream
-write_cfgmem: $(mcs)
 $(mcs): $(bit)
 	cd $(PROJECT); $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/write_cfgmem.tcl -tclargs $@ $^
 
@@ -135,23 +137,43 @@ program: #$(bit)
 # hw_server in IIS bordcomputer is v2020.2
 	$(VIVADOENV) vitis-2020.2 vivado $(VIVADOFLAGS) -source scripts/program.tcl
 
-flash_spi:
+flash_spi: $(MCS_FILE) 
 	@echo "Flashing QSPI for board $(BOARD) ($(XILINX_PART))"
-	$(VIVADOENV) vitis-2020.2 vivado $(VIVADOFLAGS) -source scripts/flash_spi.tcl
+	$(VIVADOENV) vitis-2020.2 vivado $(VIVADOFLAGS) -source scripts/flash_spi.tcl $(MCS_FILE) 
 # From occamy
 # flash-u-boot:
-# 	${MAKE} flash FILE=${UBOOT_ITB} OFFSET=0x6000000
+# 	${MAKE} flash FILE=${UBOOT_ITB} FW_PAYLOAD_OFFSET=0x6000000
 # flash-uimage:
-# 	${MAKE} flash FILE=${LINUX_UIMAGE} OFFSET=0x6100000
+# 	${MAKE} flash FILE=${LINUX_UIMAGE} LINUX_UIMAGE_OFFSET=0x6100000
 
-clean:
+CVA6_SDK	?= ../../../cva6-sdk_pulp
+# Load this with GDB
+# FW_PAYLOAD_FILE		?= $(CVA6_SDK)/install64/fw_payload.elf 
+# FW_PAYLOAD_OFFSET	?= 0x6000000 
+LINUX_UIMAGE_FILE	?= $(CVA6_SDK)/cva6-sdk_pulp/install64/uImage
+DTB_FILE			?= ../../sw/boot/cheshire.dtb 
+# Same offsets as u-boot, see $(CVA6_SDK)/u-boot/configs/pulp-platform_cheshire_defconfig
+LINUX_UIMAGE_OFFSET	?= 0x6100000
+DTB_OFFSET			?= # TBD
+
+write_cfgmem:
+	cd $(PROJECT); \
+		$(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/write_cfgmem.tcl \
+		-tclargs $(MCS_FILE) $(FLASH_OFFSET) $(FLASH_FILE)
+
+flash_dtb: $(DTB_FILE)
+	make write_cfgmem MCS_FILE=$@.mcs FLASH_OFFSET=$(DTB_OFFSET) FLASH_FILE=$(DTB_FILE)
+	make flash_spi    MCS_FILE=$@.mcs
+
+flash_uImage: $(LINUX_UIMAGE_FILE)
+	make write_cfgmem MCS_FILE=$@.mcs FLASH_OFFSET=$(FW_PAYLOAD_OFFSET) FLASH_FILE=$(LINUX_UIMAGE_FILE)
+	make flash_spi    MCS_FILE=$@.mcs
 
 # Spare IPS from clean
 clean:
 	rm -rf scripts/add_sources.tcl 
 	rm -rf vivado* probes.ltx \
-		*.log *.jou *.str *.mif .Xil/ \
-		$(out) $(PROJECT)
+		*.log *.jou *.str *.mif .Xil/ $(PROJECT)
 
 clean_ips:
 	rm -rf *.xci
