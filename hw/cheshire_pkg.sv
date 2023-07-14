@@ -213,7 +213,9 @@ package cheshire_pkg;
   typedef struct packed {
     aw_bt cores;
     aw_bt dbg;
+  `ifdef ARA
     aw_bt ara;
+  `endif // ARA
     aw_bt dma;
     aw_bt slink;
     aw_bt vga;
@@ -268,9 +270,10 @@ package cheshire_pkg;
     // xlnx_qspi
     // TODO: actual memory map here
     // TODO: check r and i
+    // TODO: make this conditional? the vcu128 requires the spi anyway
     i++; 
     r++;
-    ret.map[2] = '{2, -1, -1}; 
+    ret.map[2] = '{2, 64'h020C_0000, 64'h0210_0000}; 
 
     // Whether we have an LLC or a bypass, the output port is has its
     // own Xbar output with the specified region iff it is connected.
