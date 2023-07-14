@@ -39,9 +39,6 @@ set_property -dict [ list \
             CONFIG.Master_mode {1} \
             ] [get_ips ${ipName}]
 
-            set_property -dict [list] [get_ips xlnx_qspi]
-
-
 generate_target {instantiation_template} \
 [get_files ./$ipName.srcs/sources_1/ip/$ipName/$ipName.xci]
 generate_target all [get_files  ./$ipName.srcs/sources_1/ip/$ipName/$ipName.xci]
