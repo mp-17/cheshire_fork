@@ -9,14 +9,32 @@
 
 set TESTBENCH tb_cheshire_soc
 
-# Load in schratchpad memory
-# helloworld is the only available binary anyway
+#######################
+## Boot parameters
+#######################
+# Passive boot mode
+set BOOTMODE 0x00
+
+# JTAG
+set PRELMODE 0
+# # Serial Link
+# set PRELMODE 1
+# # UART
+# set PRELMODE 2
+
+# Only for PRELMODE JTAG and Serial link
+# ELF file to be loaded
 set BINARY ../../../sw/tests/helloworld.spm.elf
+# set BINARY ../../../sw/tests/helloworld.dram.elf
+
+# Only for BOOTMODE i2c and spih (not supported?)
+# set IMAGE    boot_hex
 
 # Set voptargs only if not already set to make overridable.
 # Default on fast simulation flags.
 if {![info exists VOPTARGS]} {
     set VOPTARGS "-O5 +acc=p+tb_cheshire_soc. +noacc=p+cheshire_soc. +acc=r+stream_xbar"
+    # set VOPTARGS "-O5"
 }
 
 # Suppress (vopt-7033) Variable '' driven in a combinational block, may not be driven by any other process. 
