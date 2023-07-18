@@ -117,6 +117,9 @@ CHS_BROM_FLAGS = $(RISCV_LDFLAGS) -Os -fno-zero-initialized-in-bss -flto -fwhole
 $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.elf: $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.ld $(CHS_BROM_SRCS)
 	$(RISCV_CC) $(CHS_SW_INCLUDES) -T$< $(CHS_BROM_FLAGS) -o $@ $(CHS_BROM_SRCS)
 
+$(CHS_ROOT)/hw/bootrom/cheshire_bootrom.dump: $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.elf
+	$(RISCV_OBJDUMP) -D -o $@ $(CHS_BROM_SRCS) $< > $@
+
 $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.sv: $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.bin $(CHS_ROOT)/util/gen_bootrom.py
 	$(PYTHON3) $(CHS_ROOT)/util/gen_bootrom.py --sv-module cheshire_bootrom $< > $@
 
