@@ -170,6 +170,7 @@ module cheshire_top_xilinx
     DbgMaxWriteTxns   : 4,
     DbgAmoNumCuts     : 1,
     DbgAmoPostCut     : 1,
+    // SPMLength = SetAssociativity * NumLines * NumBlocks * (AxiCfg.DataWidthFull / 32'd8)
     // LLC: 128 KiB, up to 2 GiB DRAM
     LlcNotBypass      : 1,
     LlcSetAssoc       : 8,
@@ -226,7 +227,7 @@ module cheshire_top_xilinx
   (* dont_touch = "yes" *) wire dram_clock_out; // 200 MHz
   (* dont_touch = "yes" *) wire dram_sync_reset;
   (* dont_touch = "yes" *) wire soc_clk;
-  (* dont_touch = "yes" *) wire rst_n;
+  (* dont_touch = "yes" *) (* mark_debug = "true" *) wire rst_n;
 
   ///////////////////////
   //  Xilinx AXI QSPI  //
@@ -353,7 +354,7 @@ module cheshire_top_xilinx
     .s_axi4_aclk     ( soc_clk                 ), // input wire s_axi4_aclk // in Occamy BD: 25MHz
     .s_axi4_aresetn  ( rst_n                   ), // input wire s_axi4_aresetn
     .s_axi4_awid     ( axi_qspi_req .aw.id     ), // input wire [4 : 0]
-    .s_axi4_awaddr   ( axi_qspi_req .aw.addr   ), // input wire [23 : 0] # NOTE: width mismatch
+    .s_axi4_awaddr   ( axi_qspi_req .aw.addr  [23 : 0]  ), // input wire [23 : 0] # NOTE: width mismatch
     .s_axi4_awlen    ( axi_qspi_req .aw.len    ), // input wire [7 : 0]
     .s_axi4_awsize   ( axi_qspi_req .aw.size   ), // input wire [2 : 0]
     .s_axi4_awburst  ( axi_qspi_req .aw.burst  ), // input wire [1 : 0]
@@ -362,8 +363,8 @@ module cheshire_top_xilinx
     .s_axi4_awprot   ( axi_qspi_req .aw.prot   ), // input wire [2 : 0]
     .s_axi4_awvalid  ( axi_qspi_req .aw_valid  ), // input wire s_axi4_awvalid
     .s_axi4_awready  ( axi_qspi_resp.aw_ready  ), // output wire s_axi4_awready
-    .s_axi4_wdata    ( axi_qspi_req .w.data    ), // input wire [31 : 0]  # NOTE: width mismatch
-    .s_axi4_wstrb    ( axi_qspi_req .w.strb    ), // input wire [3 : 0]   # NOTE: width mismatch
+    .s_axi4_wdata    ( axi_qspi_req .w.data   [31 : 0] ), // input wire [31 : 0]  # NOTE: width mismatch
+    .s_axi4_wstrb    ( axi_qspi_req .w.strb   [3 : 0] ), // input wire [3 : 0]   # NOTE: width mismatch
     .s_axi4_wlast    ( axi_qspi_req .w.last    ), // input wire s_axi4_wlast
     .s_axi4_wvalid   ( axi_qspi_req .w_valid   ), // input wire s_axi4_wvalid
     .s_axi4_wready   ( axi_qspi_resp.w_ready   ), // output wire s_axi4_wready
@@ -372,7 +373,7 @@ module cheshire_top_xilinx
     .s_axi4_bvalid   ( axi_qspi_resp.b_valid   ), // output wire s_axi4_bvalid
     .s_axi4_bready   ( axi_qspi_req .b_ready   ), // input wire s_axi4_bready
     .s_axi4_arid     ( axi_qspi_req .ar.id     ), // input wire [4 : 0]
-    .s_axi4_araddr   ( axi_qspi_req .ar.addr   ), // input wire [23 : 0]  # NOTE: width mismatch
+    .s_axi4_araddr   ( axi_qspi_req .ar.addr  [23 : 0]  ), // input wire [23 : 0]  # NOTE: width mismatch
     .s_axi4_arlen    ( axi_qspi_req .ar.len    ), // input wire [7 : 0]
     .s_axi4_arsize   ( axi_qspi_req .ar.size   ), // input wire [2 : 0]
     .s_axi4_arburst  ( axi_qspi_req .ar.burst  ), // input wire [1 : 0]
@@ -381,8 +382,8 @@ module cheshire_top_xilinx
     .s_axi4_arprot   ( axi_qspi_req .ar.prot   ), // input wire [2 : 0]
     .s_axi4_arvalid  ( axi_qspi_req .ar_valid  ), // input wire s_axi4_arvalid
     .s_axi4_arready  ( axi_qspi_resp.ar_ready  ), // output wire s_axi4_arready
-    .s_axi4_rid      ( axi_qspi_resp.r.id      ), // output wire [3 : 0]  # NOTE: width mismatch
-    .s_axi4_rdata    ( axi_qspi_resp.r.data    ), // output wire [31 : 0]  # NOTE: width mismatch
+    .s_axi4_rid      ( axi_qspi_resp.r.id     [3 : 0] ), // output wire [3 : 0]  # NOTE: width mismatch
+    .s_axi4_rdata    ( axi_qspi_resp.r.data   [31 : 0] ), // output wire [31 : 0]  # NOTE: width mismatch
     .s_axi4_rresp    ( axi_qspi_resp.r.resp    ), // output wire [1 : 0]
     .s_axi4_rlast    ( axi_qspi_resp.r.last    ), // output wire s_axi4_rlast
     .s_axi4_rvalid   ( axi_qspi_resp.r_valid   ), // output wire s_axi4_rvalid

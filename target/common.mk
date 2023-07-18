@@ -46,8 +46,4 @@ ifeq ($(ARA),1)
 		BENDER_DEFS += --define ARA_INTEGRATION_V0_2
 # 		BENDER_DEFS += --define ARA_INTEGRATION_V0_3 (not yet implemented)
 #	endif
-# 	Project name
-	PROJECT := $(PROJECT)_ara_$(ARA_NR_LANES)_lanes
-else
-	PROJECT := $(PROJECT)_no_ara
 endif

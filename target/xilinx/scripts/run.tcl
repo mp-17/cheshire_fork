@@ -82,49 +82,58 @@ report_utilization -hierarchical -hierarchical_percentage               -file re
 # report_cdc                                                              -file reports/$project.cdc.rpt
 # report_clock_interaction                                                -file reports/$project.clock_interaction.rpt
 
-# Instantiate ILA
-# set DEBUG [llength [get_nets -hier -filter {MARK_DEBUG == 1}]]
-# if ($DEBUG) {
-#     # Create core
-#     puts "Creating debug core..."
-#     create_debug_core u_ila_0 ila
-#     set_property -dict "ALL_PROBE_SAME_MU true ALL_PROBE_SAME_MU_CNT 4 C_ADV_TRIGGER true C_DATA_DEPTH 16384 \
-#      C_EN_STRG_QUAL true C_INPUT_PIPE_STAGES 0 C_TRIGIN_EN false C_TRIGOUT_EN false" [get_debug_cores u_ila_0]
-#     ## Clock
-#     set_property port_width 1 [get_debug_ports u_ila_0/clk]
-#     connect_debug_port u_ila_0/clk [get_nets soc_clk]
-#     # Get nets to debug
-#     set debugNets [lsort -dictionary [get_nets -hier -filter {MARK_DEBUG == 1}]]
-#     set netNameLast ""
-#     set probe_i 0
-#     # Loop through all nets (add extra list element to ensure last net is processed)
-#     foreach net [concat $debugNets {""}] {
-#         # Remove trailing array index
-#         regsub {\[[0-9]*\]$} $net {} netName
-#         # Create probe after all signals with the same name have been collected
-#         if {$netNameLast != $netName} {
-#             if {$netNameLast != ""} {
-#                 puts "Creating probe $probe_i with width [llength $sigList] for signal '$netNameLast'"
-#                 # probe0 already exists, and does not need to be created
-#                 if {$probe_i != 0} {
-#                     create_debug_port u_ila_0 probe
-#                 }
-#                 set_property port_width [llength $sigList] [get_debug_ports u_ila_0/probe$probe_i]
-#                 set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe$probe_i]
-#                 connect_debug_port u_ila_0/probe$probe_i [get_nets $sigList]
-#                 incr probe_i
-#             }
-#             set sigList ""
-#         }
-#         lappend sigList $net
-#         set netNameLast $netName
-#     }
-#     # Need to save save constraints before implementing the core
-#     # set_property target_constrs_file cheshire.srcs/constrs_1/imports/constraints/$::env(BOARD).xdc [current_fileset -constrset]
-#     save_constraints -force
-#     implement_debug_core
-#     write_debug_probes -force probes.ltx
-# }
+# Instantiate ILAs
+                                  # i_cheshire_soc/i_cva6/axi_req_o \
+                                  # i_cheshire_soc/i_cva6/axi_resp_i \
+# Under suggestion from http://eda.ee.ethz.ch/index.php?title=FPGA_Debugging
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/pc_commit[*]]
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/csr_regfile_i/mepc_q[*]]
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/csr_regfile_i/mcause_q[*]]
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/csr_regfile_i/mtval_q[*]]
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/csr_regfile_i/cycle_q[*]]
+
+set DEBUG [llength [get_nets -hier -filter {MARK_DEBUG == 1}]]
+if ($DEBUG) {
+    # Create core
+    puts "Creating debug core..."
+    create_debug_core u_ila_0 ila
+    set_property -dict "ALL_PROBE_SAME_MU true ALL_PROBE_SAME_MU_CNT 4 C_ADV_TRIGGER true C_DATA_DEPTH 16384 \
+     C_EN_STRG_QUAL true C_INPUT_PIPE_STAGES 0 C_TRIGIN_EN false C_TRIGOUT_EN false" [get_debug_cores u_ila_0]
+    ## Clock
+    set_property port_width 1 [get_debug_ports u_ila_0/clk]
+    connect_debug_port u_ila_0/clk [get_nets soc_clk]
+    # Get nets to debug
+    set debugNets [lsort -dictionary [get_nets -hier -filter {MARK_DEBUG == 1}]]
+    set netNameLast ""
+    set probe_i 0
+    # Loop through all nets (add extra list element to ensure last net is processed)
+    foreach net [concat $debugNets {""}] {
+        # Remove trailing array index
+        regsub {\[[0-9]*\]$} $net {} netName
+        # Create probe after all signals with the same name have been collected
+        if {$netNameLast != $netName} {
+            if {$netNameLast != ""} {
+                puts "Creating probe $probe_i with width [llength $sigList] for signal '$netNameLast'"
+                # probe0 already exists, and does not need to be created
+                if {$probe_i != 0} {
+                    create_debug_port u_ila_0 probe
+                }
+                set_property port_width [llength $sigList] [get_debug_ports u_ila_0/probe$probe_i]
+                set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe$probe_i]
+                connect_debug_port u_ila_0/probe$probe_i [get_nets $sigList]
+                incr probe_i
+            }
+            set sigList ""
+        }
+        lappend sigList $net
+        set netNameLast $netName
+    }
+    # Need to save save constraints before implementing the core
+    # set_property target_constrs_file cheshire.srcs/constrs_1/imports/constraints/$::env(BOARD).xdc [current_fileset -constrset]
+    save_constraints -force
+    implement_debug_core
+    write_debug_probes -force probes.ltx
+}
 
 # Implementation
 if { $::env(DEBUG_RUN) eq "1" } {

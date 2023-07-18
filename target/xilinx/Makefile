@@ -73,13 +73,20 @@ IP_DIR := xilinx
 
 DEBUG_RUN ?= 1
 IMPL_STRATEGY ?= Performance_ExtraTimingOpt
-SYNTH_STRATEGY ?= Flow_RuntimeOptimized
+SYNTH_STRATEGY ?= Flow_PerfOptimized_high
+
+ifeq ($(ARA),1)
+	PROJECT := $(PROJECT)_ara_$(ARA_NR_LANES)_lanes
+else
+	PROJECT := $(PROJECT)_no_ara
+endif
+
 ifneq ($(DEBUG_RUN),1) 
 	PROJECT := $(PROJECT)_$(IMPL_STRATEGY)
 endif
-out := $(PROJECT)
-bit := $(out)/$(PROJECT).bit
-mcs := $(out)/$(PROJECT).mcs
+out := out/
+BIT ?= $(out)/$(PROJECT).bit
+MCS ?= $(out)/$(PROJECT).mcs
 
 VIVADOENV ?=  PROJECT=$(PROJECT)            \
               BOARD=$(BOARD)                \
@@ -89,30 +96,34 @@ VIVADOENV ?=  PROJECT=$(PROJECT)            \
               HOST=$(XILINX_HOST)           \
               FPGA_PATH=$(FPGA_PATH)        \
               FPGA_DEVICE=$(FPGA_DEVICE)    \
-              BIT=$(bit) 					\
+              BIT=$(BIT)                    \
               IMPL_STRATEGY=$(IMPL_STRATEGY) \
               SYNTH_STRATEGY=$(SYNTH_STRATEGY) \
-			  DEBUG_RUN=$(DEBUG_RUN)		\
-			  MCS=$(mcs)
+              DEBUG_RUN=$(DEBUG_RUN)         \
+              LTX=probes.ltx                 \
+              MCS=$(MCS)
 MODE        ?= batch
 VIVADOFLAGS ?= -nojournal -mode $(MODE)
 # Define TARGET_$(BOARD) macro with bender
 BENDER_TARGETS += -t $(BOARD) -t fpga
 
-all: $(bit)
-
 # Include Xilinx IPs simulation makefile
 include sim/simulate.mk
 
+all: $(PROJECT) $(BIT)
+
+$(PROJECT):
+	mkdir -p $(PROJECT)
+
 # Generate mcs from bitstream
-$(mcs): $(bit)
+$(MCS): $(BIT)
 	cd $(PROJECT); $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/write_cfgmem.tcl -tclargs $@ $^
 
-bit: $(bit)
-$(bit): $(IPS) scripts/add_sources.tcl
+bit: $(BIT)
+$(BIT): $(IPS) scripts/add_sources.tcl
 	mkdir -p $(out)
 	cd $(PROJECT); $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source ../scripts/run.tcl 
-	cp $(PROJECT)/$(PROJECT).runs/impl_1/cheshire_top_xilinx.bit ./out/$(PROJECT).bit
+	cp $(PROJECT)/$(PROJECT).runs/impl_1/cheshire_top_xilinx.bit $(out)/$(PROJECT).bit
 	cd $(PROJECT); $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) $(PROJECT).xpr -source ../scripts/get_run_info.tcl > reports/report.tmp
 	grep " cheshire_top_xilinx " $(PROJECT)/reports/$(PROJECT).utilization.rpt | sed -E "s/.+top\) //g" >> reports/report.tmp
 
@@ -132,59 +143,94 @@ tcl:
 	@echo "Starting $(VIVADO) TCL"
 	cd $(PROJECT); $(VIVADOENV) $(VIVADO) -nojournal -mode tcl $(PROJECT).xpr
 
-program: #$(bit)
+program: #$(BIT)
 	@echo "Programming board $(BOARD) ($(XILINX_PART))"
 # hw_server in IIS bordcomputer is v2020.2
 	$(VIVADOENV) vitis-2020.2 vivado $(VIVADOFLAGS) -source scripts/program.tcl
 
-flash_spi: $(MCS_FILE) 
-	@echo "Flashing QSPI for board $(BOARD) ($(XILINX_PART))"
-	$(VIVADOENV) vitis-2020.2 vivado $(VIVADOFLAGS) -source scripts/flash_spi.tcl $(MCS_FILE) 
-# From occamy
-# flash-u-boot:
-# 	${MAKE} flash FILE=${UBOOT_ITB} FW_PAYLOAD_OFFSET=0x6000000
-# flash-uimage:
-# 	${MAKE} flash FILE=${LINUX_UIMAGE} LINUX_UIMAGE_OFFSET=0x6100000
-
-CVA6_SDK	?= ../../../cva6-sdk_pulp
+# This must be forked from pulp-platform and checked-out at the cheshire branch, not the main from openhw
+CVA6_SDK				?= ../../../cva6-sdk
 # Load this with GDB
-# FW_PAYLOAD_FILE		?= $(CVA6_SDK)/install64/fw_payload.elf 
-# FW_PAYLOAD_OFFSET	?= 0x6000000 
-LINUX_UIMAGE_FILE	?= $(CVA6_SDK)/cva6-sdk_pulp/install64/uImage
-DTB_FILE			?= ../../sw/boot/cheshire.dtb 
-# Same offsets as u-boot, see $(CVA6_SDK)/u-boot/configs/pulp-platform_cheshire_defconfig
-LINUX_UIMAGE_OFFSET	?= 0x6100000
-DTB_OFFSET			?= # TBD
+FW_PAYLOAD_FILE			?= $(CVA6_SDK)/install64/fw_payload.elf 
+SPIKE_FW_PAYLOAD_FILE	?= $(CVA6_SDK)/install64/spike_fw_payload.elf 
+# FW_PAYLOAD_RAM_OFFSET	?= 0x6000000 
+LINUX_UIMAGE_FILE		?= $(CVA6_SDK)/install64/uImage
+DTB_FILE				?= cheshire.dtb 
+# Same offsets as u-boot "sf read" command, 
+# see pulp-platform/cva6-sdk/u-boot/configs/pulp-platform_cheshire_defconfig:CONFIG_BOOTCOMMAND
+LINUX_UIMAGE_FLASH_OFFSET	?= 0x6100000
 
-write_cfgmem:
-	cd $(PROJECT); \
-		$(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/write_cfgmem.tcl \
+# This must be in the SPM
+# see sw/link/common.ldh
+
+FW_TEXT_START		:= 0x10000000
+FW_PAYLOAD_FDT_ADDR := 0x10800000
+
+write_cfgmem: #$(FLASH_FILE)
+	$(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/write_cfgmem.tcl \
 		-tclargs $(MCS_FILE) $(FLASH_OFFSET) $(FLASH_FILE)
 
-flash_dtb: $(DTB_FILE)
-	make write_cfgmem MCS_FILE=$@.mcs FLASH_OFFSET=$(DTB_OFFSET) FLASH_FILE=$(DTB_FILE)
-	make flash_spi    MCS_FILE=$@.mcs
+flash_spi: $(MCS_FILE) 
+	@echo "Flashing QSPI for board $(BOARD) ($(XILINX_PART))"
+	$(VIVADOENV) vitis-2020.2 vivado $(VIVADOFLAGS) -source scripts/flash_spi.tcl -tclargs $(MCS_FILE) 
 
+# TODO: merge operations in a single script with multiple arguments
 flash_uImage: $(LINUX_UIMAGE_FILE)
-	make write_cfgmem MCS_FILE=$@.mcs FLASH_OFFSET=$(FW_PAYLOAD_OFFSET) FLASH_FILE=$(LINUX_UIMAGE_FILE)
-	make flash_spi    MCS_FILE=$@.mcs
+	make write_cfgmem MCS_FILE=$@.mcs FLASH_OFFSET=$(LINUX_UIMAGE_FLASH_OFFSET) FLASH_FILE=$(LINUX_UIMAGE_FILE)
+	make flash_spi    MCS_FILE=$@.mcs	
+#	(Untested) \
+# $(VIVADOENV) vitis-2020.2 vivado $(VIVADOFLAGS) \
+# 	-source scripts/write_cfgmem.tcl -tclargs $(MCS_FILE) $(FLASH_OFFSET) $(FLASH_FILE) \
+# 	-source scripts/flash_spi.tcl 	 -tclargs $(MCS_FILE) 
+
+$(LINUX_UIMAGE_FILE): uImage
+uImage: 
+	make -C $(CVA6_SDK) uImage
+
+$(DTB_FILE): dtb
+dtb: ../../sw/boot/cheshire.dts 
+	dtc -I dts -O dtb -o $(DTB_FILE) $<
+
+# OpenSBI + U-boot
+# DTB/FDT is included in the OpenSBI payload
+fw_payload: $(DTB_FILE)
+	make -C $(CVA6_SDK) fw_payload.bin FW_FDT_PATH=$(realpath $(DTB_FILE))
+
+# OpenSBI + uImage
+spike_payload: $(DTB_FILE)
+	make -C $(CVA6_SDK) spike_payload FW_FDT_PATH=$(realpath $(DTB_FILE))
+
+# This will not clean buildroot
+clean_cva6-sdk:
+	make -C $(CVA6_SDK) clean 
+
+clean-all_cva6-sdk:
+	make -C $(CVA6_SDK) clean-all
 
 # Spare IPS from clean
 clean:
+	# Bender script
 	rm -rf scripts/add_sources.tcl 
-	rm -rf vivado* probes.ltx \
-		*.log *.jou *.str *.mif .Xil/ $(PROJECT)
+	# Vivado products
+	rm -rf vivado* probes.ltx *.log *.jou *.str *.mif .Xil/ $(PROJECT)
+	# Programming files
+	rm -rf *.mcs *.prm
+	# Software products
+	rm -rf cheshire.dtb fw_payload.elf spike_fw_payload.elf
 
 clean_ips:
 	rm -rf *.xci
 	cd xilinx; $(foreach ip, $(IPS_NAMES), make -C $(ip) clean;)
+
+# Call all the clean targets
+clean_all: clean_cva6-sdk clean-all_cva6-sdk clean clean_ips
 
 # Clean only top and copy back the IPS output here
 rebuild_top:
 	${MAKE} clean
 	rm -f scripts/add_sources.tcl
 	find xilinx -wholename "**/*.srcs/**/*.xci" | xargs -n 1 -I {} cp {} .
-	${MAKE} $(bit)
+	${MAKE} $(BIT)
 
 # Bender
 # TODO: this needs to be redirected to the top makefile to align with questa script generation
