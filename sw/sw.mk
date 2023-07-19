@@ -22,7 +22,7 @@ CHS_FW_TGUID  ?= 99EC86DA-3F5B-4B0D-8F4B-C4BACFA5F859
 CHS_DISK_SIZE ?= 16M
 
 # RISCV_FLAGS   ?= -DOT_PLATFORM_RV32 -march=rv64gc_zifencei -mabi=lp64d -mstrict-align -O2 -Wall -static -ffunction-sections -fdata-sections -frandom-seed=cheshire -fuse-linker-plugin -flto -Wl,-flto
-RISCV_FLAGS   ?= -fno-inline-small-functions -DOT_PLATFORM_RV32 -march=rv64gc -mabi=lp64d -mstrict-align -O0 -Wall -static -ffunction-sections -fdata-sections -frandom-seed=cheshire -fuse-linker-plugin -flto -Wl,-flto
+RISCV_FLAGS   ?= -fno-inline-small-functions -DOT_PLATFORM_RV32 -march=rv64gcv -mabi=lp64d -mstrict-align -O0 -Wall -static -ffunction-sections -fdata-sections -frandom-seed=cheshire -fuse-linker-plugin -flto -Wl,-flto
 RISCV_CCFLAGS ?= $(RISCV_FLAGS) -ggdb -mcmodel=medany -mexplicit-relocs -fno-builtin -fverbose-asm -pipe
 RISCV_LDFLAGS ?= $(RISCV_FLAGS) -nostartfiles -Wl,--gc-sections -Wl,-L$(CHS_LD_DIR)
 RISCV_ARFLAGS ?= --plugin=$(shell find $(shell dirname $(RISCV_GCC_BINROOT))/libexec/gcc/riscv64-unknown-elf/**/liblto_plugin.so)
