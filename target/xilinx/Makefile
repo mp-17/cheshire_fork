@@ -21,8 +21,6 @@ include ../common.mk
 # Board in      {vcu128, genesys2, zcu102(not working)}
 BOARD        ?= vcu128
 XILINX_HOST  ?= bordcomputer
-# TODO: check this
-FLASH_OFFSET = 0x0
 
 # Select board specific variables
 ifeq ($(BOARD),vcu128)
@@ -81,9 +79,7 @@ else
 	PROJECT := $(PROJECT)_no_ara
 endif
 
-ifneq ($(DEBUG_RUN),1) 
-	PROJECT := $(PROJECT)_$(IMPL_STRATEGY)
-endif
+PROJECT := $(PROJECT)_$(IMPL_STRATEGY)
 out := out/
 BIT ?= $(out)/$(PROJECT).bit
 MCS ?= $(out)/$(PROJECT).mcs
@@ -123,7 +119,7 @@ bit: $(BIT)
 $(BIT): $(IPS) scripts/add_sources.tcl
 	mkdir -p $(out)
 	cd $(PROJECT); $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source ../scripts/run.tcl 
-	cp $(PROJECT)/$(PROJECT).runs/impl_1/cheshire_top_xilinx.bit $(out)/$(PROJECT).bit
+	cp $(PROJECT)/$(PROJECT).runs/impl_1/cheshire_top_xilinx.bit $(BIT)
 	cd $(PROJECT); $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) $(PROJECT).xpr -source ../scripts/get_run_info.tcl > reports/report.tmp
 	grep " cheshire_top_xilinx " $(PROJECT)/reports/$(PROJECT).utilization.rpt | sed -E "s/.+top\) //g" >> reports/report.tmp
 
@@ -162,9 +158,8 @@ LINUX_UIMAGE_FLASH_OFFSET	?= 0x6100000
 
 # This must be in the SPM
 # see sw/link/common.ldh
-
-FW_TEXT_START		:= 0x10000000
-FW_PAYLOAD_FDT_ADDR := 0x10800000
+# FW_TEXT_START		:= 0x10000000
+# FW_PAYLOAD_FDT_ADDR := 0x10800000
 
 write_cfgmem: #$(FLASH_FILE)
 	$(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/write_cfgmem.tcl \

@@ -12,19 +12,30 @@ make rebuild-top
 make sim
 ```
 
+# VCU128 FPGA build
+make [VARIABLE=value]
+
+List of variables available for override and default values:
+- ARA (default:1)
+    - 0: PROJECT=cheshire_no_ara
+    - 1: PROJECT=cheshire_ara_$(ARA_NR_LANES)_lanes 
+- ARA_NR_LANES=[2|4|8] (default:2)
+- DEBUG_RUN: (default:1)
+    - 0: configure the build with the variables below
+    - 1: overrides all the ones below, and sets fastest runtime
+- IMPL_STRATEGY (default:Performance_ExtraTimingOpt)
+    - must be supported by your vivado version
+- SYNTH_STRATEGY (default:Flow_PerfOptimized_high)
+    - must be supported by your vivado version
+- BIT (default:out/$(PROJECT))
+    - final bistream path
+
 # VCU128 boot
 Program the board:
-To select the target bitstream, either:
-1. Export the envvar BIT=yourbit.bit
-2. Select it form the `out/` directory exporting the following variables:
-    - ARA=0: cheshire_no_ara
-    - ARA=1: cheshire_ara_$(ARA_NR_LANES)_lanes
-        - ARA_NR_LANES=[2|4|8]
-Some runs might have an additional suffix:
-   - IMPL_STRATEGY=...
+To select the target bitstream by setting the variable BIT.
 
 ````console
-$ make program
+$ make program BIT=yourbit.bit
 ````
 This will take around 2 minutes.
 
