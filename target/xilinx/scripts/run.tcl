@@ -68,6 +68,9 @@ if { $::env(DEBUG_RUN) eq "1" } {
   set_property STEPS.SYNTH_DESIGN.ARGS.RETIMING                   true                     [get_runs synth_1]
 }  
 
+# Prevent debug net to be optimized away
+set_property DONT_TOUCH 1 [get_nets i_cheshire_soc/i_cva6/pc_commit[*]]
+
 launch_runs synth_1
 wait_on_run synth_1
 open_run synth_1
