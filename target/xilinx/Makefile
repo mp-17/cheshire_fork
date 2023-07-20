@@ -79,7 +79,6 @@ else
 	PROJECT := $(PROJECT)_no_ara
 endif
 
-PROJECT := $(PROJECT)_$(IMPL_STRATEGY)
 out := out/
 BIT ?= $(out)/$(PROJECT).bit
 MCS ?= $(out)/$(PROJECT).mcs
@@ -121,7 +120,7 @@ $(BIT): $(IPS) scripts/add_sources.tcl
 	cd $(PROJECT); $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source ../scripts/run.tcl 
 	cp $(PROJECT)/$(PROJECT).runs/impl_1/cheshire_top_xilinx.bit $(BIT)
 	cd $(PROJECT); $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) $(PROJECT).xpr -source ../scripts/get_run_info.tcl > reports/report.tmp
-	grep " cheshire_top_xilinx " $(PROJECT)/reports/$(PROJECT).utilization.rpt | sed -E "s/.+top\) //g" >> reports/report.tmp
+	grep " cheshire_top_xilinx " $(PROJECT)/reports/$(PROJECT).utilization.rpt | sed -E "s/.+top\) //g" >> $(PROJECT)/reports/report.tmp
 
 # Build all the IPS
 ips: $(IPS)
