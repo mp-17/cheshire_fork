@@ -54,9 +54,10 @@ update_compile_order -fileset sources_1
 
 set_property XPM_LIBRARIES XPM_MEMORY [current_project]
 
+# Check rtl first
+synth_design -rtl -name rtl_1
+
 if { $::env(DEBUG_RUN) eq "1" } {
-  # Check rtl first
-  synth_design -rtl -name rtl_1
   # Check for combinatorial loops (axi_downsized has such an issue https://github.com/pulp-platform/axi/issues/195)
   report_drc -checks "LUTLP-1" -file timing.rtl.drc
   start_gui
