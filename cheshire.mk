@@ -169,6 +169,7 @@ chs-xilinx-all: $(CHS_ROOT)/target/xilinx/scripts/add_sources.tcl
 clean:
 	-rm -v $(CHS_ROOT)/target/xilinx/scripts/add_sources.tcl
 	-rm -v $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl
+	cd sw/tests; rm -rf *.dump *.elf *.memh 
 # rm -v $(CHS_ROOT)/target/sim/models/s25fs512s.v
 # rm -v $(CHS_ROOT)/target/sim/models/24FC1025.v
 # rm -v $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.sv $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.dump

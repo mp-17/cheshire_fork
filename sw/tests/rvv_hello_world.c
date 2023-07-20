@@ -12,6 +12,7 @@
 #include "dif/uart.h"
 #include "params.h"
 #include "util.h"
+#include "encoding.h"
 
 int main(void) {
     char str[] = "Hello, attempting to run some vector instructions!\r\n";
@@ -21,12 +22,37 @@ int main(void) {
     uart_write_str(&__base_uart, str, sizeof(str));
     uart_write_flush(&__base_uart);
 
+    // First set MSTATUS.VS
+    asm volatile (" li      t0, %0       " :: "i"(MSTATUS_FS | MSTATUS_XS | MSTATUS_VS));
+    asm volatile (" csrs    mstatus, t0" );
+
     // Run some vector instructions here
-    asm volatile("vsetvli   t0, zero, e64, m8, ta, ma");
+    // Vector configuration
+    #define AVL 32
+    uint64_t vl;
+    asm volatile("li        t0 ,  %0" :: "i"(32));
+    asm volatile("vsetvli   %0, t0, e64, m8, ta, ma" : "=r"(vl));
 
-    asm volatile("vmv.v.i   v0, -1");
+    // Vector permutation/arithmetic
+    asm volatile("vmv.v.i   v0 ,  1");
+    asm volatile("vadd.vv   v16, v0, v0");
 
-_main_exit:
+    // Allocate array in memory
+    uint64_t array [AVL];
+    // initialize with deadbeef
+    for ( unsigned int i = 0; i < AVL; i++ ) {
+        array[i] = 0xdeadbeefdeadbeef;
+    }
+
+    uint64_t* address = array;
+    // Vector load
+    asm volatile("vle64.v	v24, (%0)": "+&r"(address));
+
+    // Vector store
+    asm volatile("vse64.v	v16, (%0)": "+&r"(address));
+
+    // Vector load
+    asm volatile("vle64.v	v8 , (%0)": "+&r"(address));
 
     return 0;
 }
