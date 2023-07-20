@@ -24,5 +24,7 @@ nonfree-%:
 .PHONY: patches
 patches: 
 	-patch .bender/git/checkouts/cva6-*/Bender.yml patches/bender_git_checkouts_cva6_Bender.yml.patch
+	-patch .bender/git/checkouts/cva6-*/common/local/util/instr_trace_item.svh patches/bender_git_checkouts_cva6_common_local_util_instr_trace_item.svh.patch
 	-patch .bender/git/checkouts/ara-*/Bender.yml patches/bender_git_checkouts_ara_Bender.yml.patch 
 	-patch .bender/git/checkouts/ara-*/hardware/src/vlsu/vlsu.sv patches/bender_git_checkouts_ara_hardware_src_vlsu_vlsu.sv.patch
+	
