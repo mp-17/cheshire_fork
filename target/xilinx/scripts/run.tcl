@@ -136,7 +136,7 @@ if ($DEBUG) {
     # set_property target_constrs_file cheshire.srcs/constrs_1/imports/constraints/$::env(BOARD).xdc [current_fileset -constrset]
     save_constraints -force
     implement_debug_core
-    write_debug_probes -force probes.ltx
+    write_debug_probes -force $::env(LTX)
 }
 
 # Implementation

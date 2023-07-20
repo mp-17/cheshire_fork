@@ -82,6 +82,7 @@ endif
 out := out/
 BIT ?= $(out)/$(PROJECT).bit
 MCS ?= $(out)/$(PROJECT).mcs
+LTX ?= $(out)/$(PROJECT).ltx
 
 VIVADOENV ?=  PROJECT=$(PROJECT)            \
               BOARD=$(BOARD)                \
@@ -95,7 +96,7 @@ VIVADOENV ?=  PROJECT=$(PROJECT)            \
               IMPL_STRATEGY=$(IMPL_STRATEGY) \
               SYNTH_STRATEGY=$(SYNTH_STRATEGY) \
               DEBUG_RUN=$(DEBUG_RUN)         \
-              LTX=probes.ltx                 \
+              LTX=$(LTX)          	       \
               MCS=$(MCS)
 MODE        ?= batch
 VIVADOFLAGS ?= -nojournal -mode $(MODE)
