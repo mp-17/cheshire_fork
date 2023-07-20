@@ -24,7 +24,7 @@ set PRELMODE 0
 
 # Only for PRELMODE JTAG and Serial link
 # ELF file to be loaded
-set BINARY ../../../sw/tests/helloworld.spm.elf
+set BINARY ../../../sw/tests/rvv_hello_world.spm.elf
 # set BINARY ../../../sw/tests/helloworld.dram.elf
 
 # Only for BOOTMODE i2c and spih (not supported?)
@@ -33,8 +33,8 @@ set BINARY ../../../sw/tests/helloworld.spm.elf
 # Set voptargs only if not already set to make overridable.
 # Default on fast simulation flags.
 if {![info exists VOPTARGS]} {
-    set VOPTARGS "-O5 +acc=p+tb_cheshire_soc. +noacc=p+cheshire_soc. +acc=r+stream_xbar"
-    # set VOPTARGS "-O5"
+    # set VOPTARGS "-O5 +acc=p+tb_cheshire_soc. +noacc=p+cheshire_soc. +acc=r+stream_xbar"
+    set VOPTARGS "-O5  +acc=tb_cheshire_soc"
 }
 
 # Suppress (vopt-7033) Variable '' driven in a combinational block, may not be driven by any other process. 
