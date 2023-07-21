@@ -227,7 +227,7 @@ module cheshire_top_xilinx
   (* dont_touch = "yes" *) wire dram_clock_out; // 200 MHz
   (* dont_touch = "yes" *) wire dram_sync_reset;
   (* dont_touch = "yes" *) wire soc_clk;
-  (* dont_touch = "yes" *) (* mark_debug = "true" *) wire rst_n;
+  (* dont_touch = "yes" *) wire rst_n;
 
   ///////////////////////
   //  Xilinx AXI QSPI  //
