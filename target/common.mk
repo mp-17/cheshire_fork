@@ -24,7 +24,7 @@
 #			- ARA_INTEGRATION_V0_3: split crossbar (not yet implemented)
 
 # Ara-capable CVA6
-BENDER_TARGETS += -t cv64a6_imafdcv_sv39 
+BENDER_TARGETS += -t cv64a6_imafdcv_sv39 -t cva6
 
 ARA ?= 1
 ARA_NR_LANES ?= 2

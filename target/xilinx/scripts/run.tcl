@@ -10,9 +10,6 @@ source ../scripts/prologue.tcl
 switch $::env(BOARD) {
   "genesys2" - "kc705" - "vc707" - "vcu128" - "zcu102" {
     import_files -fileset constrs_1 -norecurse ../constraints/cheshire.xdc
-    import_files -fileset constrs_1 -norecurse ../constraints/$::env(BOARD).xdc
-    set_property used_in_synthesis false [get_files cheshire.xdc]
-    set_property used_in_synthesis false [get_files $::env(BOARD).xdc]
   }
   default {
       exit 1
@@ -40,6 +37,7 @@ switch $::env(BOARD) {
 
 read_ip $ips
 
+# Add sources
 source ../scripts/add_sources.tcl
 # Manually add the sources that submodules will not give bender
 # Yes, this is a dirty solution and a fix should be applied in the interested submodules instead
@@ -52,7 +50,18 @@ set_property top cheshire_top_xilinx [current_fileset]
 
 update_compile_order -fileset sources_1
 
+# Add project configuration for Xilinx' memory
 set_property XPM_LIBRARIES XPM_MEMORY [current_project]
+
+# Add constraints
+import_files -fileset constrs_1 -norecurse ../constraints/$::env(BOARD).xdc
+set_property used_in_synthesis false [get_files cheshire.xdc]
+set_property used_in_synthesis false [get_files $::env(BOARD).xdc]
+# Import contraints for external JTAG connection
+if { $::env(EXT_JTAG) } {
+    import_files -fileset constrs_1 ../constraints/occamy_vcu128_impl_ext_jtag.xdc
+    set_property used_in_synthesis false [get_files occamy_vcu128_impl_ext_jtag.xdc]
+}
 
 # Check rtl first
 synth_design -rtl -name rtl_1

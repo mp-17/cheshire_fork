@@ -14,7 +14,8 @@ PROJECT     ?= cheshire
 
 BENDER      	?= bender
 BENDER_DEFS 	?= 
-BENDER_TARGETS 	:= -t cva6
+BENDER_TARGETS 	?= 
+EXT_JTAG    	?= 0
 
 include ../common.mk
 
@@ -36,7 +37,10 @@ ifeq ($(BOARD),vcu128)
     FPGA_PATH	 ?= xilinx_tcf/Xilinx/091847100638A 
 	FPGA_DEVICE	 ?= xcvu37p_0
 	IPS_NAMES    := xlnx_vio xlnx_mig_ddr4 xlnx_qspi
-	BENDER_TARGETS := $(BENDER_TARGETS) -t bscane
+# Choose whether to use BSCANE2 or external scanchain for the debug module 
+	ifneq ($(EXT_JTAG),1)
+		BENDER_TARGETS += -t bscane
+	endif
 endif
 ifeq ($(BOARD),genesys2)
 	XILINX_PART  ?= xc7k325tffg900-2
@@ -78,26 +82,30 @@ ifeq ($(ARA),1)
 else
 	PROJECT := $(PROJECT)_no_ara
 endif
+ifeq ($(EXT_JTAG),1)
+	PROJECT := $(PROJECT)_ara_EXT_JTAG
+endif
 
 out := out/
 BIT ?= $(out)/$(PROJECT).bit
 MCS ?= $(out)/$(PROJECT).mcs
 LTX ?= $(out)/$(PROJECT).ltx
 
-VIVADOENV ?=  PROJECT=$(PROJECT)            \
-              BOARD=$(BOARD)                \
-              XILINX_PART=$(XILINX_PART)    \
-              XILINX_BOARD=$(XILINX_BOARD)  \
-              PORT=$(XILINX_PORT)           \
-              HOST=$(XILINX_HOST)           \
-              FPGA_PATH=$(FPGA_PATH)        \
-              FPGA_DEVICE=$(FPGA_DEVICE)    \
-              BIT=$(BIT)                    \
-              IMPL_STRATEGY=$(IMPL_STRATEGY) \
-              SYNTH_STRATEGY=$(SYNTH_STRATEGY) \
-              DEBUG_RUN=$(DEBUG_RUN)         \
-              LTX=$(LTX)          	       \
-              MCS=$(MCS)
+VIVADOENV ?=  PROJECT="$(PROJECT)"          	\
+              BOARD=$(BOARD)                	\
+              XILINX_PART=$(XILINX_PART)    	\
+              XILINX_BOARD=$(XILINX_BOARD)  	\
+              PORT=$(XILINX_PORT)           	\
+              HOST=$(XILINX_HOST)           	\
+              FPGA_PATH=$(FPGA_PATH)        	\
+              FPGA_DEVICE=$(FPGA_DEVICE)    	\
+              BIT="$(BIT)"                    	\
+              IMPL_STRATEGY=$(IMPL_STRATEGY) 	\
+              SYNTH_STRATEGY=$(SYNTH_STRATEGY) 	\
+              DEBUG_RUN=$(DEBUG_RUN)        	\
+              EXT_JTAG=$(EXT_JTAG)      	    \
+              LTX="$(LTX)"          	       	\
+              MCS="$(MCS)"
 MODE        ?= batch
 VIVADOFLAGS ?= -nojournal -mode $(MODE)
 # Define TARGET_$(BOARD) macro with bender
@@ -141,7 +149,7 @@ tcl:
 
 program: #$(BIT)
 	@echo "Programming board $(BOARD) ($(XILINX_PART))"
-# hw_server in IIS bordcomputer is v2020.2
+#	hw_server in IIS bordcomputer is v2020.2
 	$(VIVADOENV) vitis-2020.2 vivado $(VIVADOFLAGS) -source scripts/program.tcl
 
 # This must be forked from pulp-platform and checked-out at the cheshire branch, not the main from openhw
