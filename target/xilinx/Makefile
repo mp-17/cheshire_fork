@@ -84,7 +84,7 @@ else
 	PROJECT := $(PROJECT)_no_ara
 endif
 ifeq ($(EXT_JTAG),1)
-	PROJECT := $(PROJECT)_ara_EXT_JTAG
+	PROJECT := $(PROJECT)_EXT_JTAG
 endif
 
 out := out/
