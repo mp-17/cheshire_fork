@@ -67,7 +67,7 @@ $ make flash_uImage
 ````
 This will take 3-4 minutes.
 
-## Connect with OpenOCd + GDB
+## Connect with OpenOCD + GDB
 On bordcomputer, stop hw_server, and launch OpenOCD:
 ````console
 $ openocd -f openocd_configs/vcu128-2.cfg
@@ -80,13 +80,18 @@ $ ssh -L 3333:localhost:3334 -C -N -f -l $USER bordcomputer`
 
 Launch GDB:
 ````console
-$ riscv64-unknown-elf-gdb  -ex "target extended-remote :3333" 
+$ riscv64-unknown-elf-gdb -ex "target extended-remote :3333" 
 (gdb) monitor reset halt
 (gdb) file fw_payload.elf
 (gdb) load
 (gdb) break ...set your breakpoints...
 (gdb) continue
 (gdb) 
+````
+
+An example and utility GDB script is provided in scripts/gdb.gdb. It can be launched like so:
+````console
+$ riscv64-unknown-elf-gdb -ex "target extended-remote :3333" --command=scripts/gdb/helloworld.gdb
 ````
 
 
