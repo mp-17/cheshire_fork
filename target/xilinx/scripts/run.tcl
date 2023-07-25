@@ -2,7 +2,7 @@
 # Solderpad Hardware License, Version 0.51, see LICENSE for details.
 # SPDX-License-Identifier: SHL-0.51
 #
-# Author: Florian Zaruba <zarubaf@iis.ee.ethz.ch>
+# Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 
 source ../scripts/prologue.tcl
 
@@ -73,13 +73,18 @@ if { $::env(DEBUG_RUN) eq "1" } {
   set_property STRATEGY                                           Flow_RuntimeOptimized    [get_runs synth_1]
   set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY          none                     [get_runs synth_1]
   set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS  true                     [get_runs synth_1]
+  # Instantiate ILAs
+  set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/axi_req_o[*]]
+  set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/axi_resp_i[*]]
+  set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/pc_commit[*]]
+  set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/csr_regfile_i/mepc_q[*]]
+  set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/csr_regfile_i/mcause_q[*]]
+  set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/csr_regfile_i/mtval_q[*]]
+  set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/csr_regfile_i/cycle_q_reg[*]]
 } else {
   set_property STRATEGY                                           $::env(SYNTH_STRATEGY)   [get_runs synth_1]
   set_property STEPS.SYNTH_DESIGN.ARGS.RETIMING                   true                     [get_runs synth_1]
 }  
-
-# Prevent debug net to be optimized away
-set_property DONT_TOUCH 1 [get_nets i_cheshire_soc/i_cva6/pc_commit[*]]
 
 launch_runs synth_1
 wait_on_run synth_1
@@ -94,16 +99,6 @@ check_timing -verbose                                                   -file re
 report_utilization -hierarchical -hierarchical_percentage               -file reports/$project.utilization.rpt
 # report_cdc                                                              -file reports/$project.cdc.rpt
 # report_clock_interaction                                                -file reports/$project.clock_interaction.rpt
-
-# Instantiate ILAs
-                                  # i_cheshire_soc/i_cva6/axi_req_o \
-                                  # i_cheshire_soc/i_cva6/axi_resp_i \
-# Under suggestion from http://eda.ee.ethz.ch/index.php?title=FPGA_Debugging
-set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/pc_commit[*]]
-set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/csr_regfile_i/mepc_q[*]]
-set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/csr_regfile_i/mcause_q[*]]
-set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/csr_regfile_i/mtval_q[*]]
-set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/csr_regfile_i/cycle_q[*]]
 
 set DEBUG [llength [get_nets -hier -filter {MARK_DEBUG == 1}]]
 if ($DEBUG) {
@@ -145,7 +140,7 @@ if ($DEBUG) {
     # set_property target_constrs_file cheshire.srcs/constrs_1/imports/constraints/$::env(BOARD).xdc [current_fileset -constrset]
     save_constraints -force
     implement_debug_core
-    write_debug_probes -force $::env(LTX)
+    write_debug_probes -force $project.ltx
 }
 
 # Implementation

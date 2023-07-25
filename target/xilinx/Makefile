@@ -22,11 +22,12 @@ include ../common.mk
 # Board in      {vcu128, genesys2, zcu102(not working)}
 BOARD        ?= vcu128
 XILINX_HOST  ?= bordcomputer
+# IIS bordcomputer has a fixed vivado version for the hw_server 
+VIVADO_BORDCOMPUTER ?= vitis-2020.2 vivado
 
 # Select board specific variables
 ifeq ($(BOARD),vcu128)
 	VIVADO       ?= vitis-2020.2 vivado
-# VIVADO       ?= vitis-2022.1 vivado
 	XILINX_PART  ?= xcvu37p-fsvh2892-2L-e
 	XILINX_BOARD ?= xilinx.com:vcu128:part0:1.0
 # VCU128-01 (broken flash)
@@ -112,7 +113,7 @@ VIVADOFLAGS ?= -nojournal -mode $(MODE)
 BENDER_TARGETS += -t $(BOARD) -t fpga
 
 # Include Xilinx IPs simulation makefile
-include sim/simulate.mk
+# include sim/simulate.mk
 
 all: $(PROJECT) $(BIT)
 
@@ -128,6 +129,7 @@ $(BIT): $(IPS) scripts/add_sources.tcl
 	mkdir -p $(out)
 	cd $(PROJECT); $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source ../scripts/run.tcl 
 	cp $(PROJECT)/$(PROJECT).runs/impl_1/cheshire_top_xilinx.bit $(BIT)
+	cp $(PROJECT)/$(PROJECT).runs/impl_1/$(PROJECT).ltx $(LTX)
 	cd $(PROJECT); $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) $(PROJECT).xpr -source ../scripts/get_run_info.tcl > reports/report.tmp
 	grep " cheshire_top_xilinx " $(PROJECT)/reports/$(PROJECT).utilization.rpt | sed -E "s/.+top\) //g" >> $(PROJECT)/reports/report.tmp
 
@@ -150,7 +152,7 @@ tcl:
 program: #$(BIT)
 	@echo "Programming board $(BOARD) ($(XILINX_PART))"
 #	hw_server in IIS bordcomputer is v2020.2
-	$(VIVADOENV) vitis-2020.2 vivado $(VIVADOFLAGS) -source scripts/program.tcl
+	$(VIVADOENV) $(VIVADO_BORDCOMPUTER) $(VIVADOFLAGS) -source scripts/program.tcl
 
 # This must be forked from pulp-platform and checked-out at the cheshire branch, not the main from openhw
 CVA6_SDK				?= ../../../cva6-sdk
@@ -175,14 +177,14 @@ write_cfgmem: #$(FLASH_FILE)
 
 flash_spi: $(MCS_FILE) 
 	@echo "Flashing QSPI for board $(BOARD) ($(XILINX_PART))"
-	$(VIVADOENV) vitis-2020.2 vivado $(VIVADOFLAGS) -source scripts/flash_spi.tcl -tclargs $(MCS_FILE) 
+	$(VIVADOENV) $(VIVADO_BORDCOMPUTER) $(VIVADOFLAGS) -source scripts/flash_spi.tcl -tclargs $(MCS_FILE) 
 
 # TODO: merge operations in a single script with multiple arguments
 flash_uImage: $(LINUX_UIMAGE_FILE)
 	make write_cfgmem MCS_FILE=$@.mcs FLASH_OFFSET=$(LINUX_UIMAGE_FLASH_OFFSET) FLASH_FILE=$(LINUX_UIMAGE_FILE)
 	make flash_spi    MCS_FILE=$@.mcs	
 #	(Untested) \
-# $(VIVADOENV) vitis-2020.2 vivado $(VIVADOFLAGS) \
+# $(VIVADOENV) $(VIVADO_BORDCOMPUTER) $(VIVADOFLAGS) \
 # 	-source scripts/write_cfgmem.tcl -tclargs $(MCS_FILE) $(FLASH_OFFSET) $(FLASH_FILE) \
 # 	-source scripts/flash_spi.tcl 	 -tclargs $(MCS_FILE) 
 

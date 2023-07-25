@@ -23,8 +23,6 @@ current_hw_device   [get_hw_devices $::env(FPGA_DEVICE)]
 program_hw_devices  [get_hw_devices $::env(FPGA_DEVICE)]
 # Debug
 report_property -all [get_hw_targets]
-# Search for hw probes
-refresh_hw_device -update_hw_probes false [lindex [get_hw_devices $::env(FPGA_DEVICE)] 0]
 
 puts "Query the design"
 # Debug
