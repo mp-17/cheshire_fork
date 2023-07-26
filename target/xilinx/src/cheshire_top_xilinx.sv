@@ -19,6 +19,10 @@ module cheshire_top_xilinx
   input logic         cpu_resetn,
 `endif
 
+  // System clock for clk_wiz
+  input logic         sys_clk_p,
+  input logic         sys_clk_n,
+
 `ifdef USE_SWITCHES
   input logic         testmode_i,
   input logic [1:0]   boot_mode_i,
@@ -57,13 +61,15 @@ module cheshire_top_xilinx
 `endif
 
 `ifdef USE_QSPI
+`ifndef USE_STARTUPE3
   output logic        qspi_clk,
   input  logic        qspi_dq0,
   input  logic        qspi_dq1,
   input  logic        qspi_dq2,
   input  logic        qspi_dq3,
   output logic        qspi_cs_b,
-`endif
+`endif // USE_STARTUPE3
+`endif // USE_QSPI
 
 `ifdef USE_VGA
   // VGA Colour signals
@@ -81,11 +87,10 @@ module cheshire_top_xilinx
   output logic        ddr_link_clk_o,
 `endif
 
-  // Phy interface for DDR4
+  // Phy interface for DRAMs
 `ifdef USE_DDR4
   `DDR4_INTF
 `endif
-
 `ifdef USE_DDR3
   `DDR3_INTF
 `endif
@@ -215,6 +220,10 @@ module cheshire_top_xilinx
   axi_llc_req_t axi_llc_mst_req;
   axi_llc_rsp_t axi_llc_mst_rsp;
 
+  ///////////////////////////
+  // Clk reset definitions //
+  ///////////////////////////
+
   `ifdef USE_RESET
   logic cpu_resetn;
   assign cpu_resetn = ~cpu_reset;
@@ -224,8 +233,6 @@ module cheshire_top_xilinx
   `endif
   logic sys_rst;
 
-  (* dont_touch = "yes" *) wire dram_clock_out; // 200 MHz
-  (* dont_touch = "yes" *) wire dram_sync_reset;
   (* dont_touch = "yes" *) wire soc_clk;
   (* dont_touch = "yes" *) wire rst_n;
 
@@ -236,7 +243,7 @@ module cheshire_top_xilinx
 `ifdef TARGET_XLNX_QSPI
 
 `ifdef QSPI_AXI_LITE
-  // UNTESTED
+  // NOTE: UNTESTED, this code is here as a reference for a possible AXI-lite integration
   
   // // AXI types
   // // Define types needed
@@ -339,10 +346,13 @@ module cheshire_top_xilinx
   //     .mst_req_o  ( axi_qspi_d32_req ),
   //     .mst_resp_i ( axi_qspi_d32_resp )
   //   );
+  // TODO: test with u-boot drivers
 
 `endif // QSPI_AXI_LITE
 
 `ifdef QSPI_AXI4
+  // TODO: test with u-boot drivers
+  // TODO: handle width mismatches, possibly use adapters from axi library to be safe
 
   axi_slv_req_t axi_qspi_req;
   axi_slv_rsp_t axi_qspi_resp;
@@ -354,7 +364,7 @@ module cheshire_top_xilinx
     .s_axi4_aclk     ( soc_clk                 ), // input wire s_axi4_aclk // in Occamy BD: 25MHz
     .s_axi4_aresetn  ( rst_n                   ), // input wire s_axi4_aresetn
     .s_axi4_awid     ( axi_qspi_req .aw.id     ), // input wire [4 : 0]
-    .s_axi4_awaddr   ( axi_qspi_req .aw.addr  [23 : 0]  ), // input wire [23 : 0] # NOTE: width mismatch
+    .s_axi4_awaddr   ( axi_qspi_req .aw.addr   ), // input wire [23 : 0] # NOTE: width mismatch
     .s_axi4_awlen    ( axi_qspi_req .aw.len    ), // input wire [7 : 0]
     .s_axi4_awsize   ( axi_qspi_req .aw.size   ), // input wire [2 : 0]
     .s_axi4_awburst  ( axi_qspi_req .aw.burst  ), // input wire [1 : 0]
@@ -363,8 +373,8 @@ module cheshire_top_xilinx
     .s_axi4_awprot   ( axi_qspi_req .aw.prot   ), // input wire [2 : 0]
     .s_axi4_awvalid  ( axi_qspi_req .aw_valid  ), // input wire s_axi4_awvalid
     .s_axi4_awready  ( axi_qspi_resp.aw_ready  ), // output wire s_axi4_awready
-    .s_axi4_wdata    ( axi_qspi_req .w.data   [31 : 0] ), // input wire [31 : 0]  # NOTE: width mismatch
-    .s_axi4_wstrb    ( axi_qspi_req .w.strb   [3 : 0] ), // input wire [3 : 0]   # NOTE: width mismatch
+    .s_axi4_wdata    ( axi_qspi_req .w.data    ), // input wire [31 : 0]  # NOTE: width mismatch
+    .s_axi4_wstrb    ( axi_qspi_req .w.strb    ), // input wire [3 : 0]   # NOTE: width mismatch
     .s_axi4_wlast    ( axi_qspi_req .w.last    ), // input wire s_axi4_wlast
     .s_axi4_wvalid   ( axi_qspi_req .w_valid   ), // input wire s_axi4_wvalid
     .s_axi4_wready   ( axi_qspi_resp.w_ready   ), // output wire s_axi4_wready
@@ -373,7 +383,7 @@ module cheshire_top_xilinx
     .s_axi4_bvalid   ( axi_qspi_resp.b_valid   ), // output wire s_axi4_bvalid
     .s_axi4_bready   ( axi_qspi_req .b_ready   ), // input wire s_axi4_bready
     .s_axi4_arid     ( axi_qspi_req .ar.id     ), // input wire [4 : 0]
-    .s_axi4_araddr   ( axi_qspi_req .ar.addr  [23 : 0]  ), // input wire [23 : 0]  # NOTE: width mismatch
+    .s_axi4_araddr   ( axi_qspi_req .ar.addr   ), // input wire [23 : 0]  # NOTE: width mismatch
     .s_axi4_arlen    ( axi_qspi_req .ar.len    ), // input wire [7 : 0]
     .s_axi4_arsize   ( axi_qspi_req .ar.size   ), // input wire [2 : 0]
     .s_axi4_arburst  ( axi_qspi_req .ar.burst  ), // input wire [1 : 0]
@@ -382,8 +392,8 @@ module cheshire_top_xilinx
     .s_axi4_arprot   ( axi_qspi_req .ar.prot   ), // input wire [2 : 0]
     .s_axi4_arvalid  ( axi_qspi_req .ar_valid  ), // input wire s_axi4_arvalid
     .s_axi4_arready  ( axi_qspi_resp.ar_ready  ), // output wire s_axi4_arready
-    .s_axi4_rid      ( axi_qspi_resp.r.id     [3 : 0] ), // output wire [3 : 0]  # NOTE: width mismatch
-    .s_axi4_rdata    ( axi_qspi_resp.r.data   [31 : 0] ), // output wire [31 : 0]  # NOTE: width mismatch
+    .s_axi4_rid      ( axi_qspi_resp.r.id      ), // output wire [3 : 0]  # NOTE: width mismatch
+    .s_axi4_rdata    ( axi_qspi_resp.r.data    ), // output wire [31 : 0]  # NOTE: width mismatch
     .s_axi4_rresp    ( axi_qspi_resp.r.resp    ), // output wire [1 : 0]
     .s_axi4_rlast    ( axi_qspi_resp.r.last    ), // output wire s_axi4_rlast
     .s_axi4_rvalid   ( axi_qspi_resp.r_valid   ), // output wire s_axi4_rvalid
@@ -407,21 +417,6 @@ module cheshire_top_xilinx
 `endif // TARGET_XLNX_QSPI
 
   ///////////////////
-  // VIOs          // 
-  ///////////////////
-  
-`ifdef USE_VIO
-  logic vio_reset;
-  xlnx_vio (
-    .clk(soc_clk),
-    .probe_out0(vio_reset)
-  );
-  assign sys_rst = cpu_reset | vio_reset;
-`else
-  assign sys_rst = cpu_reset;
-`endif
-
-  ///////////////////
   // GPIOs         // 
   ///////////////////
 
@@ -433,7 +428,7 @@ module cheshire_top_xilinx
   assign boot_mode_i = 2'b00; // Passive boot (see cheshire_regs.json)
 `endif
 
-  // Give VDD and GND to JTAG
+  // Give VDD and GND to JTAG dongle
 `ifdef USE_JTAG_VDDGND
   assign jtag_vdd_o  = '1;
   assign jtag_gnd_o  = '0;
@@ -443,24 +438,34 @@ module cheshire_top_xilinx
   assign jtag_trst_ni = '1;
 `endif
 
-  ///////////////////
-  // Clock Divider // 
-  ///////////////////
+  //////////////////
+  // Clock Wizard //
+  //////////////////
 
-  clk_int_div #(
-    .DIV_VALUE_WIDTH       ( 4                ),
-    .DEFAULT_DIV_VALUE     ( `DDR_CLK_DIVIDER ),
-    .ENABLE_CLOCK_IN_RESET ( 1'b0             )
-  ) i_sys_clk_div (
-    .clk_i                 ( dram_clock_out ),
-    .rst_ni                ( ~dram_sync_reset  ),
-    .en_i                  ( 1'b1              ),
-    .test_mode_en_i        ( testmode_i        ),
-    .div_i                 ( `DDR_CLK_DIVIDER  ),
-    .div_valid_i           ( 1'b0              ),
-    .div_ready_o           (                   ),
-    .clk_o                 ( soc_clk           ),
-    .cycl_count_o          (                   )
+  wire sys_clk;
+
+  // Get from the diff board pins a single ended buffered clock that
+  // can be sent to clk_wiz and DDR separately (without cascading MMCMs)
+  // As sys_clk frequency depends on the boards /!\ in IPs configurations
+  IBUFDS #
+  (
+    .IBUF_LOW_PWR ("FALSE")
+  )
+  u_ibufg_sys_clk
+  (
+    .I  (sys_clk_p),
+    .IB (sys_clk_n),
+    .O  (sys_clk)
+  );
+
+  xlnx_clk_wiz i_xlnx_clk_wiz (
+    .clk_in1 ( sys_clk  ),
+    .reset   ( '0       ),
+    .clk_100 (          ),
+    .clk_50  ( soc_clk  ),
+    .clk_20  (          ),
+    .clk_10  (          ),
+    .locked  (          )
   );
 
   /////////////////////
@@ -469,38 +474,62 @@ module cheshire_top_xilinx
 
   rstgen i_rstgen_main (
     .clk_i        ( soc_clk                  ),
-    .rst_ni       ( ~dram_sync_reset         ),
+    .rst_ni       ( ~sys_rst                 ),
     .test_mode_i  ( testmode_i               ),
     .rst_no       ( rst_n                    ),
     .init_no      (                          ) // keep open
   );
 
+  ///////////////////
+  // VIOs          //
+  ///////////////////
+
+  logic       vio_reset, vio_boot_mode_sel;
+  logic [1:0] boot_mode, vio_boot_mode;
+
+`ifdef USE_VIO
+  xlnx_vio i_xlnx_vio (
+    .clk(soc_clk),
+    .probe_out0(vio_reset),
+    .probe_out1(vio_boot_mode), // WARNING: [Synth 8-689] width (2) of port connection 'probe_out1' does not match port width (1) of module 'xlnx_vio' 
+    .probe_out2(vio_boot_mode_sel)
+  );
+`else
+  assign vio_reset = '0;
+  assign vio_boot_mode = '0;
+  assign vio_boot_mode_sel = '0;
+`endif
+
+  assign sys_rst = ~cpu_resetn | vio_reset;
+  assign boot_mode = vio_boot_mode_sel ? vio_boot_mode : boot_mode_i;
+
   //////////////
   // DRAM MIG //
   //////////////
 
+`ifdef USE_DDR
   dram_wrapper #(
     .axi_soc_aw_chan_t ( axi_llc_aw_chan_t ),
-    .axi_soc_w_chan_t  ( axi_llc_w_chan_t ),
-    .axi_soc_b_chan_t  ( axi_llc_b_chan_t ),
+    .axi_soc_w_chan_t  ( axi_llc_w_chan_t  ),
+    .axi_soc_b_chan_t  ( axi_llc_b_chan_t  ),
     .axi_soc_ar_chan_t ( axi_llc_ar_chan_t ),
-    .axi_soc_r_chan_t  ( axi_llc_r_chan_t ),
-    .axi_soc_req_t     (axi_llc_req_t),
-    .axi_soc_resp_t    (axi_llc_rsp_t)
+    .axi_soc_r_chan_t  ( axi_llc_r_chan_t  ),
+    .axi_soc_req_t     ( axi_llc_req_t     ),
+    .axi_soc_resp_t    ( axi_llc_rsp_t     )
   ) i_dram_wrapper (
     // Rst
-    .sys_rst_i                  ( sys_rst     ),
-    .soc_resetn_i               ( rst_n       ),
-    .soc_clk_i                  ( soc_clk     ),
-    // Clk rst out
-    .dram_clk_o                 ( dram_clock_out     ),
-    .dram_rst_o                 ( dram_sync_reset    ),
+    .sys_rst_i                  ( sys_rst   ),
+    .soc_resetn_i               ( rst_n     ),
+    .soc_clk_i                  ( soc_clk   ),
+    // Sys clk
+    .dram_clk_i                 ( sys_clk   ),
     // Axi
     .soc_req_i                  ( axi_llc_mst_req  ),
     .soc_rsp_o                  ( axi_llc_mst_rsp  ),
     // Phy
     .*
   );
+`endif
 
   //////////////////
   // I2C Adaption //
@@ -554,6 +583,13 @@ module cheshire_top_xilinx
   logic spi_sck_en;
   logic [1:0] spi_cs_en;
   logic [3:0] spi_sd_en;
+  logic spi_sck_en_n;
+  logic [1:0] spi_cs_en_n;
+  logic [3:0] spi_sd_en_n;
+
+  //////////////////
+  // SD           //
+  //////////////////
 
 `ifdef USE_SD
   // Assert reset low => Apply power to the SD Card
@@ -574,18 +610,67 @@ module cheshire_top_xilinx
   assign spi_sd_soc_in[3] = 1'b0;
 `endif
 
+  //////////////////
+  // QSPI         //
+  //////////////////
+
 `ifdef USE_QSPI
-  assign qspi_clk  = spi_sck_en    ? spi_sck_soc       : 1'b1;
-  assign qspi_cs_b = spi_cs_soc[0];
-  assign spi_sd_soc_in[1] = qspi_dq0;
-`endif
+  logic                 qspi_clk;
+  logic                 qspi_clk_ts;
+  logic [3:0]           qspi_dqi;
+  logic [3:0]           qspi_dqo_ts;
+  logic [3:0]           qspi_dqo;
+  logic [SpihNumCs-1:0] qspi_cs_b;
+  logic [SpihNumCs-1:0] qspi_cs_b_ts;
+
+  assign qspi_clk      = spi_sck_soc;
+  assign qspi_cs_b     = spi_cs_soc;
+  assign qspi_dqo      = spi_sd_soc_out;
+  assign spi_sd_soc_in = qspi_dqi;
+  // Tristate - Enable
+  assign qspi_clk_ts  = ~(spi_sck_en);
+  assign qspi_cs_b_ts = ~(spi_cs_en);
+  assign qspi_dqo_ts  = ~(spi_sd_en);
+
+  // On VCU128, SPI ports are not directly available
+`ifdef USE_STARTUPE3
+  STARTUPE3 #(
+     .PROG_USR("FALSE"),
+     .SIM_CCLK_FREQ(0.0)
+  )
+  STARTUPE3_inst (
+     .CFGCLK    (),
+     .CFGMCLK   (),
+     .DI        (qspi_dqi),
+     .EOS       (),
+     .PREQ      (),
+     .DO        (qspi_dqo),
+     .DTS       (qspi_dqo_ts),
+     .FCSBO     (qspi_cs_b[1]),
+     .FCSBTS    (qspi_cs_b_ts[1]),
+     .GSR       (1'b0),
+     .GTS       (1'b0),
+     .KEYCLEARB (1'b1),
+     .PACK      (1'b0),
+     .USRCCLKO  (qspi_clk),
+     .USRCCLKTS (qspi_clk_ts),
+     .USRDONEO  (1'b1),
+     .USRDONETS (1'b1)
+  );
+`else
+  assign qspi_clk_o = qspi_clk;
+  assign qspi_dqi = qspi_dq_i;
+  assign qspi_cs_b_o = qspi_cs_b;
+`endif // USE_STARTUPE3
+
+`endif // USE_QSPI
 
   /////////////////////////
   // "RTC" Clock Divider //
   /////////////////////////
 
   logic rtc_clk_d, rtc_clk_q;
-  logic [4:0] counter_d, counter_q;
+  logic [15:0] counter_d, counter_q;
 
   // Divide soc_clk (50 MHz) by 50 => 1 MHz RTC Clock
   always_comb begin
@@ -593,21 +678,20 @@ module cheshire_top_xilinx
     rtc_clk_d = rtc_clk_q;
 
     if(counter_q == 24) begin
-      counter_d = 5'b0;
+      counter_d = '0;
       rtc_clk_d = ~rtc_clk_q;
     end
   end
 
   always_ff @(posedge soc_clk, negedge rst_n) begin
     if(~rst_n) begin
-      counter_q <= 5'b0;
+      counter_q <= '0;
       rtc_clk_q <= 0;
     end else begin
       counter_q <= counter_d;
       rtc_clk_q <= rtc_clk_d;
     end
   end
-
 
   /////////////////
   // Fan Control //
@@ -639,7 +723,6 @@ module cheshire_top_xilinx
     .rsp_o ( ext_rsp  )
   );
 
-
   //////////////////
   // Cheshire SoC //
   //////////////////
@@ -650,23 +733,22 @@ module cheshire_top_xilinx
   assign axi_qspi_req = axi_ext_req[0];
   assign axi_ext_resp = {'0, axi_qspi_resp};
   
-  // TODO: connect to xlxn_qspi as external slave
   cheshire_soc #(
-    .Cfg               ( FPGACfg ),
-    .ExtHartinfo       ( '0 ),
-    .axi_ext_llc_req_t ( axi_llc_req_t ),
-    .axi_ext_llc_rsp_t ( axi_llc_rsp_t ),
-    .axi_ext_mst_req_t ( axi_mst_req_t ),
-    .axi_ext_mst_rsp_t ( axi_mst_rsp_t ),
-    .axi_ext_slv_req_t ( axi_slv_req_t ),
-    .axi_ext_slv_rsp_t ( axi_slv_rsp_t ),
-    .reg_ext_req_t     ( reg_req_t ),
-    .reg_ext_rsp_t     ( reg_req_t )
+    .Cfg                ( FPGACfg ),
+    .ExtHartinfo        ( '0 ),
+    .axi_ext_llc_req_t  ( axi_llc_req_t ),
+    .axi_ext_llc_rsp_t  ( axi_llc_rsp_t ),
+    .axi_ext_mst_req_t  ( axi_mst_req_t ),
+    .axi_ext_mst_rsp_t  ( axi_mst_rsp_t ),
+    .axi_ext_slv_req_t  ( axi_slv_req_t ),
+    .axi_ext_slv_rsp_t  ( axi_slv_rsp_t ),
+    .reg_ext_req_t      ( reg_req_t ),
+    .reg_ext_rsp_t      ( reg_req_t )
   ) i_cheshire_soc (
     .clk_i              ( soc_clk ),
     .rst_ni             ( rst_n   ),
     .test_mode_i        ( testmode_i ),
-    .boot_mode_i,
+    .boot_mode_i        ( boot_mode  ),
     .rtc_i              ( rtc_clk_q       ),
     .axi_llc_mst_req_o  ( axi_llc_mst_req ),
     .axi_llc_mst_rsp_i  ( axi_llc_mst_rsp ),

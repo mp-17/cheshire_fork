@@ -11,7 +11,7 @@
 *.mif
 *.xci
 *.Xil/
-scripts/add_sources.tcl
+add_sources.tcl
 cheshire.cache/
 cheshire.hw/
 cheshire.ioplanning/

@@ -4,11 +4,11 @@
 #
 # Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 
-source ../scripts/prologue.tcl
+source $::env(TCL_DIR)/prologue.tcl
 
 # Contraints files selection
 switch $::env(BOARD) {
-  "genesys2" - "kc705" - "vc707" - "vcu128" - "zcu102" {
+ "vcu128" {
     import_files -fileset constrs_1 -norecurse ../constraints/cheshire.xdc
   }
   default {
@@ -25,6 +25,7 @@ switch $::env(BOARD) {
     set ips { "../xilinx/xlnx_mig_ddr4/xlnx_mig_ddr4.srcs/sources_1/ip/xlnx_mig_ddr4/xlnx_mig_ddr4.xci" \
               "../xilinx/xlnx_vio/xlnx_vio.srcs/sources_1/ip/xlnx_vio/xlnx_vio.xci" \
               "../xilinx/xlnx_qspi/xlnx_qspi.srcs/sources_1/ip/xlnx_qspi/xlnx_qspi.xci" \
+              "../xilinx/xlnx_clk_wiz/xlnx_clk_wiz.srcs/sources_1/ip/xlnx_clk_wiz/xlnx_clk_wiz.xci" \
             }
   }
   "zcu102" {
@@ -38,12 +39,10 @@ switch $::env(BOARD) {
 read_ip $ips
 
 # Add sources
-source ../scripts/add_sources.tcl
+source $::env(TCL_DIR)/add_sources.tcl
 # Manually add the sources that submodules will not give bender
 # Yes, this is a dirty solution and a fix should be applied in the interested submodules instead
-set SyncSpRamBeNx64  [exec find ../../../ -name SyncSpRamBeNx64.sv  | grep cva6 | head -n 1]
 set instr_tracer_pkg [exec find ../../../ -name instr_tracer_pkg.sv | grep cva6 | head -n 1]
-add_files -norecurse -fileset [current_fileset] $SyncSpRamBeNx64
 add_files -norecurse -fileset [current_fileset] $instr_tracer_pkg
 
 set_property top cheshire_top_xilinx [current_fileset]
@@ -139,7 +138,7 @@ if ($DEBUG) {
     # set_property target_constrs_file cheshire.srcs/constrs_1/imports/constraints/$::env(BOARD).xdc [current_fileset -constrset]
     save_constraints -force
     implement_debug_core
-    write_debug_probes -force $project.ltx
+    write_debug_probes -force ${project}.ltx
 }
 
 # Implementation

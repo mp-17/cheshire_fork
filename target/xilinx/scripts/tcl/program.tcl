@@ -5,6 +5,9 @@
 # Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 # Description: Program bitstream
 
+# First check if the bitstream file exists
+exec ls $::env(BIT) 
+
 # Connect to hw server
 open_hw_manager
 set url $::env(HOST):$::env(PORT)
@@ -16,13 +19,12 @@ open_hw_target $target
 set_property PARAM.FREQUENCY 15000000 [get_hw_targets $target]
 # Programming bitstream
 puts "Programming $::env(BIT)"
-set_property PROBES.FILE      $::env(LTX) [get_hw_devices $::env(FPGA_DEVICE)]
-set_property FULL_PROBES.FILE $::env(LTX) [get_hw_devices $::env(FPGA_DEVICE)]
 set_property PROGRAM.FILE     $::env(BIT) [get_hw_devices $::env(FPGA_DEVICE)]
+# For bitstream programming, we don't need a probe file
+# set_property PROBES.FILE      $::env(LTX) [get_hw_devices $::env(FPGA_DEVICE)]
+# set_property FULL_PROBES.FILE $::env(LTX) [get_hw_devices $::env(FPGA_DEVICE)]
 current_hw_device   [get_hw_devices $::env(FPGA_DEVICE)]
 program_hw_devices  [get_hw_devices $::env(FPGA_DEVICE)]
-# Debug
-report_property -all [get_hw_targets]
 
 puts "Query the design"
 # Debug

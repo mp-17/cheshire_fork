@@ -161,13 +161,13 @@ chs-sim-all: $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl
 #############
 
 # Goto ./target/xilinx/Makefile to change the target board, or to build from there
-$(CHS_ROOT)/target/xilinx/scripts/add_sources.tcl: Bender.yml
-	make -C target/xilinx scripts/add_sources.tcl
+$(CHS_ROOT)/target/xilinx/scripts/tcl/add_sources.tcl: Bender.yml
+	make -C target/xilinx scripts/tcl/add_sources.tcl
 
-chs-xilinx-all: $(CHS_ROOT)/target/xilinx/scripts/add_sources.tcl
+chs-xilinx-all: $(CHS_ROOT)/target/xilinx/scripts/tcl/add_sources.tcl
 
 clean:
-	-rm -v $(CHS_ROOT)/target/xilinx/scripts/add_sources.tcl
+	-rm -v $(CHS_ROOT)/target/xilinx/scripts/tcl/add_sources.tcl
 	-rm -v $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl
 	cd sw/tests; rm -rf *.dump *.elf *.memh 
 # rm -v $(CHS_ROOT)/target/sim/models/s25fs512s.v
