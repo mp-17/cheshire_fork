@@ -59,21 +59,9 @@ set_property used_in_synthesis false [get_files cheshire.xdc]
 set_property used_in_synthesis false [get_files $::env(BOARD).xdc]
 
 if { $::env(DEBUG_RUN) eq "1" } {
-  # synth_design -rtl -name rtl_1
-  # # Check for combinatorial loops (axi_downsizer has such an issue https://github.com/pulp-platform/axi/issues/195)
-  # report_drc -checks "LUTLP-1" -file timing.rtl.drc
-  # start_gui
   set_property STRATEGY                                           Flow_RuntimeOptimized    [get_runs synth_1]
   set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY          none                     [get_runs synth_1]
   set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS  true                     [get_runs synth_1]
-  # Instantiate ILAs
-  # set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/axi_req_o*]
-  # set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/axi_resp_i*]
-  # set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/pc_commit*]
-  # set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/csr_regfile_i/mepc_q*/Q   ]]
-  # set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/csr_regfile_i/mcause_q*/Q ]]
-  # set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/csr_regfile_i/mtval_q*/Q  ]]
-  # set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/csr_regfile_i/cycle_q*/Q  ]]
 } else {
   set_property STRATEGY                                           $::env(SYNTH_STRATEGY)   [get_runs synth_1]
   set_property STEPS.SYNTH_DESIGN.ARGS.RETIMING                   true                     [get_runs synth_1]
@@ -95,9 +83,9 @@ report_utilization -hierarchical -hierarchical_percentage               -file re
 
 # Instantiate ILAs
 if { $::env(DEBUG_RUN) eq "1" } {
-  set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/axi_req_o*]
-  set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/axi_resp_i*]
-  set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/i_cva6/pc_commit*]
+  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/axi_req_o*                ]]
+  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/axi_resp_i*               ]]
+  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/i_frontend/pc_commit_i*   ]]
   set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/csr_regfile_i/mepc_q*/Q   ]]
   set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/csr_regfile_i/mcause_q*/Q ]]
   set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/csr_regfile_i/mtval_q*/Q  ]]
