@@ -105,7 +105,11 @@ module cheshire_top_xilinx
 
   // Add an external slave for the QSPI
   localparam int unsigned AxiNumExtMst = 0;
+`ifdef QSPI_AXI4
   localparam int unsigned AxiNumExtSlv = 1;
+`else  // ! QSPI_AXI4
+  localparam int unsigned AxiNumExtSlv = 0;
+`endif // QSPI_AXI4
 
   // Declare QSPI memory map
   // TODO: this must be tuned
@@ -357,6 +361,10 @@ module cheshire_top_xilinx
   axi_slv_req_t axi_qspi_req;
   axi_slv_rsp_t axi_qspi_resp;
   logic         qspi_intr;
+
+  assign intr_ext_chs = {'0, qspi_intr    };
+  assign axi_qspi_req = axi_ext_req[0];
+  assign axi_ext_resp = {'0, axi_qspi_resp};
 
   // AXI4 Full
   xlnx_qspi i_axi_full_quad_spi (
@@ -728,10 +736,6 @@ module cheshire_top_xilinx
   //////////////////
   axi_slv_req_t [iomsb(FPGACfg.AxiExtNumSlv):0] axi_ext_req;
   axi_slv_rsp_t [iomsb(FPGACfg.AxiExtNumSlv):0] axi_ext_resp;
-
-  assign intr_ext_chs = {'0, qspi_intr    };
-  assign axi_qspi_req = axi_ext_req[0];
-  assign axi_ext_resp = {'0, axi_qspi_resp};
   
   cheshire_soc #(
     .Cfg                ( FPGACfg ),
@@ -754,11 +758,17 @@ module cheshire_top_xilinx
     .axi_llc_mst_rsp_i  ( axi_llc_mst_rsp ),
     .axi_ext_mst_req_i  ( '0 ),
     .axi_ext_mst_rsp_o  ( ),
+`ifdef QSPI_AXI4
     .axi_ext_slv_req_o  ( axi_ext_req    ),
     .axi_ext_slv_rsp_i  ( axi_ext_resp   ),
+    .intr_ext_i         ( intr_ext_chs   ),
+`else  // ! QSPI_AXI4
+    .axi_ext_slv_req_o  (    ),
+    .axi_ext_slv_rsp_i  ( '0 ),
+    .intr_ext_i         ( '0 ),
+`endif // QSPI_AXI4
     .reg_ext_slv_req_o  ( ),
     .reg_ext_slv_rsp_i  ( '0 ),
-    .intr_ext_i         ( intr_ext_chs   ),
     .meip_ext_o         ( ),
     .seip_ext_o         ( ),
     .mtip_ext_o         ( ),
