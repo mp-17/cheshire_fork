@@ -4,6 +4,7 @@
 # ARA #
 #######
 
+##########################################################################################################
 # NOTE: Cheshire is configuration oriented but the current strategy requires 
 #		source code modifications of a cheshire_cfg_t struct. 
 #		Ara itself is configurable and runs with different configurations must
@@ -22,6 +23,7 @@
 #			- ARA_INTEGRATION_V0_1: direct connection to Cheshire xbar, only supports ARA_NR_LANES=2
 #			- ARA_INTEGRATION_V0_2: with axi_dw_converter
 #			- ARA_INTEGRATION_V0_3: split crossbar (not yet implemented)
+##########################################################################################################
 
 # Ara-capable CVA6
 BENDER_TARGETS += -t cv64a6_imafdcv_sv39 -t cva6

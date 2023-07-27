@@ -24,6 +24,7 @@ BOARD        ?= vcu128
 XILINX_HOST  ?= bordcomputer
 # IIS bordcomputer has a fixed vivado version for the hw_server 
 VIVADO_BORDCOMPUTER ?= vitis-2020.2 vivado
+VCU128 ?= 2
 
 # Select board specific variables
 ifeq ($(BOARD),vcu128)
@@ -31,11 +32,15 @@ ifeq ($(BOARD),vcu128)
 	XILINX_PART  ?= xcvu37p-fsvh2892-2L-e
 	XILINX_BOARD ?= xilinx.com:vcu128:part0:1.0
 # VCU128-01 (broken flash)
-# XILINX_PORT	 ?= 3231 
-# FPGA_PATH	 ?= xilinx_tcf/Xilinx/091847100576A 
+	ifeq ($(VCU128),1)
+		XILINX_PORT	 ?= 3231 
+		FPGA_PATH	 ?= xilinx_tcf/Xilinx/091847100576A 
+	endif
 # 	VCU128-02
-    XILINX_PORT	 ?= 3232
-    FPGA_PATH	 ?= xilinx_tcf/Xilinx/091847100638A 
+	ifeq ($(VCU128),2)
+		XILINX_PORT	 ?= 3232
+		FPGA_PATH	 ?= xilinx_tcf/Xilinx/091847100638A 
+	endif
 	FPGA_DEVICE	 ?= xcvu37p_0
 	IPS_NAMES    := xlnx_vio xlnx_mig_ddr4 xlnx_qspi xlnx_clk_wiz 
 # Choose whether to use BSCANE2 or external scanchain for the debug module 
@@ -65,6 +70,9 @@ ifeq ($(ARA),1)
 	PROJECT := $(PROJECT)_ara_$(ARA_NR_LANES)_lanes
 else
 	PROJECT := $(PROJECT)_no_ara
+endif
+ifeq ($(EXT_JTAG),1)
+	PROJECT := $(PROJECT)_EXT_JTAG
 endif
 
 TCL_DIR := $(PWD)/scripts/tcl
