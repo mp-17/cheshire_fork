@@ -63,6 +63,14 @@ set all_in_mux [get_nets -of [ get_pins -filter { DIRECTION == IN } -of [get_cel
 set_property CLOCK_DEDICATED_ROUTE FALSE $all_in_mux
 set_property CLOCK_BUFFER_TYPE NONE $all_in_mux
 
+###################
+# Reset Generator #
+###################
+
+# set multicycle path on reset, on the FPGA we do not care about the reset anyway
+set_multicycle_path -from [get_pins i_rstgen_main/i_rstgen_bypass/synch_regs_q_reg[3]/C] 4
+set_multicycle_path -from [get_pins i_rstgen_main/i_rstgen_bypass/synch_regs_q_reg[3]/C] 3  -hold
+
 ################
 # Clock Groups #
 ################
@@ -98,8 +106,8 @@ set_false_path -hold -to [get_ports uart_tx_o]
 ########
 
 # cdc_fifo_gray: Disable hold checks, limit datapath delay and bus skew
-set_property KEEP_HIERARCHY SOFT [get_cells i_dram_wrapper/i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_*/*i_sync]
-set_false_path -hold -through [get_pins -of_objects [get_cells i_dram_wrapper/i_axi_cdc_mig/i_axi_cdc_*]] -through [get_pins -of_objects [get_cells i_dram_wrapper/i_axi_cdc_mig/i_axi_cdc_*]]
+set_property KEEP_HIERARCHY SOFT [get_cells i_dram_wrapper/gen_cdc.i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_*/*i_sync]
+set_false_path -hold -through [get_pins -of_objects [get_cells i_dram_wrapper/gen_cdc.i_axi_cdc_mig/i_axi_cdc_*]] -through [get_pins -of_objects [get_cells i_dram_wrapper/gen_cdc.i_axi_cdc_mig/i_axi_cdc_*]]
 
 set_false_path -hold -through [get_pins -of_objects [get_cells -hier -filter {ORIG_REF_NAME == axi_cdc_src || REF_NAME == axi_cdc_src}] -filter {NAME =~ *async*}]
 set_false_path -hold -through [get_pins -of_objects [get_cells -hier -filter {ORIG_REF_NAME == axi_cdc_dst || REF_NAME == axi_cdc_dst}] -filter {NAME =~ *async*}]
