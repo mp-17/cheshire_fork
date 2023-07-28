@@ -15,7 +15,7 @@ PROJECT     ?= cheshire
 BENDER      	?= bender
 BENDER_DEFS 	?= 
 BENDER_TARGETS 	?= 
-EXT_JTAG    	?= 0
+EXT_JTAG    	?= 1
 
 include ../common.mk
 
@@ -117,9 +117,9 @@ bit: $(BIT)
 $(BIT): $(IPS) $(TCL_DIR)/add_sources.tcl
 	mkdir -p $(out)
 	cd $(PROJECT); $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source $(TCL_DIR)/run.tcl 
-	cp $(PROJECT)/$(PROJECT).runs/impl_1/cheshire_top_xilinx.bit $(BIT)
-	cp $(PROJECT)/$(PROJECT).ltx $(LTX)
-	cd $(PROJECT); $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) $(PROJECT).xpr -source $(TCL_DIR)/get_run_info.tcl > reports/report.tmp
+	-cp $(PROJECT)/$(PROJECT).runs/impl_1/cheshire_top_xilinx.bit $(BIT)
+	-cp $(PROJECT)/$(PROJECT).ltx $(LTX)
+	cd $(PROJECT); $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) $(PROJECT).xpr -source $(TCL_DIR)/get_run_info.tcl | grep " \[REPORT]" > reports/report.tmp
 	grep " cheshire_top_xilinx " $(PROJECT)/reports/$(PROJECT).utilization.rpt | sed -E "s/.+top\) //g" >> $(PROJECT)/reports/report.tmp
 
 # Build all the IPS
