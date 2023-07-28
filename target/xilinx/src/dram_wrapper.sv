@@ -32,9 +32,6 @@ module dram_wrapper #(
     `DDR3_INTF
 `endif
     // Dram axi interface
-    // (* mark_debug = "true" *) input  axi_soc_req_t  soc_req_i,
-    // (* mark_debug = "true" *) output axi_soc_resp_t soc_rsp_o
-    // Dram axi interface
     input  axi_soc_req_t  soc_req_i,
     output axi_soc_resp_t soc_rsp_o
 );
@@ -60,7 +57,7 @@ module dram_wrapper #(
     EnResizer     : 1,
     EnCDC         : 1, // 333 MHz axi
     EnSpill1      : 1,
-    IdWidth       : 4,
+    IdWidth       : 6,
     AddrWidth     : 32,
     DataWidth     : 512,
     StrobeWidth   : 64
@@ -73,7 +70,7 @@ module dram_wrapper #(
     EnResizer     : 1,
     EnCDC         : 1, // ??? MHz axi
     EnSpill1      : 1,
-    IdWidth       : 4,
+    IdWidth       : 6,
     AddrWidth     : 29,
     DataWidth     : 128,
     StrobeWidth   : 16
@@ -326,11 +323,9 @@ module dram_wrapper #(
     .c0_ddr4_s_axi_wvalid      (spill_dram_req.w_valid),
     .c0_ddr4_s_axi_wready      (spill_dram_rsp.w_ready),
     .c0_ddr4_s_axi_bready      (spill_dram_req.b_ready),
-    // WARNING: [Synth 8-689] width (4) of port connection 'c0_ddr4_s_axi_bid' does not match port width (6) of module 'xlnx_mig_ddr4' [/scratch/vmaisto/cheshire_fork/target/xilinx/src/dram_wrapper.sv:325]
     .c0_ddr4_s_axi_bid         (spill_dram_rsp_bid),
     .c0_ddr4_s_axi_bresp       (spill_dram_rsp.b.resp),
     .c0_ddr4_s_axi_bvalid      (spill_dram_rsp.b_valid),
-    // WARNING: [Synth 8-689] width (4) of port connection 'c0_ddr4_s_axi_rid' does not match port width (6) of module 'xlnx_mig_ddr4' [/scratch/vmaisto/cheshire_fork/target/xilinx/src/dram_wrapper.sv:340]
     .c0_ddr4_s_axi_arid        (spill_dram_req_arid),
     .c0_ddr4_s_axi_araddr      (spill_dram_req_araddr),
     .c0_ddr4_s_axi_arlen       (spill_dram_req.ar.len),
