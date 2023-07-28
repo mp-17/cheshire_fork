@@ -358,6 +358,9 @@ module cheshire_top_xilinx
   // TODO: test with u-boot drivers
   // TODO: handle width mismatches, possibly use adapters from axi library to be safe
 
+  axi_slv_req_t [iomsb(FPGACfg.AxiExtNumSlv):0] axi_ext_req;
+  axi_slv_rsp_t [iomsb(FPGACfg.AxiExtNumSlv):0] axi_ext_resp;
+  
   axi_slv_req_t axi_qspi_req;
   axi_slv_rsp_t axi_qspi_resp;
   logic         qspi_intr;
@@ -734,8 +737,6 @@ module cheshire_top_xilinx
   //////////////////
   // Cheshire SoC //
   //////////////////
-  axi_slv_req_t [iomsb(FPGACfg.AxiExtNumSlv):0] axi_ext_req;
-  axi_slv_rsp_t [iomsb(FPGACfg.AxiExtNumSlv):0] axi_ext_resp;
   
   cheshire_soc #(
     .Cfg                ( FPGACfg ),
