@@ -9,9 +9,8 @@
   `define USE_JTAG
   `define USE_JTAG_VDDGND
   `define USE_DDR4
-  // In this branch, we are using the Xilinx IP
-  // `define USE_QSPI
-  // `define USE_STARTUPE3
+  `define USE_QSPI
+  `define USE_STARTUPE3
   `define USE_VIO
 `endif
 
@@ -30,8 +29,6 @@
   `define USE_RESET
   `define USE_JTAG
   `define USE_DDR4
-  `define USE_QSPI
-  `define USE_STARTUPE3
   `define USE_VIO
 `endif
 

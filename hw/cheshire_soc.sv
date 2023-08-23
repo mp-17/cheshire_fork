@@ -1680,19 +1680,19 @@ module cheshire_soc import cheshire_pkg::*; #(
       .reg_req_t  ( reg_req_t ),
       .reg_rsp_t  ( reg_rsp_t )
     ) i_spi_host (
-      .clk_i,
-      .rst_ni,
-      .reg_req_i        ( reg_out_req[RegOut.spi_host] ),
-      .reg_rsp_o        ( reg_out_rsp[RegOut.spi_host] ),
-      .cio_sck_o        ( spih_sck_o    ),
-      .cio_sck_en_o     ( spih_sck_en_o ),
-      .cio_csb_o        ( {spih_csb_dummy,    spih_csb_o   } ),
-      .cio_csb_en_o     ( {spih_csb_dummy_en, spih_csb_en_o} ),
-      .cio_sd_o         ( spih_sd_o     ),
-      .cio_sd_en_o      ( spih_sd_en_o  ),
-      .cio_sd_i         ( spih_sd_i     ),
-      .intr_error_o     ( intr.spih_error     ),
-      .intr_spi_event_o ( intr.spih_spi_event )
+      (* mark_debug = "true" *) .clk_i,
+      (* mark_debug = "true" *) .rst_ni,
+      (* mark_debug = "true" *) .reg_req_i        ( reg_out_req[RegOut.spi_host] ),
+      (* mark_debug = "true" *) .reg_rsp_o        ( reg_out_rsp[RegOut.spi_host] ),
+      (* mark_debug = "true" *) .cio_sck_o        ( spih_sck_o    ),
+      (* mark_debug = "true" *) .cio_sck_en_o     ( spih_sck_en_o ),
+      (* mark_debug = "true" *) .cio_csb_o        ( {spih_csb_dummy,    spih_csb_o   } ),
+      (* mark_debug = "true" *) .cio_csb_en_o     ( {spih_csb_dummy_en, spih_csb_en_o} ),
+      (* mark_debug = "true" *) .cio_sd_o         ( spih_sd_o     ),
+      (* mark_debug = "true" *) .cio_sd_en_o      ( spih_sd_en_o  ),
+      (* mark_debug = "true" *) .cio_sd_i         ( spih_sd_i     ),
+      (* mark_debug = "true" *) .intr_error_o     ( intr.spih_error     ),
+      (* mark_debug = "true" *) .intr_spi_event_o ( intr.spih_spi_event )
     );
 
   end else begin : gen_no_spi_host

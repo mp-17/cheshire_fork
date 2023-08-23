@@ -61,13 +61,8 @@ module cheshire_top_xilinx
 `endif
 
 `ifdef USE_QSPI
-`ifndef USE_STARTUPE3
-  output logic        qspi_clk,
-  input  logic        qspi_dq0,
-  input  logic        qspi_dq1,
-  input  logic        qspi_dq2,
-  input  logic        qspi_dq3,
-  output logic        qspi_cs_b,
+`ifndef USE_STARTUPE3  
+  // TODO: off-chip qspi interface
 `endif // USE_STARTUPE3
 `endif // USE_QSPI
 
@@ -158,28 +153,23 @@ module cheshire_top_xilinx
     // Features
     Bootrom           : 1,
     Uart              : 1,
-    // I2c               : 1, // Disable
+    I2c               : 1,
     // BUG: because of hard-coded value axi_llc_pkg::UseIdBits=4 in axi_llc_top.sv:473, 
     //      there must be at least 3 masters (excluding Ara) (e.g., CVA6, Dbg, Dma)
     //      because AxiSlvidWidth must be at least 4 for the LLC
     //      NOTE: depending on axi_llc implementation, it might need to be **exactly** 4, so either 3 or 4 masters 
-    // SpiHost           : 1, // Disable OpenTitan SPI core
-    // Gpio              : 1, // Disable 
+    SpiHost           : 1,
+    Gpio              : 1,
     Dma               : 1, 
     SerialLink        : 0,
-    // Vga               : 1, // Disable
+    Vga               : 1,
     // Debug
-`ifdef TARGET_BSCANE
-    DbgIdCode         : '1, // Unused wih BSCANE
-`else
     DbgIdCode         : CheshireIdCode, 
-`endif // TARGET_VCU128 
     DbgMaxReqs        : 4,
     DbgMaxReadTxns    : 4,
     DbgMaxWriteTxns   : 4,
     DbgAmoNumCuts     : 1,
     DbgAmoPostCut     : 1,
-    // SPMLength = SetAssociativity * NumLines * NumBlocks * (AxiCfg.DataWidthFull / 32'd8)
     // LLC: 128 KiB, up to 2 GiB DRAM
     LlcNotBypass      : 1,
     LlcSetAssoc       : 8,
@@ -246,115 +236,6 @@ module cheshire_top_xilinx
 
 `ifdef TARGET_XLNX_QSPI
 
-`ifdef QSPI_AXI_LITE
-  // NOTE: UNTESTED, this code is here as a reference for a possible AXI-lite integration
-  
-  // // AXI types
-  // // Define types needed
-  // // `CHESHIRE_TYPEDEF_AXI_CT(axi_lite_qspi, addr_t, axi_slv_id_t, logic [31:0], logic [3:0], axi_user_t) 
-  // // AXI-lite
-  //   `AXI_LITE_TYPEDEF_ALL ( axi_lite_qspi, logic [6:0], logic [31:0], logic [3:0] )
-  //   axi_lite_qspi_req_t  axi_lite_qspi_req;
-  //   axi_lite_qspi_resp_t axi_lite_qspi_resp;
-  // // AXI-full 32bit
-  //   `AXI_TYPEDEF_ALL      ( axi_qspi_d32 , addr_t, axi_slv_id_t, logic [31:0], logic [3:0], axi_user_t )
-  //   axi_qspi_d32_req_t axi_qspi_d32_req;
-  //   axi_qspi_d32_resp_t axi_qspi_d32_resp;
-  // // AXI-full full width
-  //   axi_slv_req_t axi_qspi_req;
-  //   axi_slv_resp_t axi_qspi_resp;
-
-  // AXI-Lite
-  // // Connects as a 32-bit slave on either AXI4-Lite (or AXI4 interface)
-  //   xlnx_qspi i_axi_lite_quad_spi(
-  //     .ext_spi_clk    ( soc_clk             ), 
-  //     .s_axi4_aclk    ( soc_clk             ), 
-  //     .s_axi4_aresetn ( rst_n            ), // in Occamy BD: peripheral reset 
-  //     .s_axi4_awaddr  ( axi_lite_qspi_req .aw.addr  ), // ( spi_lite.aw_addr  ),
-  //     .s_axi4_awvalid ( axi_lite_qspi_req .aw_valid ), // ( spi_lite.aw_valid ),
-  //     .s_axi4_awready ( axi_lite_qspi_resp.aw_ready ), // ( spi_lite.aw_ready ),
-  //     .s_axi4_wdata   ( axi_lite_qspi_req .w.data   ), // ( spi_lite.w_data   ),
-  //     .s_axi4_wstrb   ( axi_lite_qspi_req .w.strb   ), // ( spi_lite.w_strb   ),
-  //     .s_axi4_wvalid  ( axi_lite_qspi_req .w_valid  ), // ( spi_lite.w_valid  ),
-  //     .s_axi4_wready  ( axi_lite_qspi_resp.w_ready  ), // ( spi_lite.w_ready  ),
-  //     .s_axi4_bresp   ( axi_lite_qspi_resp.b.axi_qspi_resp  ), // ( spi_lite.b_resp   ),
-  //     .s_axi4_bvalid  ( axi_lite_qspi_resp.b_valid  ), // ( spi_lite.b_valid  ),
-  //     .s_axi4_bready  ( axi_lite_qspi_req .b_ready  ), // ( spi_lite.b_ready  ),
-  //     .s_axi4_araddr  ( axi_lite_qspi_req .ar.addr  ), // ( spi_lite.ar_addr  ),
-  //     .s_axi4_arvalid ( axi_lite_qspi_req .ar_valid ), // ( spi_lite.ar_valid ),
-  //     .s_axi4_arready ( axi_lite_qspi_resp.ar_ready ), // ( spi_lite.ar_ready ),
-  //     .s_axi4_rdata   ( axi_lite_qspi_resp.r.data   ), // ( spi_lite.r_data   ),
-  //     .s_axi4_rresp   ( axi_lite_qspi_resp.r.axi_qspi_resp  ), // ( spi_lite.r_resp   ),
-  //     .s_axi4_rvalid  ( axi_lite_qspi_resp.r_valid  ), // ( spi_lite.r_valid  ),
-  //     .s_axi4_rready  ( axi_lite_qspi_req .r_ready  ), // ( spi_lite.r_ready  ),
-  //     .cfgclk        (                   ),
-  //     .cfgmclk       (                   ),
-  //     .eos           (                   ),
-  //     .preq          (                   ),
-  //     .gsr           ( 1'b0              ), 
-  //     .gts           ( 1'b1              ), in Occamy BD: 1'b0
-  //     .keyclearb     ( 1'b1              ), 
-  //     .usrcclkts     ( 1'b0              ), 
-  //     .usrdoneo      ( 1'b1              ), 
-  //     .usrdonets     ( 1'b1              ), 
-  // // .ip2intc_irpt  ( irq_sources[0]    ) //TODO: connect this to plic
-  //     .ip2intc_irpt  (                   ) //TODO: connect this to plic
-  //   );
-      
-  // // Convert AXI Lite to AXI
-  //   axi_to_axi_lite #(
-  //     .AxiAddrWidth    ( Cfg.AddrWidth        ),
-  //     .AxiDataWidth    ( 32                   ),
-  //     .AxiIdWidth      ( AxiSlvIdWidth        ),
-  //     .AxiUserWidth    ( Cfg.AxiUserWidth     ),
-  //     .AxiMaxReadTxns  ( 1                    ),       
-  //     .AxiMaxWriteTxns ( 1                    ),
-  //     .FallThrough     ( 1'b0                 ),
-  //     .full_req_t      ( axi_slv_req_t        ),
-  //     .full_resp_t     ( axi_slv_resp_t        ),
-  //     .lite_req_t      ( axi_lite_qspi_req_t  ),
-  //     .lite_resp_t     ( axi_lite_qspi_resp_t )
-  //   ) i_axi_to_axi_lite (
-  //     .clk_i      ( soc_clk             ),
-  //     .rst_ni     ( rst_n              ),
-  //     .test_i     ( 1'b0               ),
-  //     .slv_req_i  ( axi_qspi_req       ),
-  //     .slv_resp_o ( axi_qspi_resp      ),
-  //     .mst_req_o  ( axi_lite_qspi_req  ),
-  //     .mst_resp_i ( axi_lite_qspi_resp )
-  //   ); 
-
-  // // Convert AXI full 32-bit to full width
-  //   axi_dw_converter #(
-  //     .AxiSlvPortDataWidth ( Cfg.AxiDataWidth         ),
-  //     .AxiMstPortDataWidth ( 32                       ),
-  //     .AxiAddrWidth        ( Cfg.AddrWidth            ),
-  //     .AxiIdWidth          ( AxiSlvIdWidth        ),
-  //     .AxiMaxReads         ( 4                        ),
-  //     .ar_chan_t           ( axi_qspi_d32_ar_chan_t   ),
-  //     .mst_r_chan_t        ( axi_qspi_d32_r_chan_t    ),
-  //     .slv_r_chan_t        ( axi_slv_r_chan_t         ),
-  //     .aw_chan_t           ( axi_qspi_d32_aw_chan_t   ),
-  //     .b_chan_t            ( axi_qspi_d32_b_chan_t    ),
-  //     .mst_w_chan_t        ( axi_qspi_d32_w_chan_t    ),
-  //     .slv_w_chan_t        ( axi_slv_w_chan_t         ),
-  //     .axi_mst_req_t       ( axi_qspi_d32_req_t       ),
-  //     .axi_mst_resp_t      ( axi_qspi_d32_resp_t      ),
-  //     .axi_slv_req_t       ( axi_slv_req_t            ),
-  //     .axi_slv_resp_t      ( axi_slv_resp_t            )
-  //   ) i_ariane_axi_dwc (
-  //     .clk_i      ( soc_clk          ),
-  //     .rst_ni     ( rst_n            ),
-  //     .slv_req_i  ( axi_qspi_req     ),
-  //     .slv_resp_o ( axi_qspi_resp    ),
-  //     .mst_req_o  ( axi_qspi_d32_req ),
-  //     .mst_resp_i ( axi_qspi_d32_resp )
-  //   );
-  // TODO: test with u-boot drivers
-
-`endif // QSPI_AXI_LITE
-
-`ifdef QSPI_AXI4
   // TODO: test with u-boot drivers
   // TODO: handle width mismatches, possibly use adapters from axi library to be safe
 
@@ -423,8 +304,6 @@ module cheshire_top_xilinx
     .ip2intc_irpt    ( qspi_intr               ) // output wire ip2intc_irpt
   );
   
-`endif // QSPI_AXI
-
 `endif // TARGET_XLNX_QSPI
 
   ///////////////////
@@ -436,7 +315,7 @@ module cheshire_top_xilinx
   logic         testmode_i;
   logic [1:0]   boot_mode_i;
   assign testmode_i  = '0;
-  assign boot_mode_i = 2'b00; // Passive boot (see cheshire_regs.json)
+  assign boot_mode_i = 2'b00;
 `endif
 
   // Give VDD and GND to JTAG dongle
@@ -502,7 +381,7 @@ module cheshire_top_xilinx
   xlnx_vio i_xlnx_vio (
     .clk(soc_clk),
     .probe_out0(vio_reset),
-    .probe_out1(vio_boot_mode), // WARNING: [Synth 8-689] width (2) of port connection 'probe_out1' does not match port width (1) of module 'xlnx_vio' 
+    .probe_out1(vio_boot_mode),
     .probe_out2(vio_boot_mode_sel)
   );
 `else
@@ -639,11 +518,11 @@ module cheshire_top_xilinx
   assign qspi_dqo      = spi_sd_soc_out;
   assign spi_sd_soc_in = qspi_dqi;
   // Tristate - Enable
-  assign qspi_clk_ts  = ~(spi_sck_en);
-  assign qspi_cs_b_ts = ~(spi_cs_en);
-  assign qspi_dqo_ts  = ~(spi_sd_en);
+  assign qspi_clk_ts  = ~spi_sck_en;
+  assign qspi_cs_b_ts = ~spi_cs_en;
+  assign qspi_dqo_ts  = ~spi_sd_en;
 
-  // On VCU128, SPI ports are not directly available
+  // On VCU128/ZCU102, SPI ports are not directly available
 `ifdef USE_STARTUPE3
   STARTUPE3 #(
      .PROG_USR("FALSE"),
@@ -669,9 +548,7 @@ module cheshire_top_xilinx
      .USRDONETS (1'b1)
   );
 `else
-  assign qspi_clk_o = qspi_clk;
-  assign qspi_dqi = qspi_dq_i;
-  assign qspi_cs_b_o = qspi_cs_b;
+  // TODO: off-chip qspi interface
 `endif // USE_STARTUPE3
 
 `endif // USE_QSPI
@@ -759,15 +636,15 @@ module cheshire_top_xilinx
     .axi_llc_mst_rsp_i  ( axi_llc_mst_rsp ),
     .axi_ext_mst_req_i  ( '0 ),
     .axi_ext_mst_rsp_o  ( ),
-`ifdef QSPI_AXI4
+`ifdef TARGET_XLNX_QSPI
     .axi_ext_slv_req_o  ( axi_ext_req    ),
     .axi_ext_slv_rsp_i  ( axi_ext_resp   ),
     .intr_ext_i         ( intr_ext_chs   ),
-`else  // ! QSPI_AXI4
+`else  // ! TARGET_XLNX_QSPI
     .axi_ext_slv_req_o  (    ),
     .axi_ext_slv_rsp_i  ( '0 ),
     .intr_ext_i         ( '0 ),
-`endif // QSPI_AXI4
+`endif // TARGET_XLNX_QSPI
     .reg_ext_slv_req_o  ( ),
     .reg_ext_slv_rsp_i  ( '0 ),
     .meip_ext_o         ( ),

@@ -47,7 +47,8 @@ sources:
       - target/sim/src/vip_cheshire_soc.sv
       - target/sim/src/fixture_cheshire_soc.sv
       - target/sim/src/tb_cheshire_soc.sv
-  - target: any(fpga, xilinx)
+
+  - target: all(fpga, xilinx)
     files:
       - target/xilinx/src/fan_ctrl.sv
       - target/xilinx/src/dram_wrapper.sv

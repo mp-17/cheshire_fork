@@ -103,7 +103,6 @@ module dram_wrapper #(
   axi_soc_resp_t soc_spill_rsp, spill_resizer_rsp;
 
   // Signals after resizing
-  // (* mark_debug = "true" *) axi_ddr_req_t resizer_cdc_req, cdc_spill_req;
   axi_ddr_req_t resizer_cdc_req, cdc_spill_req;
   axi_ddr_req_t spill_dram_req;
   axi_ddr_resp_t resizer_cdc_rsp, cdc_spill_rsp;

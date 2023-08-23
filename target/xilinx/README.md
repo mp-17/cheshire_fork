@@ -22,7 +22,7 @@ List of variables available for override and default values:
 - ARA_NR_LANES=[2|4|8] (default:2)
 - DEBUG_RUN: (default:1)
     - 0: configure the build with the variables below
-    - 1: overrides all the ones below, and sets fastest runtime
+    - 1: overrides all the ones below, sets fastest runtime and instantiates ILAs on nets
 - IMPL_STRATEGY (default:Performance_ExtraTimingOpt)
     - must be supported by your vivado version
 - SYNTH_STRATEGY (default:Flow_PerfOptimized_high)
