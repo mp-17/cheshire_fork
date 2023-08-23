@@ -10,7 +10,7 @@ CHS_ROOT ?= .
 
 include cheshire.mk
 
-# Inside the repo, forward (prefixed) all and nonfree targets
+# Inside the repo, forward (prefixed) all, nonfree, and clean targets
 all: patches
 	@$(MAKE) chs-all
 
@@ -28,3 +28,7 @@ patches:
 	-patch .bender/git/checkouts/ara-*/Bender.yml patches/bender_git_checkouts_ara_Bender.yml.patch 
 	-patch .bender/git/checkouts/ara-*/hardware/src/vlsu/vlsu.sv patches/bender_git_checkouts_ara_hardware_src_vlsu_vlsu.sv.patch
 	
+# Quick workaround for cva6-sdk not finding the DTB/FDT in this repo
+# Expose a target to update it (just touching would not work)
+dtb:
+	dtc -I dts -O dtb -i $(CHS_SW_DIR)/boot $(CHS_SW_DIR)/boot/cheshire_$(BOARD).dts -o $(CHS_SW_DIR)/boot/cheshire_$(BOARD).dtb 

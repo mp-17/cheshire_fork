@@ -35,14 +35,19 @@ ifeq ($(BOARD),vcu128)
 	ifeq ($(VCU128),1)
 		XILINX_PORT	 ?= 3231 
 		FPGA_PATH	 ?= xilinx_tcf/Xilinx/091847100576A 
+		GDB_LOCAL_PORT  ?= 3337
+		GDB_REMOTE_PORT ?= 3337
 	endif
 # 	VCU128-02
 	ifeq ($(VCU128),2)
 		XILINX_PORT	 ?= 3232
 		FPGA_PATH	 ?= xilinx_tcf/Xilinx/091847100638A 
+		GDB_LOCAL_PORT  ?= 3333
+		GDB_REMOTE_PORT ?= 3334
 	endif
 	FPGA_DEVICE	 ?= xcvu37p_0
-	IPS_NAMES    := xlnx_vio xlnx_mig_ddr4 xlnx_qspi xlnx_clk_wiz 
+# IPS_NAMES    := xlnx_vio xlnx_mig_ddr4 xlnx_qspi xlnx_clk_wiz 
+	IPS_NAMES    := xlnx_vio xlnx_mig_ddr4 xlnx_clk_wiz 
 # Choose whether to use BSCANE2 or external scanchain for the debug module 
 	ifeq ($(EXT_JTAG),0)
 		BENDER_TARGETS += -t bscane
@@ -56,10 +61,6 @@ endif
 # Define TARGET_<ip> macro with bender
 IPS := $(addsuffix .xci ,$(basename $(IPS_NAMES)))
 BENDER_TARGETS += $(addprefix -t ,$(basename $(IPS)))
-# Define QSPI IP configuration (mutually exclusive)
-# NOTE: This could be embedded in the IPs generation
-# BENDER_DEFS += --define QSPI_AXI_LITE
-BENDER_DEFS += --define QSPI_AXI4
 IP_DIR := xilinx
 
 DEBUG_RUN ?= 1
@@ -73,12 +74,14 @@ else
 endif
 ifeq ($(EXT_JTAG),1)
 	PROJECT := $(PROJECT)_EXT_JTAG
+else
+	PROJECT := $(PROJECT)_INT_JTAG
 endif
 
 TCL_DIR := $(PWD)/scripts/tcl
 out := out
 BIT ?= $(out)/$(PROJECT).bit
-MCS ?= $(out)/$(PROJECT).mcs
+# MCS ?= $(out)/$(PROJECT).mcs
 LTX ?= $(out)/$(PROJECT).ltx
 
 VIVADOENV ?=  PROJECT="$(PROJECT)"          	\
@@ -94,8 +97,9 @@ VIVADOENV ?=  PROJECT="$(PROJECT)"          	\
               IMPL_STRATEGY=$(IMPL_STRATEGY) 	\
               SYNTH_STRATEGY=$(SYNTH_STRATEGY) 	\
               DEBUG_RUN=$(DEBUG_RUN)        	\
-              LTX="$(LTX)"          	       	\
-              MCS="$(MCS)"
+              LTX="$(LTX)"          	       
+#   	\
+#   MCS="$(MCS)"
 MODE        ?= batch
 VIVADOFLAGS ?= -nojournal -mode $(MODE)
 # Define TARGET_$(BOARD) macro with bender
@@ -149,67 +153,62 @@ program: #$(BIT)
 # This must be forked from pulp-platform and checked-out at the cheshire branch, not the main from openhw
 CVA6_SDK				?= ../../../cva6-sdk
 
-U_BOOT_SPL_FILE			?= $(CVA6_SDK)/u-boot/spl/u-boot-spl
-FW_PAYLOAD_FILE			?= $(CVA6_SDK)/install64/fw_payload.elf 
-SPIKE_FW_PAYLOAD_FILE	?= $(CVA6_SDK)/install64/spike_fw_payload.elf 
-LINUX_UIMAGE_FILE		?= $(CVA6_SDK)/install64/uImage
-DTB_FILE				?= cheshire.dtb 
+# FW_PAYLOAD_FILE			?= $(CVA6_SDK)/install64/fw_payload.elf 
+# SPIKE_FW_PAYLOAD_FILE	?= $(CVA6_SDK)/install64/spike_fw_payload.elf 
+# LINUX_UIMAGE_FILE		?= $(CVA6_SDK)/install64/uImage
+# DTB_FILE				?= cheshire_$(BOARD).dtb 
 # Same offsets as u-boot "sf read" command, 
 # see pulp-platform/cva6-sdk/u-boot/configs/pulp-platform_cheshire_defconfig:CONFIG_BOOTCOMMAND
-LINUX_UIMAGE_FLASH_OFFSET	?= 0x6100000
-FW_PAYLOAD_FLASH_OFFSET		?= 0x6000000 
+# LINUX_UIMAGE_FLASH_OFFSET	?= 0x6100000
+# FW_PAYLOAD_FLASH_OFFSET		?= 0x6000000 
 
-# This must be in the SPM
-# see sw/link/common.ldh
-# FW_TEXT_START		:= 0x10000000
-# FW_PAYLOAD_FDT_ADDR := 0x10800000
-
-write_cfgmem: #$(FLASH_FILE)
+write_cfgmem: 
 	$(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source $(TCL_DIR)/write_cfgmem.tcl \
 		-tclargs $(MCS_FILE) $(FLASH_OFFSET) $(FLASH_FILE)
 
+flash_spi_gpt: FLASH_FILE=../../sw/boot/linux-$(BOARD).gpt.bin  
+flash_spi_gpt: MCS_FILE=linux-$(BOARD).gpt.mcs 
+flash_spi_gpt: FLASH_OFFSET=0
+flash_spi_gpt: write_cfgmem
+flash_spi_gpt: flash_spi
+
 flash_spi: $(MCS_FILE) 
-	@echo "Flashing QSPI for board $(BOARD) ($(XILINX_PART))"
+	@echo "Flashing QSPI for board $(BOARD) ($(XILINX_PART)) with file $(MCS_FILE)"
 	$(VIVADOENV) $(VIVADO_BORDCOMPUTER) $(VIVADOFLAGS) -source $(TCL_DIR)/flash_spi.tcl -tclargs $(MCS_FILE) 
 
 # TODO: merge operations in a single script with multiple arguments
-flash_uImage: $(LINUX_UIMAGE_FILE)
-	make write_cfgmem MCS_FILE=$@.mcs FLASH_OFFSET=$(LINUX_UIMAGE_FLASH_OFFSET) FLASH_FILE=$(LINUX_UIMAGE_FILE)
-	make flash_spi    MCS_FILE=$@.mcs	
+# flash_uImage: $(LINUX_UIMAGE_FILE)
+# 	make write_cfgmem MCS_FILE=$@.mcs FLASH_OFFSET=$(LINUX_UIMAGE_FLASH_OFFSET) FLASH_FILE=$(LINUX_UIMAGE_FILE)
+# 	make flash_spi    MCS_FILE=$@.mcs	
 #	(Untested) \
 # $(VIVADOENV) $(VIVADO_BORDCOMPUTER) $(VIVADOFLAGS) \
 # 	-source $(TCL_DIR)/write_cfgmem.tcl -tclargs $(MCS_FILE) $(FLASH_OFFSET) $(FLASH_FILE) \
 # 	-source $(TCL_DIR)/flash_spi.tcl 	 -tclargs $(MCS_FILE) 
 
+# flash_fw_payload: $(FW_PAYLOAD_FILE)
+# 	make write_cfgmem MCS_FILE=$@.mcs FLASH_OFFSET=$(LINUX_UIMAGE_FLASH_OFFSET) FLASH_FILE=$(LINUX_UIMAGE_FILE)
+# 	make flash_spi    MCS_FILE=$@.mcs	
 
-$(LINUX_UIMAGE_FILE): uImage
-uImage: 
-	make -C $(CVA6_SDK) $@
+# $(DTB_FILE): dtb
+# dtb: ../../sw/boot/$(BOARD).dts 
+# 	dtc -I dts -O dtb -o $(DTB_FILE) $<
 
-flash_fw_payload: $(FW_PAYLOAD_FILE)
-	make write_cfgmem MCS_FILE=$@.mcs FLASH_OFFSET=$(LINUX_UIMAGE_FLASH_OFFSET) FLASH_FILE=$(LINUX_UIMAGE_FILE)
-	make flash_spi    MCS_FILE=$@.mcs	
+# # OpenSBI + U-boot
+# # DTB/FDT is included in the OpenSBI payload
+# $(FW_PAYLOAD_FILE): fw_payload
+# fw_payload: $(DTB_FILE)
+# 	make -C $(CVA6_SDK) fw_payload.bin FW_FDT_PATH=$(realpath $(DTB_FILE))
 
-$(DTB_FILE): dtb
-dtb: ../../sw/boot/cheshire.dts 
-	dtc -I dts -O dtb -o $(DTB_FILE) $<
+# # OpenSBI + uImage
+# spike_payload: $(DTB_FILE)
+# 	make -C $(CVA6_SDK) spike_payload FW_FDT_PATH=$(realpath $(DTB_FILE))
 
-# OpenSBI + U-boot
-# DTB/FDT is included in the OpenSBI payload
-$(FW_PAYLOAD_FILE): fw_payload
-fw_payload: $(DTB_FILE)
-	make -C $(CVA6_SDK) fw_payload.bin FW_FDT_PATH=$(realpath $(DTB_FILE))
-
-# OpenSBI + uImage
-spike_payload: $(DTB_FILE)
-	make -C $(CVA6_SDK) spike_payload FW_FDT_PATH=$(realpath $(DTB_FILE))
-
-# This will not clean buildroot
-clean_cva6-sdk:
-	make -C $(CVA6_SDK) clean 
-
-clean-all_cva6-sdk:
-	make -C $(CVA6_SDK) clean-all
+# Launch gdb
+# GDB ?= riscv64-unknown-elf-gdb 
+GDB ?= /usr/scratch/fenga3/vmaisto/cva6-sdk_fork_update_kernel/buildroot/output/host/bin/riscv64-buildroot-linux-gnu-gdb
+launch_gdb:
+	-ssh -L $(GDB_LOCAL_PORT):localhost:$(GDB_REMOTE_PORT) -C -N -f -l $$USER $(XILINX_HOST)
+	$(GDB) -ex "target extended-remote :$(GDB_LOCAL_PORT)"
 
 # Spare IPS from clean
 clean:
@@ -220,7 +219,7 @@ clean:
 	# Programming files
 	rm -rf *.mcs *.prm
 	# Software products
-	rm -rf cheshire.dtb fw_payload.elf spike_fw_payload.elf
+	rm -rf cheshire.dtb fw_payload.elf spike_fw_payload.elf linux-*gpt.*
 
 clean_ips:
 	rm -rf *.xci

@@ -10,29 +10,15 @@ source $::env(TCL_DIR)/prologue.tcl
 switch $::env(BOARD) {
  "vcu128" {
     puts "Building for supported board: $::env(BOARD)"
-  }
-  default {
-      exit 1
-  }
-}
-
-# Ips selection
-switch $::env(BOARD) {
-  "genesys2" - "kc705" - "vc707" {
-    set ips { "../xilinx/xlnx_mig_7_ddr3/xlnx_mig_7_ddr3.srcs/sources_1/ip/xlnx_mig_7_ddr3/xlnx_mig_7_ddr3.xci" }
-  }
-  "vcu128" {
     set ips { "../xilinx/xlnx_mig_ddr4/xlnx_mig_ddr4.srcs/sources_1/ip/xlnx_mig_ddr4/xlnx_mig_ddr4.xci" \
               "../xilinx/xlnx_vio/xlnx_vio.srcs/sources_1/ip/xlnx_vio/xlnx_vio.xci" \
               "../xilinx/xlnx_qspi/xlnx_qspi.srcs/sources_1/ip/xlnx_qspi/xlnx_qspi.xci" \
               "../xilinx/xlnx_clk_wiz/xlnx_clk_wiz.srcs/sources_1/ip/xlnx_clk_wiz/xlnx_clk_wiz.xci" \
             }
   }
-  "zcu102" {
-    set ips { "../xilinx/xlnx_mig_ddr4/xlnx_mig_ddr4.srcs/sources_1/ip/xlnx_mig_ddr4/xlnx_mig_ddr4.xci"}
-  }
   default {
-    set ips {}
+    puts "Unsupported board: $::env(BOARD)"
+    exit 1
   }
 }
 
@@ -90,6 +76,10 @@ if { $::env(DEBUG_RUN) eq "1" } {
   set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/csr_regfile_i/mcause_q*/Q ]]
   set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/csr_regfile_i/mtval_q*/Q  ]]
   set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/csr_regfile_i/cycle_q*/Q  ]]
+  if { $::env(ARA) eq "1" } {
+    set_property MARK_DEBUG 1 [get_nets -of [get_cells i_cheshire_soc/i_ara                         ]]
+  }
+
 }  
 
 # Include also those signals which are arked as debug in RTL

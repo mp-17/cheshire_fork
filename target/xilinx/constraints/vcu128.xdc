@@ -6,7 +6,9 @@
 # Sys clock #
 #############
 
-create_clock -period 10 -name sys_clk [get_pins u_ibufg_sys_clk/O]
+# 100 MHz ref clock
+set SYS_TCK 10
+create_clock -period $SYS_TCK -name sys_clk [get_pins u_ibufg_sys_clk/O]
 set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_pins u_ibufg_sys_clk/O]
 set_clock_groups -name sys_clk_async -asynchronous -group {sys_clk}
 
@@ -14,15 +16,46 @@ set_clock_groups -name sys_clk_async -asynchronous -group {sys_clk}
 # Mig clock #
 #############
 
+# Dram axi clock : 833ps * 4
+set MIG_TCK 3.332
 set MIG_RST [get_pins i_dram_wrapper/i_dram/c0_ddr4_ui_clk_sync_rst]
-#create_clock -period 10 -name dram_axi_clk [get_pins i_dram_wrapper/i_dram/c0_ddr4_ui_clk]
+create_clock -period $MIG_TCK -name dram_axi_clk [get_pins i_dram_wrapper/i_dram/c0_ddr4_ui_clk]
+set_clock_groups -name dram_async -asynchronous -group {dram_axi_clk}
 set_false_path -hold -through $MIG_RST
-set_max_delay -through $MIG_RST 10
+set_max_delay -through $MIG_RST $MIG_TCK
 
-# 333 MHz (max) DRAM Axi clock
-set DRAM_CLK 3.0
-set_max_delay -datapath -from [get_pins i_dram_wrapper/gen_cdc.i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_*/*reg*/C] -to [get_pins i_dram_wrapper/gen_cdc.i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_dst_*/*i_sync/reg*/D] $DRAM_CLK
-set_max_delay -datapath -from [get_pins i_dram_wrapper/gen_cdc.i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_*/*reg*/C] -to [get_pins i_dram_wrapper/gen_cdc.i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_*/i_spill_register/spill_register_flushable_i/*reg*/D] $DRAM_CLK
+########
+# CDCs #
+########
+
+set_max_delay -through [get_nets -of_objects [get_cells i_dram_wrapper/gen_cdc.i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_*/*] -filter {NAME=~*async*}] $MIG_TCK
+set_max_delay -datapath -from [get_pins i_dram_wrapper/gen_cdc.i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_*/*reg*/C] -to [get_pins i_dram_wrapper/gen_cdc.i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_dst_*/*i_sync/reg*/D] $MIG_TCK
+
+###############
+# Xilinx QSPI #
+###############
+# From https://github.com/AlSaqr-platform/he-soc/blob/master/hardware/fpga/alsaqr/tcl/constraints.xdc#L38
+# tested on vivado-2018.2
+# SPI-STARTUPE3 Ultrascale+
+# Following are the SPI device parameters
+set tco_max 7
+set tco_min 1
+set tsu 2
+set th 3
+set tdata_trace_delay_max 0.25
+set tdata_trace_delay_min 0.25
+set tclk_trace_delay_max 0.2
+set tclk_trace_delay_min 0.2
+create_generated_clock -name clk_sck -source [get_pins -hierarchical *i_axi_full_quad_spi/ext_spi_clk] [get_pins -hierarchical */CCLK] -edges {3 5 7}
+set_input_delay -clock clk_sck -max [expr $tco_max + $tdata_trace_delay_max + $tclk_trace_delay_max] [get_pins -hierarchical *STARTUP*/DATA_IN[*]] -clock_fall;
+set_input_delay -clock clk_sck -min [expr $tco_min + $tdata_trace_delay_min + $tclk_trace_delay_min] [get_pins -hierarchical *STARTUP*/DATA_IN[*]] -clock_fall;
+set_multicycle_path 2 -setup -from clk_sck -to [get_clocks -of_objects [get_pins -hierarchical */ext_spi_clk]]
+set_multicycle_path 1 -hold -end -from clk_sck -to [get_clocks -of_objects [get_pins -hierarchical */ext_spi_clk]]
+set_output_delay -clock clk_sck -max [expr $tsu + $tdata_trace_delay_max -$tclk_trace_delay_min] [get_pins -hierarchical *STARTUP*/DATA_OUT[*]];
+set_output_delay -clock clk_sck -min [expr $tdata_trace_delay_min -$th -$tclk_trace_delay_max] [get_pins -hierarchical *STARTUP*/DATA_OUT[*]];
+set_multicycle_path 2 -setup -start -from [get_clocks -of_objects [get_pins -hierarchical */ext_spi_clk]] -to clk_sck
+set_multicycle_path 1 -hold -from [get_clocks -of_objects [get_pins -hierarchical */ext_spi_clk]] -to clk_sck
+# TODO: fix [Timing 38-316] Clock period '20.000' specified during out-of-context synthesis of instance 'i_axi_full_quad_spi' at clock pin 'ext_spi_clk' is different from the actual clock period '5.000', this can lead to different synthesis results.
 
 #################################################################################
 
