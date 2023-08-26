@@ -2,38 +2,47 @@
 # Solderpad Hardware License, Version 0.51, see LICENSE for details.
 # SPDX-License-Identifier: SHL-0.51
 #
-# Author: Florian Zaruba <zarubaf@iis.ee.ethz.ch>
+# Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
+
+source $::env(TCL_DIR)/prologue.tcl
 
 # Contraints files selection
 switch $::env(BOARD) {
-  "genesys2" - "kc705" - "vc707" - "vcu128" - "zcu102" {
-    import_files -fileset constrs_1 -norecurse ../constraints/cheshire.xdc
-    import_files -fileset constrs_1 -norecurse ../constraints/$::env(BOARD).xdc
+ "vcu128" {
+    puts "Building for supported board: $::env(BOARD)"
+    set ips { "../xilinx/xlnx_mig_ddr4/xlnx_mig_ddr4.srcs/sources_1/ip/xlnx_mig_ddr4/xlnx_mig_ddr4.xci" \
+              "../xilinx/xlnx_vio/xlnx_vio.srcs/sources_1/ip/xlnx_vio/xlnx_vio.xci" \
+              "../xilinx/xlnx_qspi/xlnx_qspi.srcs/sources_1/ip/xlnx_qspi/xlnx_qspi.xci" \
+              "../xilinx/xlnx_clk_wiz/xlnx_clk_wiz.srcs/sources_1/ip/xlnx_clk_wiz/xlnx_clk_wiz.xci" \
+            }
   }
   default {
-      exit 1
+    puts "Unsupported board: $::env(BOARD)"
+    exit 1
   }
 }
 
-# Ips selection
-set ips $::env(IP_PATHS)
 read_ip $ips
 
-source ../scripts/add_sources.tcl
+# Add sources
+source $::env(TCL_DIR)/add_sources.tcl
+# Manually add the sources that submodules will not give bender
+# Yes, this is a dirty solution and a fix should be applied in the interested submodules instead
+set instr_tracer_pkg [exec find ../../../ -name instr_tracer_pkg.sv | grep cva6 | head -n 1]
+add_files -norecurse -fileset [current_fileset] $instr_tracer_pkg
 
 set_property top cheshire_top_xilinx [current_fileset]
 
 update_compile_order -fileset sources_1
 
-# set_property strategy Flow_PerfOptimized_high [get_runs synth_1]
-# set_property strategy Performance_ExtraTimingOpt [get_runs impl_1]
-
+# Add project configuration for Xilinx' memory
 set_property XPM_LIBRARIES XPM_MEMORY [current_project]
 
-# synth_design -rtl -name rtl_1
-
-# set_property used_in_synthesis false [get_files cheshire.xdc]
-# set_property used_in_synthesis false [get_files $::env(BOARD).xdc]
+# Add constraints
+import_files -fileset constrs_1 -norecurse ../constraints/cheshire.xdc
+import_files -fileset constrs_1 -norecurse ../constraints/$::env(BOARD).xdc
+set_property used_in_synthesis false [get_files cheshire.xdc]
+set_property used_in_synthesis false [get_files $::env(BOARD).xdc]
 
 if { $::env(DEBUG_RUN) eq "1" } {
   set_property STRATEGY                                           Flow_RuntimeOptimized    [get_runs synth_1]
@@ -44,10 +53,9 @@ if { $::env(DEBUG_RUN) eq "1" } {
   set_property STEPS.SYNTH_DESIGN.ARGS.RETIMING                   true                     [get_runs synth_1]
 }  
 
-# Synthesis
 launch_runs synth_1
 wait_on_run synth_1
-open_run synth_1 -name synth_1
+open_run synth_1
 
 exec mkdir -p reports/
 exec rm -rf reports/*
@@ -59,27 +67,22 @@ report_utilization -hierarchical -hierarchical_percentage               -file re
 # report_cdc                                                              -file reports/$project.cdc.rpt
 # report_clock_interaction                                                -file reports/$project.clock_interaction.rpt
 
-# Remove black-boxed unreads
-remove_cell [get_cells -hier -filter {ORIG_REF_NAME == "unread" || REF_NAME == "unread"}]
-
 # Add further debug nets
 if { $::env(DEBUG_RUN) eq "1" } {
-  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/axi_req_o*                ]]
-  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/axi_resp_i*               ]]
-  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/i_frontend/pc_commit_i*   ]]
-  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/csr_regfile_i/mepc_q*/Q   ]]
-  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/csr_regfile_i/mcause_q*/Q ]]
-  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/csr_regfile_i/mtval_q*/Q  ]]
-  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/csr_regfile_i/cycle_q*/Q  ]]
+  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/axi_req_o*                ]]
+  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/axi_resp_i*               ]]
+  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/i_frontend/pc_commit_i*   ]]
+  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/csr_regfile_i/mepc_q*/Q   ]]
+  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/csr_regfile_i/mcause_q*/Q ]]
+  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/csr_regfile_i/mtval_q*/Q  ]]
+  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/i_cva6/csr_regfile_i/cycle_q*/Q  ]]
   if { $::env(ARA) eq "1" } {
-    set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/acc_req_i* ]]
-    set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/acc_resp_o*]]
-    set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/axi_req_o* ]]
-    set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/axi_resp_i*]]
+    set_property MARK_DEBUG 1 [get_nets -of [get_cells i_cheshire_soc/i_ara                         ]]
   }
+
 }  
 
-# Instantiate ILA
+# Include also those signals which are arked as debug in RTL
 set DEBUG [llength [get_nets -hier -filter {MARK_DEBUG == 1}]]
 if ($DEBUG) {
     # Create core
@@ -120,12 +123,7 @@ if ($DEBUG) {
     # set_property target_constrs_file cheshire.srcs/constrs_1/imports/constraints/$::env(BOARD).xdc [current_fileset -constrset]
     save_constraints -force
     implement_debug_core
-    write_debug_probes -force probes.ltx
-}
-
-# Incremental implementation
-if {[info exists $::env(ROUTED_DCP)] && [file exists  $::env(ROUTED_DCP)]} {
-  set_property incremental_checkpoint $ $::env(ROUTED_DCP) [get_runs impl_1]
+    write_debug_probes -force ${project}.ltx
 }
 
 # Implementation
@@ -144,25 +142,22 @@ launch_runs impl_1 -to_step write_bitstream
 wait_on_run impl_1
 
 # Check timing constraints
-set timingrep [report_timing_summary -no_header -no_detailed_paths -return_string]
-if {[info exists ::env(CHECK_TIMING)] && $::env(CHECK_TIMING)==1} {
-  if {! [string match -nocase {*timing constraints are met*} $timingrep]} {
-    send_msg_id {USER 1-1} ERROR {Timing constraints were not met.}
-    return -code error
-  }
-}
+open_run impl_1
+# set timingrep [report_timing_summary -no_header -no_detailed_paths -return_string]
+# if {! [string match -nocase {*timing constraints are met*} $timingrep]} {
+#   send_msg_id {USER 1-1} ERROR {Timing constraints were not met.}
+#   # return -code error
+# }
 
 # Output Verilog netlist + SDC for timing simulation
-if {[info exists ::env(EXPORT_SDF)] && $::env(EXPORT_SDF)==1} {
-  write_verilog -force -mode funcsim out/${project}_funcsim.v
-  write_verilog -force -mode timesim out/${project}_timesim.v
-  write_sdf     -force out/${project}_timesim.sdf
-}
+# write_verilog -force -mode funcsim out/${project}_funcsim.v
+# write_verilog -force -mode timesim out/${project}_timesim.v
+# write_sdf     -for -verbose
 
 # Reports
 exec mkdir -p reports/
 exec rm -rf reports/*
-check_timing                                                              -file reports/${project}.check_timing.rpt
+check_timing -verbose                                                     -file reports/${project}.check_timing.rpt
 report_timing -max_paths 100 -nworst 100 -delay_type max -sort_by slack   -file reports/${project}.timing_WORST_100.rpt
 report_timing -nworst 1 -delay_type max -sort_by group                    -file reports/${project}.timing.rpt
 report_utilization -hierarchical -hierarchical_percentage                 -file reports/${project}.utilization.rpt
