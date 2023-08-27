@@ -166,6 +166,12 @@ include $(CHS_ROOT)/target/common/ara.mk
 
 include $(CHS_ROOT)/target/sim/vsim/vsim.mk
 
+#######
+# Ara #
+#######
+
+include $(CHS_ROOT)/target/common/ara.mk
+
 #############
 # Emulation #
 #############
