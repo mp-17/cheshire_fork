@@ -20,11 +20,8 @@ set UART_IO_SPEED 200.0
 # Clocks #
 ##########
 
-# Clk_wiz clocks
-create_clock -period 100 -name clk_10 [get_pins i_xlnx_clk_wiz/clk_10]
-create_clock -period 50 -name clk_20 [get_pins i_xlnx_clk_wiz/clk_20]
-create_clock -period 20 -name clk_50 [get_pins i_xlnx_clk_wiz/clk_50]
-create_clock -period 10 -name clk_100 [get_pins i_xlnx_clk_wiz/clk_100]
+# Clk_wiz clocks are named clk_(100,50,20,10)_xlnx_clk_wiz
+# They are on pins : i_xlnx_clk_wiz/inst/mmcme4_adv_inst/CLKOUT(0,1,2,3)
 
 # System Clock
 # [see in board.xdc]
@@ -93,6 +90,8 @@ set_false_path -hold -to [get_ports uart_tx_o]
 
 # Disable hold checks
 set_property KEEP_HIERARCHY SOFT [get_cells -hier -filter {ORIG_REF_NAME=="sync" || REF_NAME=="sync"}]
+set_false_path -hold -through [get_pins -of_objects [get_cells -hier -filter {ORIG_REF_NAME=="sync" || REF_NAME=="sync"}] -filter {NAME=~*serial_i}]
+
 # src false path
 set_false_path -hold -through [get_pins -of_objects [get_cells -hier -filter {ORIG_REF_NAME == axi_cdc_src || REF_NAME == axi_cdc_src}] -filter {NAME =~ *async*}]
 # dst false path
