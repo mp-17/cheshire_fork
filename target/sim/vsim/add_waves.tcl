@@ -77,7 +77,7 @@ add wave -noupdate -group Ara -group sequencer sim:/tb_cheshire_soc/fix/dut/gen_
 
 # Add waves from all the lanes
 for {set lane 0}  {$lane < 2} {incr lane} {
-    do wave_lane.tcl $lane
+    do wave_lane.post-sim.tcl $lane
 }
 
 add wave -noupdate -group Ara -group masku sim:/tb_cheshire_soc/fix/dut/gen_cva6_cores[0].i_ara/i_masku/*
