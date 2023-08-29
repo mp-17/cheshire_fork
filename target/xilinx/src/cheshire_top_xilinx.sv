@@ -358,14 +358,14 @@ module cheshire_top_xilinx
   // SPI Adaption //
   //////////////////
 
-  (* mark_debug = "true" *) logic spi_sck_soc;
-  (* mark_debug = "true" *) logic [1:0] spi_cs_soc;
-  (* mark_debug = "true" *) logic [3:0] spi_sd_soc_out;
-  (* mark_debug = "true" *) logic [3:0] spi_sd_soc_in;
+  logic spi_sck_soc;
+  logic [1:0] spi_cs_soc;
+  logic [3:0] spi_sd_soc_out;
+  logic [3:0] spi_sd_soc_in;
 
-  (* mark_debug = "true" *) logic spi_sck_en;
-  (* mark_debug = "true" *) logic [1:0] spi_cs_en;
-  (* mark_debug = "true" *) logic [3:0] spi_sd_en;
+  logic spi_sck_en;
+  logic [1:0] spi_cs_en;
+  logic [3:0] spi_sd_en;
 
 `ifdef USE_SD
   // Assert reset low => Apply power to the SD Card

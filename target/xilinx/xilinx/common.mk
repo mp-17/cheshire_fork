@@ -37,12 +37,14 @@ generate_sha256:
 load-artifacts: .generated_sha256
 	@if [ -d "$(ARTIFACTS_PATH)/`cat $<`" ]; then\
 		echo "Fetching $(PROJECT) from $(ARTIFACTS_PATH)/`cat $<`"; \
-		cp -r -d $(ARTIFACTS_PATH)/`cat $<`/* .; \
+		cp -r $(ARTIFACTS_PATH)/`cat $<`/* .; \
 	fi
 
 # Save artifacts (this folder) based on .generated_sha256
 save-artifacts: generate_sha256 load-artifacts $(PROJECT).xpr
-	cp -r . $(ARTIFACTS_PATH)/`cat .generated_sha256`/
+	@if [ ! -d "$(ARTIFACTS_PATH)/`cat .generated_sha256`" ]; then \
+		cp -r . $(ARTIFACTS_PATH)/`cat .generated_sha256`; \
+	fi
 
 gui:
 	$(VIVADOENV) $(VIVADO) -mode gui -source tcl/run.tcl &
