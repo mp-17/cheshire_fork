@@ -51,8 +51,8 @@ set_property CLOCK_BUFFER_TYPE NONE $all_in_mux
 ###################
 
 # set multicycle path on reset, on the FPGA we do not care about the reset anyway
-set_multicycle_path -from [get_pins i_rstgen_main/i_rstgen_bypass/synch_regs_q_reg[3]/C] 4
-set_multicycle_path -from [get_pins i_rstgen_main/i_rstgen_bypass/synch_regs_q_reg[3]/C] 3  -hold
+# set_multicycle_path -from [get_pins i_rstgen_main/i_rstgen_bypass/synch_regs_q_reg[3]/C] 4
+# set_multicycle_path -from [get_pins i_rstgen_main/i_rstgen_bypass/synch_regs_q_reg[3]/C] 3  -hold
 
 ################
 # Clock Groups #

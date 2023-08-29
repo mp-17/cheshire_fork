@@ -2,14 +2,16 @@
 # Licensed under the Apache License, Version 2.0, see LICENSE for details.
 # SPDX-License-Identifier: Apache-2.0
 #
-# Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
+# Nicole Narr <narrn@student.ethz.ch>
+# Christopher Reinwardt <creinwar@student.ethz.ch>
+# Cyril Koenig <cykoenig@iis.ee.ethz.ch>
+# Vincenzo Maisto <vincenzo.maisto2@unina.it>
 
 CHS_XIL_DIR  ?= $(CHS_ROOT)/target/xilinx
 VIVADO       ?= vitis-2020.2 vivado
 
-PROJECT       ?= cheshire
-ip-dir        := $(CHS_XIL_DIR)/xilinx
-USE_ARTIFACTS ?= 0
+PROJECT      ?= cheshire
+ip-dir       := $(CHS_XIL_DIR)/xilinx
 
 # Select board specific variables
 ifeq ($(BOARD),vcu128)
@@ -38,7 +40,7 @@ ifeq ($(BOARD),zcu102)
 endif
 
 ifeq ($(ARA),1)
-	PROJECT := $(PROJECT)_ara_$(ARA_NR_LANES)_lanes
+	PROJECT := $(PROJECT)_ara_$(ARA_NR_LANES)
 else
 	PROJECT := $(PROJECT)_no_ara
 endif
@@ -112,8 +114,9 @@ chs-xil-program: #$(BIT)
 chs-xil-flash: $(CHS_SW_DIR)/boot/linux-${BOARD}.gpt.bin
 	$(VIVADOENV) FILE=$< OFFSET=0 $(VIVADO) $(VIVADOFLAGS) -source $(CHS_XIL_DIR)/scripts/flash_spi.tcl
 
+# Spare IPs from clean
 chs-xil-clean:
-	cd $(CHS_XIL_DIR) && rm -rf scripts/add_sources.tcl* *.log *.jou *.str *.mif *.xci *.xpr .Xil/ $(out) $(PROJECT).srcs $(PROJECT).cache $(PROJECT).hw $(PROJECT).ioplanning $(PROJECT).ip_user_files $(PROJECT).runs $(PROJECT).sim
+	cd $(CHS_XIL_DIR) && rm -rf scripts/add_sources.tcl* *.log *.jou *.str *.mif *.xpr .Xil/ $(out) $(PROJECT).srcs $(PROJECT).cache $(PROJECT).hw $(PROJECT).ioplanning $(PROJECT).ip_user_files $(PROJECT).runs $(PROJECT).sim
 
 # Re-compile only top and not ips
 chs-xil-rebuild-top:

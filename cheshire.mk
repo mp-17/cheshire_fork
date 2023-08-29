@@ -130,11 +130,9 @@ CHS_BOOTROM_ALL += $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.sv $(CHS_ROOT)/hw/boo
 # Simulation #
 ##############
 
-FORCE: 
-
-$(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl: Bender.yml FORCE
+$(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl: Bender.yml
 	$(BENDER) script vsim $(BENDER_ARA_DEFS) -t sim $(BENDER_ARA_TARGETS) -t test -t cva6 --vlog-arg="$(VLOG_ARGS)" > $@
-	echo 'vlog "$(CHS_ROOT)/target/sim/src/elfloader.cpp" -ccflags "-std=c++11"' >> $@
+	echo 'vlog "$(CURDIR)/$(CHS_ROOT)/target/sim/src/elfloader.cpp" -ccflags "-std=c++11"' >> $@
 
 $(CHS_ROOT)/target/sim/models:
 	mkdir -p $@

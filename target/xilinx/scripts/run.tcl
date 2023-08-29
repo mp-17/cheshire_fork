@@ -64,20 +64,20 @@ remove_cell [get_cells -hier -filter {ORIG_REF_NAME == "unread" || REF_NAME == "
 
 # Add further debug nets
 if { $::env(DEBUG_RUN) eq "1" } {
-  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/axi_req_o*                ]]
-  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/axi_resp_i*               ]]
-  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/i_frontend/pc_commit_i*   ]]
+  set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/axi_req_o*                ]
+  set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/axi_resp_i*               ]
+  set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/i_frontend/pc_commit_i*   ]
   set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/csr_regfile_i/mepc_q*/Q   ]]
   set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/csr_regfile_i/mcause_q*/Q ]]
   set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/csr_regfile_i/mtval_q*/Q  ]]
   set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/csr_regfile_i/cycle_q*/Q  ]]
   if { $::env(ARA) eq "1" } {
-    set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/acc_req_i* ]]
-    set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/acc_resp_o*]]
-    set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/axi_req_o* ]]
-    set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/axi_resp_i*]]
+    set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/acc_req_i* ]
+    set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/acc_resp_o*]
+    set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/axi_req_o* ]
+    set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/axi_resp_i*]
   }
-}  
+}
 
 # Instantiate ILA
 set DEBUG [llength [get_nets -hier -filter {MARK_DEBUG == 1}]]

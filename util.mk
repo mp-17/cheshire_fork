@@ -8,18 +8,22 @@
 ## Utility ##
 #############
 
+all: patches
+
 # Complete fpga run
-fpga_run: 
+util-fpga_run:
 # 	NOTE: these target must be run sequentially
 	$(MAKE) -j1 chs-linux-clean chs-linux-img chs-xil-flash chs-xil-program
 
 # This is a temporary solution to avoid a mess with bender
+# Also keeping the patches separated for single files helps keeping things simple
 .PHONY: patches
-patches: 
-	-patch .bender/git/checkouts/cva6-*/Bender.yml patches/bender_git_checkouts_cva6_Bender.yml.patch
-	-patch .bender/git/checkouts/cva6-*/common/local/util/instr_trace_item.svh patches/bender_git_checkouts_cva6_common_local_util_instr_trace_item.svh.patch
-	-patch .bender/git/checkouts/ara-*/Bender.yml patches/bender_git_checkouts_ara_Bender.yml.patch 
-	-patch .bender/git/checkouts/ara-*/hardware/src/vlsu/vlsu.sv patches/bender_git_checkouts_ara_hardware_src_vlsu_vlsu.sv.patch
+patches: util-patches
+util-patches: 
+	-patch $(shell bender path cva6)/Bender.yml patches/bender_git_checkouts_cva6_Bender.yml.patch
+	-patch $(shell bender path cva6)/common/local/util/instr_trace_item.svh patches/bender_git_checkouts_cva6_common_local_util_instr_trace_item.svh.patch
+	-patch $(shell bender path ara)/Bender.yml patches/bender_git_checkouts_ara_Bender.yml.patch 
+	-patch $(shell bender path ara)/hardware/src/vlsu/vlsu.sv patches/bender_git_checkouts_ara_hardware_src_vlsu_vlsu.sv.patch
 	
 # Quick workaround for cva6-sdk not finding the DTB/FDT in this repo
 # Expose a target to update it (just touching would not work)
@@ -67,10 +71,6 @@ ifeq ($(BOARD),vcu128)
 	endif
 endif
 
-##########
-# Vivado #
-##########
-
 DEBUG_RUN ?= 1
 IMPL_STRATEGY ?= Performance_ExtraTimingOpt
 SYNTH_STRATEGY ?= Flow_PerfOptimized_high
@@ -95,7 +95,9 @@ chs-xil-ips: $(ips)
 # tcl: chs-xil-tcl
 
 # Add to xilinx.mk targets
-chs-xil-clean: clean
+chs-xil-clean: util-clean
+
+chs-xil-all: chs-xil-report
 
 # Local targets
 chs-xil-report: $(bit) $(PROJECT)
@@ -106,7 +108,8 @@ chs-xil-tcl:
 	@echo "Starting $(VIVADO) TCL"
 	cd $(CHS_XIL_DIR)/$(PROJECT); $(VIVADOENV) $(VIVADO) -nojournal -mode tcl $(PROJECT).xpr
 
-debug_gui:
+util-debug-gui: chs-xil-debug-gui
+chs-xil-debug-gui:
 	@echo "Starting $(VIVADO) GUI for debug"
 	$(VIVADOENV) $(VIVADO) -nojournal -mode gui -source $(TCL_DIR)/debug_gui.tcl
 
@@ -124,20 +127,22 @@ debug_gui:
 # 	@echo "Flashing QSPI for board $(BOARD) ($(XILINX_PART)) with file $(MCS_FILE)"
 # 	$(VIVADOENV) $(VIVADO_BORDCOMPUTER) $(VIVADOFLAGS) -source $(TCL_DIR)/flash_spi.tcl -tclargs $(MCS_FILE) 
 
-launch_gdb:
+util-launch-gdb:
 	-ssh -L $(GDB_LOCAL_PORT):localhost:$(GDB_REMOTE_PORT) -C -N -f -l $$USER $(XILINX_HOST)
 	$(GDB) -ex "target extended-remote :$(GDB_LOCAL_PORT)"
 
 # Spare IPS from clean
-clean:
+chs-xil-util-clean:
 # 	Vivado products
 	rm -rf  $(CHS_XIL_DIR)/$(PROJECT) $(out) 
 # 	Programming files from top directory
 	rm -rf *.mcs *.prm
 
-clean_ips:
+chs-xil-clean-ips:
 	rm -rf  $(CHS_XIL_DIR)*.xci
 	cd  $(CHS_XIL_DIR)/xilinx; $(foreach ip, $(ips-names), make -C $(ip) clean;)
 
 # Call all the clean targets
-clean_all: clean clean_ips
+chs-xil-clean-all: util-clean chs-xil-clean-ips
+
+
