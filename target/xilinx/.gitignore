@@ -21,3 +21,6 @@ cheshire.sim/
 cheshire.xpr
 out/
 reports/
+
+cheshire_*/
+backup/

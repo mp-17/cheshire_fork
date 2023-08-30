@@ -26,9 +26,21 @@ sw/deps/.patched
 target/sim/models
 
 # VSIM generated files
-target/sim/vsim/compile.*.tcl
-target/sim/vsim/*.log
-target/sim/vsim/modelsim.ini
-target/sim/vsim/transcript
-target/sim/vsim/vsim.wlf
-target/sim/vsim/work/
+compile.*.tcl
+*.log
+modelsim.ini
+transcript
+vsim.wlf
+work/
+
+.vscode
+*dtb
+tmp*
+backup
+
+# Vivado products
+.Xil
+vivado*
+webtalk*
+*prm
+*mcs

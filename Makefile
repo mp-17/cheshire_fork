@@ -6,7 +6,7 @@
 # Christopher Reinwardt <creinwar@student.ethz.ch>
 # Paul Scheffler <paulsc@iis.ee.ethz.ch>
 
-CHS_ROOT ?= .
+CHS_ROOT ?= $(PWD)
 
 include cheshire.mk
 
@@ -22,3 +22,6 @@ nonfree-%:
 
 clean-%:
 	@$(MAKE) chs-clean-$*
+
+# Utility make aliases and new targets
+include util.mk
