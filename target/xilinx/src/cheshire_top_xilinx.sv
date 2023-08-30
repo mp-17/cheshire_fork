@@ -110,9 +110,9 @@ module cheshire_top_xilinx
     // Interrupts
     NumExtIntrSyncs   : 2,
     // Interconnect
-    AddrWidth         : 48,
+    AddrWidth         : 64, // Needed by CVA6 and ARA
     AxiDataWidth      : 64,
-    AxiUserWidth      : 2,  // Convention: bit 0 for core(s), bit 1 for serial link
+    AxiUserWidth      : ariane_pkg::DCACHE_USER_WIDTH,  // WT cache only supports this
     AxiMstIdWidth     : 2,
     AxiMaxMstTrans    : 8,
     AxiMaxSlvTrans    : 8,
@@ -248,7 +248,8 @@ module cheshire_top_xilinx
     .clk_100 (          ),
     .clk_50  ( soc_clk  ),
     .clk_20  (          ),
-    .clk_10  (          )
+    .clk_10  (          ),
+    .locked  (          )
   );
 
   /////////////////////

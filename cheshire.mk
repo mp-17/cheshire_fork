@@ -131,7 +131,7 @@ CHS_BOOTROM_ALL += $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.sv $(CHS_ROOT)/hw/boo
 ##############
 
 $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl: Bender.yml
-	$(BENDER) script vsim -t sim -t cv64a6_imafdcsclic_sv39 -t test -t cva6 --vlog-arg="$(VLOG_ARGS)" > $@
+	$(BENDER) script vsim $(BENDER_ARA_DEFS) -t sim $(BENDER_ARA_TARGETS) -t test -t cva6 --vlog-arg="$(VLOG_ARGS)" > $@
 	echo 'vlog "$(CURDIR)/$(CHS_ROOT)/target/sim/src/elfloader.cpp" -ccflags "-std=c++11"' >> $@
 
 $(CHS_ROOT)/target/sim/models:
@@ -150,7 +150,25 @@ $(CHS_ROOT)/target/sim/models/24FC1025.v: Bender.yml | $(CHS_ROOT)/target/sim/mo
 
 CHS_SIM_ALL += $(CHS_ROOT)/target/sim/models/s25fs512s.v
 CHS_SIM_ALL += $(CHS_ROOT)/target/sim/models/24FC1025.v
-CHS_SIM_ALL += $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl
+CHS_SIM_ALL += $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl 
+
+#######
+# Ara #
+#######
+
+include $(CHS_ROOT)/target/common/ara.mk
+
+##################
+# RTL Simulation #
+##################
+
+# include $(CHS_ROOT)/target/sim/vsim/vsim.mk
+
+#######
+# Ara #
+#######
+
+include $(CHS_ROOT)/target/common/ara.mk
 
 #############
 # Emulation #
@@ -165,7 +183,7 @@ CHS_LINUX_IMG  += $(CHS_SW_DIR)/boot/linux-${BOARD}.gpt.bin
 # Phonies (KEEP AT END OF FILE) #
 #################################
 
-.PHONY: chs-all chs-nonfree-init chs-clean-deps chs-sw-all chs-hw-all chs-bootrom-all chs-sim-all chs-xilinx-all
+.PHONY: chs-all chs-nonfree-init chs-clean-deps chs-sw-all chs-hw-all chs-bootrom-all chs-sim-all chs-xil-all
 
 CHS_ALL += $(CHS_SW_ALL) $(CHS_HW_ALL) $(CHS_SIM_ALL)
 
@@ -173,6 +191,6 @@ chs-all:         $(CHS_ALL)
 chs-sw-all:      $(CHS_SW_ALL)
 chs-hw-all:      $(CHS_HW_ALL)
 chs-bootrom-all: $(CHS_BOOTROM_ALL)
-chs-sim-all:     $(CHS_SIM_ALL)
-chs-xilinx-all:  $(CHS_XILINX_ALL)
+chs-sim-all:     $(CHS_SIM_ALL) BENDER_TARGETS="$(BENDER_TARGETS)" BENDER_DEFS="$(BENDER_DEFS)"
+chs-xil-all:     $(CHS_XILINX_ALL)
 chs-linux-img:   $(CHS_LINUX_IMG)
