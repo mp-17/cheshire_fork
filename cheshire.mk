@@ -162,7 +162,7 @@ include $(CHS_ROOT)/target/common/ara.mk
 # RTL Simulation #
 ##################
 
-# include $(CHS_ROOT)/target/sim/vsim/vsim.mk
+include $(CHS_ROOT)/target/sim/vsim/vsim.mk
 
 #######
 # Ara #
