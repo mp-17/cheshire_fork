@@ -17,7 +17,7 @@
 break __restore_v_state
 break riscv_v_first_use_handler
 
-# Using vse8.v
+# Using vse8.v and reads vector CSRs
 break save_v_state
 
 # Using vse8.v and vle8.v

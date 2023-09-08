@@ -135,12 +135,12 @@ $(foreach link,$(patsubst $(CHS_SW_LD_DIR)/%.ld,%,$(wildcard $(CHS_SW_LD_DIR)/*.
 	$(CHS_SW_OBJCOPY) -I binary -O verilog $< $@
 
 # Create full Linux disk image
-UIMAGE_EFFECTIVE_SIZE = $(shell ls -l $(CHS_SW_DIR)/boot/install64/uImage | awk '{print $$5}')
+UIMAGE_EFFECTIVE_SIZE = $(shell ls -l $(CHS_SW_DIR)/boot/install64$(IS_RVV)/uImage | awk '{print $$5}')
 UIMAGE_START ?= 8192
 # UIMAGE_END ?= $$(( $(UIMAGE_START) + $(UIMAGE_EFFECTIVE_SIZE) ))
 UIMAGE_END ?= 24575
 UIMAGE_AVAILABLE_SIZE ?= $$(($$(( $(UIMAGE_END) - $(UIMAGE_START) )) * 1024))
-$(CHS_SW_DIR)/boot/linux-${BOARD}.gpt.bin: $(CHS_SW_DIR)/boot/zsl.rom.bin $(CHS_SW_DIR)/boot/cheshire_$(BOARD).dtb $(CHS_SW_DIR)/boot/install64/fw_payload.bin $(CHS_SW_DIR)/boot/install64/uImage
+$(CHS_SW_DIR)/boot/linux${IS_RVV}-${BOARD}.gpt.bin: $(CHS_SW_DIR)/boot/zsl.rom.bin $(CHS_SW_DIR)/boot/cheshire_$(BOARD).dtb $(CHS_SW_DIR)/boot/install64$(IS_RVV)/fw_payload.bin $(CHS_SW_DIR)/boot/install64$(IS_RVV)/uImage
 	if [[ $(UIMAGE_EFFECTIVE_SIZE) -ge $(UIMAGE_AVAILABLE_SIZE) ]]; then \
 		echo "ERROR: uImage $(UIMAGE_EFFECTIVE_SIZE) B is larger than available the $(shell echo $(UIMAGE_AVAILABLE_SIZE)) B, increase UIMAGE_END past current value ($(UIMAGE_END))"; \
 		exit -1; \
@@ -182,4 +182,4 @@ chs-sw-clean:
 	rm -rf lib/libcheshire.a
 
 chs-linux-clean:
-	rm -rf $(CHS_SW_DIR)/boot/linux-${BOARD}.gpt.bin
+	rm -rf $(CHS_SW_DIR)/boot/linux${IS_RVV}-${BOARD}.gpt.bin

@@ -28,7 +28,20 @@ report_property -all [get_hw_targets]
 # Search for hw probes
 refresh_hw_device [lindex [get_hw_devices $::env(FPGA_DEVICE)] 0]
 
-# TODO: add commands to launch a first ILA sampling
+#######################
+## ILA configuration ##
+#######################
+# Set triggers
+# Ara req/resp valid
+set_property TRIGGER_COMPARE_VALUE eq1'bR [get_hw_probes {i_cheshire_soc/gen_cva6_cores[0].i_ara/acc_req_i[req_valid]} -of_objects [get_hw_ilas -of_objects [get_hw_devices xcvu37p_0] -filter {CELL_NAME=~"u_ila_0"}]]
+set_property TRIGGER_COMPARE_VALUE eq1'bR [get_hw_probes {i_cheshire_soc/gen_cva6_cores[0].i_ara/acc_resp_o[resp_valid]} -of_objects [get_hw_ilas -of_objects [get_hw_devices xcvu37p_0] -filter {CELL_NAME=~"u_ila_0"}]]
+# CVA6 exception valid
+# set_property TRIGGER_COMPARE_VALUE eq1'bR [get_hw_probes {i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/commit_stage_i/exception_o[valid]} -of_objects [get_hw_ilas -of_objects [get_hw_devices xcvu37p_0] -filter {CELL_NAME=~"u_ila_0"}]]
+
+# Set trigger control
+set_property CONTROL.TRIGGER_CONDITION OR [get_hw_ilas -of_objects [get_hw_devices xcvu37p_0] -filter {CELL_NAME=~"u_ila_0"}]
+set_property CONTROL.TRIGGER_POSITION 4096 [get_hw_ilas -of_objects [get_hw_devices xcvu37p_0] -filter {CELL_NAME=~"u_ila_0"}]
+
+# Arm ILA
 run_hw_ila [get_hw_ilas -of_objects [get_hw_devices xcvu37p_0] -filter {CELL_NAME=~"u_ila_0"}]
-wait_on_hw_ila [get_hw_ilas -of_objects [get_hw_devices xcvu37p_0] -filter {CELL_NAME=~"u_ila_0"}]
-display_hw_ila_data [upload_hw_ila_data [get_hw_ilas -of_objects [get_hw_devices xcvu37p_0] -filter {CELL_NAME=~"u_ila_0"}]]
+

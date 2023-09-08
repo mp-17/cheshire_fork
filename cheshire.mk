@@ -62,6 +62,14 @@ chs-nonfree-init:
 
 -include $(CHS_ROOT)/nonfree/nonfree.mk
 
+#########
+## RVV ##
+#########
+RVV ?= 1
+ifeq ($(RVV),1)
+	IS_RVV := V
+endif
+
 ############
 # Build SW #
 ############
@@ -126,13 +134,19 @@ $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.sv: $(CHS_ROOT)/hw/bootrom/cheshire_boot
 
 CHS_BOOTROM_ALL += $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.sv $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.dump
 
+#######
+# Ara #
+#######
+
+include $(CHS_ROOT)/target/common/ara.mk
+
 ##############
 # Simulation #
 ##############
 
 $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl: Bender.yml
 	$(BENDER) script vsim $(BENDER_ARA_DEFS) -t sim $(BENDER_ARA_TARGETS) -t test -t cva6 --vlog-arg="$(VLOG_ARGS)" > $@
-	echo 'vlog "$(CURDIR)/$(CHS_ROOT)/target/sim/src/elfloader.cpp" -ccflags "-std=c++11"' >> $@
+	echo 'vlog "$(CHS_ROOT)/target/sim/src/elfloader.cpp" -ccflags "-std=c++11"' >> $@
 
 $(CHS_ROOT)/target/sim/models:
 	mkdir -p $@
@@ -164,12 +178,6 @@ include $(CHS_ROOT)/target/common/ara.mk
 
 include $(CHS_ROOT)/target/sim/vsim/vsim.mk
 
-#######
-# Ara #
-#######
-
-include $(CHS_ROOT)/target/common/ara.mk
-
 #############
 # Emulation #
 #############
@@ -177,7 +185,7 @@ include $(CHS_ROOT)/target/common/ara.mk
 include $(CHS_ROOT)/target/xilinx/xilinx.mk
 include $(CHS_XIL_DIR)/sim/simulate.mk
 CHS_XILINX_ALL += $(CHS_XIL_DIR)/scripts/add_sources.tcl
-CHS_LINUX_IMG  += $(CHS_SW_DIR)/boot/linux-${BOARD}.gpt.bin
+CHS_LINUX_IMG  += $(CHS_SW_DIR)/boot/linux${IS_RVV}-${BOARD}.gpt.bin
 
 #################################
 # Phonies (KEEP AT END OF FILE) #
@@ -191,6 +199,6 @@ chs-all:         $(CHS_ALL)
 chs-sw-all:      $(CHS_SW_ALL)
 chs-hw-all:      $(CHS_HW_ALL)
 chs-bootrom-all: $(CHS_BOOTROM_ALL)
-chs-sim-all:     $(CHS_SIM_ALL) BENDER_TARGETS="$(BENDER_TARGETS)" BENDER_DEFS="$(BENDER_DEFS)"
+chs-sim-all:     $(CHS_SIM_ALL)
 chs-xil-all:     $(CHS_XILINX_ALL)
 chs-linux-img:   $(CHS_LINUX_IMG)

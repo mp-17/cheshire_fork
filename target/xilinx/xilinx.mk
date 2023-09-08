@@ -111,12 +111,12 @@ chs-xil-program: #$(BIT)
 	@echo "Programming board $(BOARD) ($(XILINX_PART))"
 	$(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source $(CHS_XIL_DIR)/scripts/program.tcl
 
-chs-xil-flash: $(CHS_SW_DIR)/boot/linux-${BOARD}.gpt.bin
+chs-xil-flash: $(CHS_SW_DIR)/boot/linux$(IS_RVV)-${BOARD}.gpt.bin
 	$(VIVADOENV) FILE=$< OFFSET=0 $(VIVADO) $(VIVADOFLAGS) -source $(CHS_XIL_DIR)/scripts/flash_spi.tcl
 
 chs-xil-clean:
 	@echo "INFO: IPs will not be cleaned. To clean them run \"make chs-xil-clean-ips\""
-	cd $(CHS_XIL_DIR) && rm -rf scripts/add_sources.tcl* $(out)
+	cd $(CHS_XIL_DIR) && rm -rf scripts/add_sources.tcl* $(BIT) $(LTX) $(ROUTED_DCP)
 
 # Re-compile only top and not ips
 chs-xil-rebuild-top:
@@ -125,7 +125,7 @@ chs-xil-rebuild-top:
 	${MAKE} $(BIT)
 
 # Bender script
-$(CHS_XIL_DIR)/scripts/add_sources.tcl: Bender.yml
+$(CHS_XIL_DIR)/scripts/add_sources.tcl: Bender.yml FORCE
 	$(BENDER) script vivado $(xilinx_targs) $(BENDER_DEFS) > $@
 
 .PHONY: chs-xil-gui chs-xil-program chs-xil-flash chs-xil-clean chs-xil-rebuild-top chs-xil-all

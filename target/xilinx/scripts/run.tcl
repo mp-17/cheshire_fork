@@ -25,14 +25,10 @@ set_property top cheshire_top_xilinx [current_fileset]
 
 update_compile_order -fileset sources_1
 
-# set_property strategy Flow_PerfOptimized_high [get_runs synth_1]
-# set_property strategy Performance_ExtraTimingOpt [get_runs impl_1]
-
 set_property XPM_LIBRARIES XPM_MEMORY [current_project]
 
-# synth_design -rtl -name rtl_1
-
-if { $::env(DEBUG_RUN) eq "1" } {
+# Preserve the net names and hierarchy for debug
+if { ($::env(DEBUG_RUN) eq "1") || ($::env(DEBUG_NETS) eq "1") } {
   set_property STRATEGY                                           Flow_RuntimeOptimized    [get_runs synth_1]
   set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY          none                     [get_runs synth_1]
   set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS  true                     [get_runs synth_1]
@@ -53,27 +49,15 @@ check_timing -verbose                                                   -file re
 # report_timing -max_paths 100 -nworst 100 -delay_type max -sort_by slack -file reports/$project.timing_WORST_100.rpt
 # report_timing -nworst 1 -delay_type max -sort_by group                  -file reports/$project.timing.rpt
 report_utilization -hierarchical -hierarchical_percentage               -file reports/$project.utilization.rpt
-# report_cdc                                                              -file reports/$project.cdc.rpt
-# report_clock_interaction                                                -file reports/$project.clock_interaction.rpt
+report_cdc                                                              -file reports/$project.cdc.rpt
+report_clock_interaction                                                -file reports/$project.clock_interaction.rpt
 
-# Remove black-boxed unreads
+# Remove black-boxed unreads (only necessary for common_cells < v1.31.1)
 remove_cell [get_cells -hier -filter {ORIG_REF_NAME == "unread" || REF_NAME == "unread"}]
 
 # Add further debug nets
-if { $::env(DEBUG_RUN) eq "1" } {
-  set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/axi_req_o*                ]
-  set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/axi_resp_i*               ]
-  set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/i_frontend/pc_commit_i*   ]
-  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/csr_regfile_i/mepc_q*/Q   ]]
-  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/csr_regfile_i/mcause_q*/Q ]]
-  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/csr_regfile_i/mtval_q*/Q  ]]
-  set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/csr_regfile_i/cycle_q*/Q  ]]
-  if { $::env(ARA) eq "1" } {
-    set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/acc_req_i* ]
-    set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/acc_resp_o*]
-    set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/axi_req_o* ]
-    set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/axi_resp_i*]
-  }
+if { $::env(DEBUG_NETS) eq "1" } {
+  source ../scripts/tcl/mark_debug_nets.tcl
 }
 
 # Instantiate ILA
@@ -135,8 +119,8 @@ if { $::env(DEBUG_RUN) eq "1" } {
   set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.IS_ENABLED true                     [get_runs impl_1]
 }
 
-launch_runs impl_1
-wait_on_run impl_1
+# launch_runs impl_1
+# wait_on_run impl_1
 launch_runs impl_1 -to_step write_bitstream
 wait_on_run impl_1
 
