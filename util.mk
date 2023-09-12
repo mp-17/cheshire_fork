@@ -15,14 +15,6 @@ util-fpga-run:
 # 	NOTE: these targets must run sequentially
 	$(MAKE) -j1 chs-linux-clean chs-linux-img chs-xil-flash chs-xil-program
 
-# This is a temporary solution to avoid a mess with bender
-# Also keeping the patches separated for single files helps keeping things simple
-util-patches: 
-	-patch $(shell bender path cva6)/Bender.yml patches/bender_git_checkouts_cva6_Bender.yml.patch
-	-patch $(shell bender path cva6)/common/local/util/instr_trace_item.svh patches/bender_git_checkouts_cva6_common_local_util_instr_trace_item.svh.patch
-	-patch $(shell bender path ara)/Bender.yml patches/bender_git_checkouts_ara_Bender.yml.patch 
-	-patch $(shell bender path ara)/hardware/src/vlsu/vlsu.sv patches/bender_git_checkouts_ara_hardware_src_vlsu_vlsu.sv.patch
-	
 # Quick workaround for cva6-sdk not finding the DTB/FDT in this repo
 # Expose a target to update it (just touching would not work)
 dtb:
