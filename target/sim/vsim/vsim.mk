@@ -19,11 +19,14 @@ $(CHS_VSIM_DIR)/add_waves.tcl: $(CHS_VSIM_DIR)/wave_lane.tcl
 	sed -i -E "s|\[examine.+\]|$(ARA_NR_LANES)|g" $@
 	sed -i "s|../scripts/wave_lane.tcl|wave_lane.tcl|g" $@
 
+# NrOperandQueues := $(shell grep "NrOperandQueues =" $(shell bender path ara)/hardware/include/ara_pkg.sv | awk '{print $$6}' | sed "s/;//g")
 $(CHS_VSIM_DIR)/wave_lane.tcl: 
 #	Add lane waves
 	cp $(shell find $$(bender path ara) -name $(shell basename $@)) $(CHS_VSIM_DIR)
 	sed -i "s|$(OLD_HIERARCHY)i_ara|$(NEW_HIERARCHY)i_ara|g" $@
 	sed -i -E "s|ara_pkg|work.ara_pkg|g" $@
+#	Remove operand_requester
+	sed -i "s/\[examine -radix dec work.ara_pkg::NrOperandQueues\]/0/g" $@
 
 BINARY ?= $(CHS_SW_DIR)/tests/rvv_hello_world.spm.elf
 chs-sim-run: $(CHS_VSIM_DIR)/compile.cheshire_soc.tcl $(CHS_VSIM_DIR)/start.cheshire_soc.tcl $(CHS_VSIM_DIR)/add_waves.tcl

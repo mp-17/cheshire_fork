@@ -12,7 +12,7 @@ all: util-patches
 
 # Complete fpga run
 util-fpga-run:
-# 	NOTE: these target must be run sequentially
+# 	NOTE: these targets must run sequentially
 	$(MAKE) -j1 chs-linux-clean chs-linux-img chs-xil-flash chs-xil-program
 
 # This is a temporary solution to avoid a mess with bender
@@ -65,7 +65,7 @@ ifeq ($(BOARD),vcu128)
 		GDB_LOCAL_PORT  := 3333
 		GDB_REMOTE_PORT := 3334
 	endif
-# Choose whether to use BSCANE2 or external scanchain for the debug module 
+#	Choose whether to use BSCANE2 or external scanchain for the debug module 
 	ifeq ($(DEBUG_RUN),0)
 		PROJECT := $(PROJECT)_DEBUG_RUN_0
 	endif
@@ -99,10 +99,13 @@ chs-xil-clean: chs-xil-util-clean
 
 chs-xil-all: chs-xil-report
 
+chs-xil-bit: $(BIT)
+
 # Local targets
-chs-xil-report: $(bit)
+chs-xil-report: $(BIT)
 	cd $(CHS_XIL_DIR)/$(PROJECT); $(VIVADOENV) $(VIVADO) -mode batch $(PROJECT).xpr -source $(TCL_DIR)/get_run_info.tcl | grep " \[REPORT]" > $(CHS_XIL_DIR)/$(PROJECT)/reports/report.tmp
 	grep " cheshire_top_xilinx " $(CHS_XIL_DIR)/$(PROJECT)/reports/$(PROJECT).utilization.rpt | sed -E "s/.+top\) //g" >>  $(CHS_XIL_DIR)/$(PROJECT)/reports/report.tmp
+	cp $(CHS_XIL_DIR)/$(PROJECT)/reports/report.tmp $(out)/$(PROJECT).report
 
 chs-xil-tcl:
 	@echo "Starting $(VIVADO) TCL"
@@ -120,10 +123,10 @@ util-launch-gdb: scripts/gdb/running_kernel.gdb scripts/gdb/in_memory_boot.gdb
 	-ssh -L $(GDB_LOCAL_PORT):localhost:$(GDB_REMOTE_PORT) -C -N -f -l $$USER $(XILINX_HOST)
 	$(GDB) -ex "target extended-remote :$(GDB_LOCAL_PORT)"
 
-# Spare IPS from clean
+# Spare IPs from clean
 chs-xil-util-clean:
 # 	Vivado products in target/
-	rm -rf $(CHS_XIL_DIR)/$(PROJECT) $(out) 
+	rm -rf $(CHS_XIL_DIR)/$(PROJECT)
 # 	Viviado files from top directory
 	rm -rf *.mcs *.prm .Xil/ 
 # 	NOTE: Keep Vivado logs
