@@ -37,6 +37,8 @@ BENDER_ARA_DEFS += --define WT_CACHE=1
 # Questa requires these to be defined since Ara sources are built anyway
 BENDER_ARA_DEFS += --define ARA_NR_LANES=$(ARA_NR_LANES)  
 BENDER_ARA_DEFS += --define VLEN=$(VLEN)
+# Prioritize Ara translation requests to MMU
+BENDER_ARA_DEFS += --define MMU_ACC_PRIORITY
 
 ifeq ($(ARA),1)
 	BENDER_ARA_DEFS += --define ARA

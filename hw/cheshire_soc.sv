@@ -567,26 +567,6 @@ module cheshire_soc import cheshire_pkg::*; #(
   assign dbg_int_info     = {(NumIntHarts){ariane_pkg::DebugHartInfo}};
   assign dbg_int_unavail  = '0;
 
-`ifdef ARA  
-    // Configure Ara with the right AXI id width
-    typedef logic [Cfg.AxiMstIdWidth-1:0] ara_id_t;
-    // Default Ara AXI data width
-    localparam int unsigned AraDataWideWidth = 32 * `ARA_NR_LANES;
-    typedef logic [AraDataWideWidth   -1 : 0] axi_ara_wide_data_t;
-    typedef logic [AraDataWideWidth/8 -1 : 0] axi_ara_wide_strb_t;
-    `AXI_TYPEDEF_ALL(axi_ara_wide, addr_t, ara_id_t, axi_ara_wide_data_t, axi_ara_wide_strb_t, axi_user_t)
-`endif // ARA  
-
-  // Accelerator ports
-  acc_pkg::accelerator_req_t            acc_req;
-  acc_pkg::accelerator_resp_t           acc_resp;
-
-  // Invalidation filter ports
-  logic                                 acc_cons_en;
-  logic             [Cfg.AddrWidth-1:0] inval_addr;
-  logic                                 inval_valid;
-  logic                                 inval_ready;
-
   for (genvar i = 0; i < NumIntHarts; i++) begin : gen_cva6_cores
     axi_cva6_req_t core_out_req, core_ur_req;
     axi_cva6_rsp_t core_out_rsp, core_ur_rsp;
@@ -598,6 +578,30 @@ module cheshire_soc import cheshire_pkg::*; #(
     logic [$clog2(NumClicIntrs)-1:0] clic_irq_id;
     logic [7:0]        clic_irq_level;
     riscv::priv_lvl_t  clic_irq_priv;
+
+    // Accelerator ports
+    acc_pkg::accelerator_req_t            acc_req;
+    acc_pkg::accelerator_resp_t           acc_resp;
+
+    // Invalidation filter ports
+    logic                                 acc_cons_en;
+    logic             [Cfg.AddrWidth-1:0] inval_addr;
+    logic                                 inval_valid;
+    logic                                 inval_ready;
+    
+    // CSR 
+    logic                          en_ld_st_translation_cva6_acc;
+
+    // MMU ports
+    ariane_pkg::exception_t        mmu_misaligned_ex_acc_cva6;
+    logic                          mmu_req_acc_cva6;
+    logic [riscv::VLEN-1:0]        mmu_vaddr_acc_cva6;
+    logic                          mmu_is_store_acc_cva6;
+    logic                          mmu_dtlb_hit_cva6_acc;
+    logic [riscv::PPNW-1:0]        mmu_dtlb_ppn_cva6_acc;
+    logic                          mmu_valid_cva6_acc;
+    logic [riscv::PLEN-1:0]        mmu_paddr_cva6_acc;
+    ariane_pkg::exception_t        mmu_exception_cva6_acc;
 
     // Currently, we support only one core
     cva6 #(
@@ -633,6 +637,21 @@ module cheshire_soc import cheshire_pkg::*; #(
       .inval_addr_i     ( inval_addr   ),
       .inval_valid_i    ( inval_valid  ),
       .inval_ready_o    ( inval_ready  ),
+      .en_ld_st_translation_o   ( en_ld_st_translation_cva6_acc ),
+      // MMU interface with accelerator
+      // .acc_mmu_misaligned_ex_i  ( mmu_misaligned_ex_acc_cva6 ),
+      // .acc_mmu_req_i            ( mmu_req_acc_cva6           ),
+      // .acc_mmu_vaddr_i          ( mmu_vaddr_acc_cva6         ),
+      // .acc_mmu_is_store_i       ( mmu_is_store_acc_cva6      ),
+      .acc_mmu_misaligned_ex_i  ( '0 ),
+      .acc_mmu_req_i            ( '0 ),
+      .acc_mmu_vaddr_i          ( '0 ),
+      .acc_mmu_is_store_i       ( '0 ),
+      .acc_mmu_dtlb_hit_o       ( mmu_dtlb_hit_cva6_acc      ),
+      .acc_mmu_dtlb_ppn_o       ( mmu_dtlb_ppn_cva6_acc      ),
+      .acc_mmu_valid_o          ( mmu_valid_cva6_acc         ),
+      .acc_mmu_paddr_o          ( mmu_paddr_cva6_acc         ),
+      .acc_mmu_exception_o      ( mmu_exception_cva6_acc     ),
   `endif // ARIANE_ACCELERATOR_PORT
       // AXI interface
       .axi_req_o        ( core_out_req ),
@@ -669,7 +688,7 @@ module cheshire_soc import cheshire_pkg::*; #(
 
     ara #(
       .NrLanes      ( `ARA_NR_LANES          ),
-      .AxiDataWidth ( Cfg.AxiDataWidth       ),
+      .AxiDataWidth ( AraDataWideWidth       ),
       .AxiAddrWidth ( Cfg.AddrWidth          ),
       .axi_ar_t     ( axi_ara_wide_ar_chan_t ),
       .axi_r_t      ( axi_ara_wide_r_chan_t  ),
@@ -684,6 +703,22 @@ module cheshire_soc import cheshire_pkg::*; #(
       .scan_enable_i   ( 1'b0              ),
       .scan_data_i     ( 1'b0              ),
       .scan_data_o     ( /* Unused */      ),
+      // .en_ld_st_translation_i ( en_ld_st_translation_cva6_acc ),
+      // .mmu_misaligned_ex_o ( mmu_misaligned_ex_acc_cva6 ),
+      // .mmu_req_o           ( mmu_req_acc_cva6           ),
+      // .mmu_vaddr_o         ( mmu_vaddr_acc_cva6         ),
+      // .mmu_is_store_o      ( mmu_is_store_acc_cva6      ),
+      // .mmu_dtlb_hit_i      ( mmu_dtlb_hit_cva6_acc      ),
+      // .mmu_dtlb_ppn_i      ( mmu_dtlb_ppn_cva6_acc      ),
+      // .mmu_valid_i         ( mmu_valid_cva6_acc         ),
+      // .mmu_paddr_i         ( mmu_paddr_cva6_acc         ),
+      // .mmu_exception_i     ( mmu_exception_cva6_acc     ),
+      .en_ld_st_translation_i ( '0 ),
+      .mmu_dtlb_hit_i      ( '0 ),
+      .mmu_dtlb_ppn_i      ( '0 ),
+      .mmu_valid_i         ( '0 ),
+      .mmu_paddr_i         ( '0 ),
+      .mmu_exception_i     ( '0 ),
       .acc_req_i       ( acc_req           ),
       .acc_resp_o      ( acc_resp          ),
       .axi_req_o       ( axi_ara_wide_req  ),
