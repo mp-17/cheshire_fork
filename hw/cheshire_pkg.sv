@@ -562,4 +562,26 @@ package cheshire_pkg;
     default: '0
   };
 
+
+  // `include "axi/typedef.svh"
+  // `include "cheshire/typedef.svh"
+
+  // // Declare interface types internally
+  // // For addr_t and axi_user_t
+  // `CHESHIRE_TYPEDEF_ALL(, cheshire_pkg::DefaultCfg)
+
+  // `CHESHIRE_TYPEDEF_AXI_CT(axi_cva6, addr_t, cva6_id_t, axi_data_t, axi_strb_t, axi_user_t)
+  
+
+  // localparam int unsigned MaxVLenPerLane  = VLEN / NrLanes;       // In bits
+  // localparam int unsigned MaxVLenBPerLane = VLENB / NrLanes;      // In bytes
+  // localparam int unsigned VRFSizePerLane  = MaxVLenPerLane * 32;  // In bits
+  // localparam int unsigned VRFBSizePerLane = MaxVLenBPerLane * 32; // In bytes
+  // // Address of an element in each lane's VRF
+  // typedef logic [idx_width(VRFBSizePerLane)-1:0] vaddr_t;
+
+  // localparam int unsigned DataWidth = $bits(elen_t);
+  // localparam int unsigned StrbWidth = DataWidth / 8;
+  // typedef logic [StrbWidth-1:0] strb_t;
+  
 endpackage

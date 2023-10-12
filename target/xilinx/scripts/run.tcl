@@ -20,12 +20,38 @@ set ips $::env(IP_PATHS)
 read_ip $ips
 
 source ../scripts/add_sources.tcl
+# add_files -norecurse -fileset sources_1 ../../../hw/cva6_dfx_wrapper.sv
+# add_files -norecurse -fileset sources_1 ../../../hw/vlsu_dfx_wrapper.sv
 
 set_property top cheshire_top_xilinx [current_fileset]
 
 update_compile_order -fileset sources_1
 
+#############################
+# DFX: partition definition #
+#############################
+
+# set_property -name "pr_flow" -value "1" -objects [current_project]
+
+# # CVA6
+# create_partition_def -name partition_cva6 -module cva6_dfx_wrapper
+# create_reconfig_module -name cva6_dfx_wrapper -partition_def [get_partition_defs partition_cva6 ]  -define_from cva6_dfx_wrapper
+# update_compile_order -fileset cva6_dfx_wrapper
+# update_compile_order -fileset sources_1
+
+
+# # Ara VLSU
+# create_partition_def -name partition_vlsu -module vlsu_dfx_wrapper
+# create_reconfig_module -name vlsu_dfx_wrapper -partition_def [get_partition_defs partition_vlsu ]  -define_from vlsu_dfx_wrapper
+# update_compile_order -fileset vlsu_dfx_wrapper
+# update_compile_order -fileset sources_1
+
+# start_gui
+
 set_property XPM_LIBRARIES XPM_MEMORY [current_project]
+
+synth_design -rtl -name rtl_1
+# start_gui
 
 # Preserve the net names and hierarchy for debug
 if { ($::env(DEBUG_RUN) eq "1") || ($::env(DEBUG_NETS) eq "1") } {
@@ -41,6 +67,23 @@ if { ($::env(DEBUG_RUN) eq "1") || ($::env(DEBUG_NETS) eq "1") } {
 launch_runs synth_1
 wait_on_run synth_1
 open_run synth_1 -name synth_1
+
+
+##################
+# DFX: floorplan #
+##################
+# startgroup
+# create_pblock pblock_cva6
+# resize_pblock pblock_cva6 -add CLOCKREGION_X4Y6:CLOCKREGION_X7Y7
+# add_cells_to_pblock pblock_cva6 [get_cells [list {i_cheshire_soc/gen_cva6_cores[0].i_core_cva6}]] -clear_locs
+# endgroup
+
+# startgroup
+# create_pblock pblock_i_vlsu
+# resize_pblock pblock_i_vlsu -add CLOCKREGION_X4Y4:CLOCKREGION_X7Y5
+# add_cells_to_pblock pblock_i_vlsu [get_cells [list {i_cheshire_soc/gen_cva6_cores[0].i_ara/i_vlsu}]] -clear_locs
+# endgroup
+
 
 exec mkdir -p reports/
 exec rm -rf reports/*

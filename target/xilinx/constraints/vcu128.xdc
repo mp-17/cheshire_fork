@@ -39,6 +39,14 @@ set_max_delay -datapath \
  -from [get_pins i_dram_wrapper/gen_cdc.i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_*/*reg*/C] \
   -to [get_pins i_dram_wrapper/gen_cdc.i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_*/i_spill_register/spill_register_flushable_i/*reg*/D] $MIG_TCK
 
+#########################
+# Floorplanning for DFX #
+#########################
+
+# create_pblock {pblock_cva6_vslu}
+# add_cells_to_pblock [get_pblocks {pblock_cva6_vslu}] [get_cells -quiet [list {i_cheshire_soc/gen_cva6_cores[0].i_ara/i_vlsu} {i_cheshire_soc/gen_cva6_cores[0].i_core_cva6}]]
+# resize_pblock [get_pblocks {pblock_cva6_vslu}] -add {CLOCKREGION_X4Y4:CLOCKREGION_X7Y7}
+
 #################################################################################
 
 ###############
