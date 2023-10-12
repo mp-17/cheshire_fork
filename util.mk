@@ -4,22 +4,88 @@
 #
 # Vincenzo Maisto <vincenzo.maisto2@unina.it>
 
-#############
-## Utility ##
-#############
+#################
+## RVV Testing ##
+#################
 
-all: util-patches
+## NOTE: this is very much not the correct way to do it, but time is tight...
 
-# Complete fpga run
-util-fpga-run:
-# 	NOTE: these targets must run sequentially
-	$(MAKE) -j1 chs-linux-clean chs-linux-img chs-xil-flash chs-xil-program
+# Test macros
+RVV_TEST_MAGIC 			?= f0f0f0f0f0f0f0f0
+RVV_TEST_ARA_NR_LANES 	?= 2 4 8
+# Align to AxiDataWidth of VLSU
+ALIGN_VSTORES := $(shell echo "32 * $(ARA_NR_LANES) / 8" | bc -l | sed -E "s/\..+//g")
 
-# Quick workaround for cva6-sdk not finding the DTB/FDT in this repo
-# Expose a target to update it (just touching would not work)
-dtb:
-	dtc -I dts -O dtb -i $(CHS_SW_DIR)/boot $(CHS_SW_DIR)/boot/cheshire_$(BOARD).dts -o $(CHS_SW_DIR)/boot/cheshire_$(BOARD).dtb 
+# Software artifacts
+CHS_SW_RVV_TEST_DIR ?= $(CHS_SW_DIR)/tests
+RVV_TEST_SRC 	?= $(wildcard $(CHS_SW_RVV_TEST_DIR)/rvv_test_*.c)
+RVV_TEST_ELF 	?= $(RVV_TEST_SRC:.c=.spm.elf)
 
+CHS_RVV_TEST_RESULT_DIR := $(CHS_ROOT)/rvv_test_results
+
+# Run all the tests
+# Run RVV_TEST_ELF for all RVV_TEST_ARA_NR_LANES configurations
+rvv-test-run-all:
+	for elf in $(RVV_TEST_ELF); do 						\
+		for nrlanes in $(RVV_TEST_ARA_NR_LANES); do 	\
+			RVV_TEST_ELF=$$elf ARA_NR_LANES=$$nrlanes	\
+				$(MAKE) rvv-test-run; 					\
+ 		done											\
+ 	done
+
+rvv-test-run rvv-test-report: RVV_TEST_NAME=$(shell basename $(RVV_TEST_ELF) .spm.elf)
+rvv-test-run rvv-test-report: RVV_TEST_RESULT_DIR=$(CHS_RVV_TEST_RESULT_DIR)/$(RVV_TEST_NAME)
+rvv-test-run rvv-test-report: RVV_TEST_RESULT_FILE=$(RVV_TEST_RESULT_DIR)/results.txt
+rvv-test-run rvv-test-report: RVV_TEST_RESULT_DIR_LANES=$(RVV_TEST_RESULT_DIR)/ara_$(ARA_NR_LANES)_lanes
+rvv-test-run rvv-test-report: RVV_TEST_TRACE=$(RVV_TEST_RESULT_DIR)/ara_$(ARA_NR_LANES)_lanes/trace_hart_0.log 
+rvv-test-run rvv-test-report: VSIM_ROOT=$(RVV_TEST_RESULT_DIR_LANES)
+rvv-test-run: chs-sw-all
+#	Clear old results
+	rm -rf $(RVV_TEST_RESULT_DIR_LANES)/*
+	mkdir -p $(RVV_TEST_RESULT_DIR_LANES)
+	mkdir -p $(VSIM_ROOT)
+#	TODO: add switch to stop on first failure
+	BINARY=$(RVV_TEST_ELF) 				\
+		VSIM_ROOT=$(VSIM_ROOT) 				\
+		$(MAKE) chs-sim-clean chs-sim-run 
+	RVV_TEST_NAME=$(RVV_TEST_NAME) $(MAKE) rvv-test-report
+
+DATE_FORMAT ?= "+%Y-%b-%d %H:%M"
+TEST_COMMENT ?= "None"
+REPORT_FILE_ALL ?= $(CHS_RVV_TEST_RESULT_DIR)/report_all.txt
+rvv-test-report: $(RVV_TEST_TRACE) 
+	printf "$(RVV_TEST_NAME)," >> $(RVV_TEST_RESULT_FILE)
+	printf " ARA_NR_LANES=$(ARA_NR_LANES)," >> $(RVV_TEST_RESULT_FILE)
+	grep --quiet $(RVV_TEST_MAGIC) $(RVV_TEST_TRACE) 	\
+		&& printf " PASSED," >> $(RVV_TEST_RESULT_FILE) \
+		|| printf " FAILED," >> $(RVV_TEST_RESULT_FILE)
+	printf " $(shell date $(DATE_FORMAT))," >> $(RVV_TEST_RESULT_FILE)
+	printf " Notes: $(TEST_COMMENT)\n" >> $(RVV_TEST_RESULT_FILE)
+	cat $(RVV_TEST_RESULT_FILE) >> $(REPORT_FILE_ALL)
+	@printf "[INFO] Test report: "; cat $(RVV_TEST_RESULT_FILE)
+	@echo "[INFO] Check trace log at : $(RVV_TEST_TRACE)"
+	@echo "[INFO] Check transcript at: $(RVV_TEST_RESULT_DIR)/transcript"
+	@echo "[INFO] Check waves with   :"
+	@echo "	make chs-sim-waves VSIM_ROOT=$(RVV_TEST_RESULT_DIR_LANES)"
+
+
+rvv-test-clean: 
+	rm -rf $(RVV_TEST_RESULT_DIR)
+
+rvv-test-clean-all:
+	rm -rf $(CHS_RVV_TEST_RESULT_DIR)
+
+##############
+## Cleaning ##
+##############
+
+# Spare IPs from clean
+chs-xil-util-clean:
+# 	Vivado products in target/
+	rm -rf $(CHS_XIL_DIR)/$(PROJECT)
+# 	Viviado files from top directory
+	rm -rf *.mcs *.prm .Xil/ 
+# 	NOTE: Keep Vivado logs
 
 ############
 ## Vivado ##
@@ -36,7 +102,7 @@ GDB ?= /usr/scratch/fenga3/vmaisto/cva6-sdk_fork_backup/buildroot/output/host/bi
 
 # Select board specific variables
 ifeq ($(BOARD),vcu128)
-	VIVADO       := vitis-2020.2 vivado
+	VIVADO       := vitis-2022.1 vivado
 	XILINX_PART  := xcvu37p-fsvh2892-2L-e
 	XILINX_BOARD := xilinx.com:vcu128:part0:1.0
 	FPGA_DEVICE	 := xcvu37p_0
@@ -106,7 +172,7 @@ chs-xil-tcl:
 util-debug-gui: chs-xil-debug-gui
 chs-xil-debug-gui:
 	@echo "Starting $(VIVADO) GUI for debug"
-	$(VIVADOENV) $(VIVADO) -nojournal -mode gui -source $(TCL_DIR)/debug_gui.tcl &
+	$(VIVADOENV) $(VIVADO_BORDCOMPUTER) -nojournal -mode gui -source $(TCL_DIR)/debug_gui.tcl &
 
 %.gdb: FORCE
 	sed -E -i "s|file.+install64V?|file $(CHS_SW_DIR)/boot/install64$(IS_RVV)|g" $*.gdb 
@@ -115,20 +181,28 @@ util-launch-gdb: scripts/gdb/running_kernel.gdb scripts/gdb/in_memory_boot.gdb
 	-ssh -L $(GDB_LOCAL_PORT):localhost:$(GDB_REMOTE_PORT) -C -N -f -l $$USER $(XILINX_HOST)
 	$(GDB) -ex "target extended-remote :$(GDB_LOCAL_PORT)"
 
-# Spare IPs from clean
-chs-xil-util-clean:
-# 	Vivado products in target/
-	rm -rf $(CHS_XIL_DIR)/$(PROJECT)
-# 	Viviado files from top directory
-	rm -rf *.mcs *.prm .Xil/ 
-# 	NOTE: Keep Vivado logs
-
 chs-xil-clean-ips:
 	rm -rf $(CHS_XIL_DIR)*.xci
 	cd  $(CHS_XIL_DIR)/xilinx; $(foreach ip, $(ips-names), make -C $(ip) clean;)
 
 # Call all the clean targets
 chs-xil-clean-all: chs-xil-util-clean chs-xil-clean-ips
+
+#############
+## Utility ##
+#############
+
+all: util-patches
+
+# Complete fpga run
+util-fpga-run: 
+# 	NOTE: these targets must run sequentially
+	$(MAKE) -j1 chs-linux-clean chs-linux-img chs-xil-flash chs-xil-program
+
+# Quick workaround for cva6-sdk not finding the DTB/FDT in this repo
+# Expose a target to update it (just touching would not work)
+dtb:
+	dtc -I dts -O dtb -i $(CHS_SW_DIR)/boot $(CHS_SW_DIR)/boot/cheshire_$(BOARD).dts -o $(CHS_SW_DIR)/boot/cheshire_$(BOARD).dtb 
 
 # Force rule to override the target timestamps
 FORCE:

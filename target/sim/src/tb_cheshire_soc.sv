@@ -58,4 +58,48 @@ module tb_cheshire_soc;
     $finish;
   end
 
+     // Stop the simulation after a maximum number of cycles where the 
+   // program counter do not change
+   int unsigned count;
+   logic [63:0] old_pc;
+   logic stop, start;
+   localparam AFTER_TIME_PS = 100;
+   localparam MAX_CYCLES = 10000;
+   initial begin
+        stop = 1'b0;
+        start = 1'b0;
+        count = 0;
+        
+        // Wait for the first instruction to commit
+        wait ( fix.dut.gen_cva6_cores[0].i_core_cva6.commit_stage_i.commit_ack_o[0] == 1'b1 );
+        start = 1'b1;
+        
+        while ( stop == 1'b0 )  begin
+            // Count the cycles
+            while ( count < MAX_CYCLES ) begin
+                // Wait for a clock cycle
+                @(posedge fix.clk);             
+                // If the current pc matches the previous one
+                if ( old_pc == fix.dut.gen_cva6_cores[0].i_core_cva6.commit_stage_i.pc_o ) begin
+                    count++;
+                end
+                else begin
+                    // Reset the counter
+                    old_pc = fix.dut.gen_cva6_cores[0].i_core_cva6.commit_stage_i.pc_o;
+                    count = 0;
+                end
+            end
+
+            // Pause the simulation
+            $info("DEBUG: Program Counter : %h\n", fix.dut.gen_cva6_cores[0].i_core_cva6.commit_stage_i.pc_o);
+            stop = 1'b1;
+            // Wait for some time before autonomously stoppig the simulation
+            // (e.g. a wrapper tb might want to do some post-execution elaboration)
+            # AFTER_TIME_PS;
+            $info("DEBUG: Simulation has not been stopped yet, stopping now\n");
+            $finish(0);
+    end
+   
+   end
+
 endmodule
