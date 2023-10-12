@@ -15,10 +15,10 @@ packages:
     - apb
     - register_interface
   ara:
-    revision: 8d510dd5e8391bc4bee61fca9b103904bf1ef622
+    revision: null
     version: null
     source:
-      Git: https://github.com/MaistoV/ara_fork.git
+      Path: /scratch/vmaisto/cheshire_fork/working_dir/ara
     dependencies:
     - apb
     - axi
@@ -26,8 +26,8 @@ packages:
     - cva6
     - tech_cells_generic
   axi:
-    revision: bfee21757bf090ec8e358456314b0b0fd3c90809
-    version: 0.39.0
+    revision: fccffb5953ec8564218ba05e20adbedec845e014
+    version: 0.39.1
     source:
       Git: https://github.com/pulp-platform/axi.git
     dependencies:
@@ -80,8 +80,8 @@ packages:
     - common_cells
     - register_interface
   common_cells:
-    revision: 53b0b58af2db5bd3c850a7038fae170ed78326bb
-    version: 1.31.1
+    revision: 2bd027cb87eaa9bf7d17196ec5f69864b35b630f
+    version: 1.32.0
     source:
       Git: https://github.com/pulp-platform/common_cells.git
     dependencies:
@@ -94,10 +94,10 @@ packages:
       Git: https://github.com/pulp-platform/common_verification.git
     dependencies: []
   cva6:
-    revision: 5e2e520696aa63545b91fca38ce340314291be5c
+    revision: null
     version: null
     source:
-      Git: https://github.com/MaistoV/cva6_fork.git
+      Path: /scratch/vmaisto/cheshire_fork/working_dir/cva6
     dependencies:
     - axi
     - common_cells
@@ -174,8 +174,8 @@ packages:
     - common_cells
     - register_interface
   tech_cells_generic:
-    revision: 298b7297d220ba2601d0f24f684f97ff32f61123
-    version: 0.2.12
+    revision: 7968dd6e6180df2c644636bc6d2908a49f2190cf
+    version: 0.2.13
     source:
       Git: https://github.com/pulp-platform/tech_cells_generic.git
     dependencies:

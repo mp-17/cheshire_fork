@@ -10,6 +10,7 @@ nonfree/
 
 # Dependency files
 .bender/
+Bender.local
 
 # Software build files
 *.bin
@@ -32,6 +33,7 @@ modelsim.ini
 transcript
 vsim.wlf
 work/
+vsim.dbg
 
 .vscode
 *dtb
@@ -44,3 +46,9 @@ vivado*
 webtalk*
 *prm
 *mcs
+
+# Bender local directory
+working_dir
+
+# RVV test results
+rvv_test_results/
