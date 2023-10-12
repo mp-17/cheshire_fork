@@ -109,10 +109,10 @@ chs-xil-gui:
 
 chs-xil-program: #$(BIT)
 	@echo "Programming board $(BOARD) ($(XILINX_PART))"
-	$(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source $(CHS_XIL_DIR)/scripts/program.tcl
+	$(VIVADOENV) $(VIVADO_BORDCOMPUTER) $(VIVADOFLAGS) -source $(CHS_XIL_DIR)/scripts/program.tcl
 
 chs-xil-flash: $(CHS_SW_DIR)/boot/linux$(IS_RVV)-${BOARD}.gpt.bin
-	$(VIVADOENV) FILE=$< OFFSET=0 $(VIVADO) $(VIVADOFLAGS) -source $(CHS_XIL_DIR)/scripts/flash_spi.tcl
+	$(VIVADOENV) FILE=$< OFFSET=0 $(VIVADO_BORDCOMPUTER) $(VIVADOFLAGS) -source $(CHS_XIL_DIR)/scripts/flash_spi.tcl
 
 chs-xil-clean:
 	@echo "INFO: IPs will not be cleaned. To clean them run \"make chs-xil-clean-ips\""

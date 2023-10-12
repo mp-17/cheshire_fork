@@ -23,3 +23,17 @@ if { $::env(ARA) eq "1" } {
   set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/axi_resp_i*]
 }
 
+# MMU, same as CVA6 mmu.sv for now
+# NOTE: most of these are related to the PTW
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/ex_stage_i/lsu_i/gen_mmu_sv39.i_cva6_mmu/req_port_i*           ]
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/ex_stage_i/lsu_i/gen_mmu_sv39.i_cva6_mmu/req_port_o*           ]
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/ex_stage_i/lsu_i/gen_mmu_sv39.i_cva6_mmu/i_ptw/ptw_error_o*    ]
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/ex_stage_i/lsu_i/gen_mmu_sv39.i_cva6_mmu/i_ptw/update_vaddr_o* ]
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/ex_stage_i/lsu_i/gen_mmu_sv39.i_cva6_mmu/i_ptw/itlb_update_o*  ]
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/ex_stage_i/lsu_i/gen_mmu_sv39.i_cva6_mmu/i_ptw/dtlb_update_o*  ]
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/ex_stage_i/lsu_i/gen_mmu_sv39.i_cva6_mmu/i_ptw/dtlb_access_i*  ]
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/ex_stage_i/lsu_i/gen_mmu_sv39.i_cva6_mmu/i_ptw/dtlb_vaddr_i*   ]
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/ex_stage_i/lsu_i/gen_mmu_sv39.i_cva6_mmu/i_ptw/dtlb_hit_i*     ]
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/ex_stage_i/lsu_i/gen_mmu_sv39.i_cva6_mmu/i_ptw/itlb_access_i*  ]
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/ex_stage_i/lsu_i/gen_mmu_sv39.i_cva6_mmu/i_ptw/itlb_vaddr_i*   ]  
+set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/ex_stage_i/lsu_i/gen_mmu_sv39.i_cva6_mmu/i_ptw/itlb_hit_i*     ]
