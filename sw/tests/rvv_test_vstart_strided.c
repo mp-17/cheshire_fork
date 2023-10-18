@@ -43,6 +43,7 @@ int main(void) {
 
     // Loop over stride values
     for ( uint64_t elem_stride = 1; elem_stride <= ELEM_STRIDE_MAX; elem_stride++ ) {
+        RVV_TEST_INIT( vl, avl );
 
         // Loop over vstart values
         for ( uint64_t vstart_val = 0; vstart_val < vl; vstart_val++ ) {
@@ -92,6 +93,8 @@ int main(void) {
     
     // Loop over stride values
     for ( uint64_t elem_stride = 1; elem_stride <= ELEM_STRIDE_MAX; elem_stride++ ) {
+        RVV_TEST_INIT( vl, avl );
+        
         // Loop over vstart values
         for ( uint64_t vstart_val = 0; vstart_val < vl; vstart_val++ ) {
             RVV_TEST_INIT( vl, avl );

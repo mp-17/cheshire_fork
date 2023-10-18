@@ -1,7 +1,7 @@
 # NOTE: Run this script to reboot kernel in memory
 
 # Load OpenSBI + Linux ELF
-file sw/boot/install64V/in_memory_fw_payload.elf
+file /scratch/vmaisto/cheshire_fork/sw/boot/install64/in_memory_fw_payload.elf
 load
 printf "OpenSBI + Linux loaded\n"
 

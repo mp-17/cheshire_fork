@@ -17,7 +17,7 @@
 #			1. Instantiate Ara
 #		- ARA_NR_LANES: number of parallel lanes inside Ara
 #			- {2, 4, 8}
-#			- any other power of 2 is, in theory supported, but nearly impossible to realistically build
+#			- any other power of 2 is, in theory, supported, but nearly impossible to realistically build
 #		- VLEN: derived from ARA_NR_LANES
 #		- Ara AXI interconnection (mutually exclusive)
 #			- ARA_INTEGRATION_V0_1: direct connection to Cheshire xbar, only supports ARA_NR_LANES=2
@@ -30,13 +30,17 @@ BENDER_ARA_TARGETS += -t cv64a6_imafdcv_sv39
 
 ARA ?= 1
 ARA_NR_LANES ?= 2
-VLEN ?= $$(($(ARA_NR_LANES) * 1024))
+VLEN := $$(($(ARA_NR_LANES) * 1024))
 # Needs to be defined alongside with RVV (cv64a6_imafdcv_sv39)
 BENDER_ARA_DEFS += --define ARIANE_ACCELERATOR_PORT=1
 BENDER_ARA_DEFS += --define WT_CACHE=1
 # Questa requires these to be defined since Ara sources are built anyway
 BENDER_ARA_DEFS += --define ARA_NR_LANES=$(ARA_NR_LANES)  
 BENDER_ARA_DEFS += --define VLEN=$(VLEN)
+
+# MMU-related defines
+# # Instantiate MMU interface in CVA6 and Ara
+# BENDER_ARA_DEFS += --define ACC_MMU_INTERFACE
 # Prioritize Ara translation requests to MMU
 BENDER_ARA_DEFS += --define MMU_ACC_PRIORITY
 

@@ -2,7 +2,7 @@
 # Solderpad Hardware License, Version 0.51, see LICENSE for details.
 # SPDX-License-Identifier: SHL-0.51
 #
-# Author: Florian Zaruba <zarubaf@iis.ee.ethz.ch>
+# Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 
 # Contraints files selection
 switch $::env(BOARD) {
@@ -26,6 +26,9 @@ set_property top cheshire_top_xilinx [current_fileset]
 update_compile_order -fileset sources_1
 
 set_property XPM_LIBRARIES XPM_MEMORY [current_project]
+
+# RTL elaboration
+synth_design -rtl -name rtl_1
 
 # Preserve the net names and hierarchy for debug
 if { ($::env(DEBUG_RUN) eq "1") || ($::env(DEBUG_NETS) eq "1") } {
@@ -58,50 +61,50 @@ remove_cell [get_cells -hier -filter {ORIG_REF_NAME == "unread" || REF_NAME == "
 # Add further debug nets
 if { $::env(DEBUG_NETS) eq "1" } {
   source ../scripts/tcl/mark_debug_nets.tcl
-}
 
-# Instantiate ILA
-set DEBUG [llength [get_nets -hier -filter {MARK_DEBUG == 1}]]
-if ($DEBUG) {
-    # Create core
-    puts "Creating debug core..."
-    create_debug_core u_ila_0 ila
-    set_property -dict "ALL_PROBE_SAME_MU true ALL_PROBE_SAME_MU_CNT 4 C_ADV_TRIGGER true C_DATA_DEPTH 16384 \
-     C_EN_STRG_QUAL true C_INPUT_PIPE_STAGES 0 C_TRIGIN_EN false C_TRIGOUT_EN false" [get_debug_cores u_ila_0]
-    ## Clock
-    set_property port_width 1 [get_debug_ports u_ila_0/clk]
-    connect_debug_port u_ila_0/clk [get_nets soc_clk]
-    # Get nets to debug
-    set debugNets [lsort -dictionary [get_nets -hier -filter {MARK_DEBUG == 1}]]
-    set netNameLast ""
-    set probe_i 0
-    # Loop through all nets (add extra list element to ensure last net is processed)
-    foreach net [concat $debugNets {""}] {
-        # Remove trailing array index
-        regsub {\[[0-9]*\]$} $net {} netName
-        # Create probe after all signals with the same name have been collected
-        if {$netNameLast != $netName} {
-            if {$netNameLast != ""} {
-                puts "Creating probe $probe_i with width [llength $sigList] for signal '$netNameLast'"
-                # probe0 already exists, and does not need to be created
-                if {$probe_i != 0} {
-                    create_debug_port u_ila_0 probe
-                }
-                set_property port_width [llength $sigList] [get_debug_ports u_ila_0/probe$probe_i]
-                set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe$probe_i]
-                connect_debug_port u_ila_0/probe$probe_i [get_nets $sigList]
-                incr probe_i
-            }
-            set sigList ""
-        }
-        lappend sigList $net
-        set netNameLast $netName
-    }
-    # Need to save save constraints before implementing the core
-    # set_property target_constrs_file cheshire.srcs/constrs_1/imports/constraints/$::env(BOARD).xdc [current_fileset -constrset]
-    save_constraints -force
-    implement_debug_core
-    write_debug_probes -force probes.ltx
+  # Instantiate ILA
+  set DEBUG [llength [get_nets -hier -filter {MARK_DEBUG == 1}]]
+  if ($DEBUG) {
+      # Create core
+      puts "Creating debug core..."
+      create_debug_core u_ila_0 ila
+      set_property -dict "ALL_PROBE_SAME_MU true ALL_PROBE_SAME_MU_CNT 4 C_ADV_TRIGGER true C_DATA_DEPTH 16384 \
+       C_EN_STRG_QUAL true C_INPUT_PIPE_STAGES 0 C_TRIGIN_EN false C_TRIGOUT_EN false" [get_debug_cores u_ila_0]
+      ## Clock
+      set_property port_width 1 [get_debug_ports u_ila_0/clk]
+      connect_debug_port u_ila_0/clk [get_nets soc_clk]
+      # Get nets to debug
+      set debugNets [lsort -dictionary [get_nets -hier -filter {MARK_DEBUG == 1}]]
+      set netNameLast ""
+      set probe_i 0
+      # Loop through all nets (add extra list element to ensure last net is processed)
+      foreach net [concat $debugNets {""}] {
+          # Remove trailing array index
+          regsub {\[[0-9]*\]$} $net {} netName
+          # Create probe after all signals with the same name have been collected
+          if {$netNameLast != $netName} {
+              if {$netNameLast != ""} {
+                  puts "Creating probe $probe_i with width [llength $sigList] for signal '$netNameLast'"
+                  # probe0 already exists, and does not need to be created
+                  if {$probe_i != 0} {
+                      create_debug_port u_ila_0 probe
+                  }
+                  set_property port_width [llength $sigList] [get_debug_ports u_ila_0/probe$probe_i]
+                  set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe$probe_i]
+                  connect_debug_port u_ila_0/probe$probe_i [get_nets $sigList]
+                  incr probe_i
+              }
+              set sigList ""
+          }
+          lappend sigList $net
+          set netNameLast $netName
+      }
+      # Need to save save constraints before implementing the core
+      # set_property target_constrs_file cheshire.srcs/constrs_1/imports/constraints/$::env(BOARD).xdc [current_fileset -constrset]
+      save_constraints -force
+      implement_debug_core
+      write_debug_probes -force probes.ltx
+  }
 }
 
 # Incremental implementation
@@ -111,8 +114,9 @@ if {[info exists $::env(ROUTED_DCP)] && [file exists  $::env(ROUTED_DCP)]} {
 
 # Implementation
 if { $::env(DEBUG_RUN) eq "1" } {
-  set_property "steps.place_design.args.directive" "RuntimeOptimized" [get_runs impl_1]
-  set_property "steps.route_design.args.directive" "RuntimeOptimized" [get_runs impl_1]
+  # set_property STRATEGY                            Flow_RuntimeOptimized  [get_runs impl_1]
+  set_property "steps.place_design.args.directive" "RuntimeOptimized"     [get_runs impl_1]
+  set_property "steps.route_design.args.directive" "RuntimeOptimized"     [get_runs impl_1]
 } else {
   set_property STRATEGY                                    $::env(IMPL_STRATEGY)    [get_runs impl_1]
   set_property STEPS.PHYS_OPT_DESIGN.IS_ENABLED 		       true                     [get_runs impl_1]

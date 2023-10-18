@@ -7,6 +7,7 @@
 // Paul Scheffler <paulsc@iis.ee.ethz.ch>
 // Thomas Benz <tbenz@iis.ee.ethz.ch>
 // Alessandro Ottaviano <aottaviano@iis.ee.ethz.ch>
+// Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 
 module cheshire_soc import cheshire_pkg::*; #(
   // Cheshire config
@@ -637,26 +638,36 @@ module cheshire_soc import cheshire_pkg::*; #(
       .inval_addr_i     ( inval_addr   ),
       .inval_valid_i    ( inval_valid  ),
       .inval_ready_o    ( inval_ready  ),
-      .en_ld_st_translation_o   ( en_ld_st_translation_cva6_acc ),
-      // MMU interface with accelerator
+  // `ifdef ACC_MMU_INTERFACE
+      // CSR output
+      // .en_ld_st_translation_o   ( en_ld_st_translation_cva6_acc ),
+      // // MMU interface with accelerator
       // .acc_mmu_misaligned_ex_i  ( mmu_misaligned_ex_acc_cva6 ),
       // .acc_mmu_req_i            ( mmu_req_acc_cva6           ),
       // .acc_mmu_vaddr_i          ( mmu_vaddr_acc_cva6         ),
       // .acc_mmu_is_store_i       ( mmu_is_store_acc_cva6      ),
-      .acc_mmu_misaligned_ex_i  ( '0 ),
-      .acc_mmu_req_i            ( '0 ),
-      .acc_mmu_vaddr_i          ( '0 ),
-      .acc_mmu_is_store_i       ( '0 ),
-      .acc_mmu_dtlb_hit_o       ( mmu_dtlb_hit_cva6_acc      ),
-      .acc_mmu_dtlb_ppn_o       ( mmu_dtlb_ppn_cva6_acc      ),
-      .acc_mmu_valid_o          ( mmu_valid_cva6_acc         ),
-      .acc_mmu_paddr_o          ( mmu_paddr_cva6_acc         ),
-      .acc_mmu_exception_o      ( mmu_exception_cva6_acc     ),
+      // .acc_mmu_dtlb_hit_o       ( mmu_dtlb_hit_cva6_acc      ),
+      // .acc_mmu_dtlb_ppn_o       ( mmu_dtlb_ppn_cva6_acc      ),
+      // .acc_mmu_valid_o          ( mmu_valid_cva6_acc         ),
+      // .acc_mmu_paddr_o          ( mmu_paddr_cva6_acc         ),
+      // .acc_mmu_exception_o      ( mmu_exception_cva6_acc     ),
+  // `endif // ACC_MMU_INTERFACE
   `endif // ARIANE_ACCELERATOR_PORT
       // AXI interface
       .axi_req_o        ( core_out_req ),
       .axi_resp_i       ( core_out_rsp )
     );
+
+    // DEBUG
+    assign mmu_misaligned_ex_acc_cva6 = '0;
+    assign mmu_req_acc_cva6           = '0;
+    assign mmu_vaddr_acc_cva6         = '0;
+    assign mmu_is_store_acc_cva6      = '0;
+    assign mmu_dtlb_hit_cva6_acc      = '0;
+    assign mmu_dtlb_ppn_cva6_acc      = '0;
+    assign mmu_valid_cva6_acc         = '0;
+    assign mmu_paddr_cva6_acc         = '0;
+    assign mmu_exception_cva6_acc     = '0;
 
 `ifdef ARA
 `ifdef ARA_INTEGRATION_V0_2  
@@ -703,7 +714,9 @@ module cheshire_soc import cheshire_pkg::*; #(
       .scan_enable_i   ( 1'b0              ),
       .scan_data_i     ( 1'b0              ),
       .scan_data_o     ( /* Unused */      ),
+  // `ifdef ACC_MMU_INTERFACE
       // .en_ld_st_translation_i ( en_ld_st_translation_cva6_acc ),
+      // .en_ld_st_translation_i ( '0 ), // DEBUG
       // .mmu_misaligned_ex_o ( mmu_misaligned_ex_acc_cva6 ),
       // .mmu_req_o           ( mmu_req_acc_cva6           ),
       // .mmu_vaddr_o         ( mmu_vaddr_acc_cva6         ),
@@ -713,12 +726,7 @@ module cheshire_soc import cheshire_pkg::*; #(
       // .mmu_valid_i         ( mmu_valid_cva6_acc         ),
       // .mmu_paddr_i         ( mmu_paddr_cva6_acc         ),
       // .mmu_exception_i     ( mmu_exception_cva6_acc     ),
-      .en_ld_st_translation_i ( '0 ),
-      .mmu_dtlb_hit_i      ( '0 ),
-      .mmu_dtlb_ppn_i      ( '0 ),
-      .mmu_valid_i         ( '0 ),
-      .mmu_paddr_i         ( '0 ),
-      .mmu_exception_i     ( '0 ),
+  // `endif // ACC_MMU_INTERFACE
       .acc_req_i       ( acc_req           ),
       .acc_resp_o      ( acc_resp          ),
       .axi_req_o       ( axi_ara_wide_req  ),
@@ -780,11 +788,17 @@ module cheshire_soc import cheshire_pkg::*; #(
   `endif // ARA_INTEGRATION_V0_2  
   `else // ! ARA
     // Ingnore output acc_req
-    // Tie input ot zero
+    // Tie outputs to zero
     assign acc_resp    = '0; 
     assign inval_valid = '0;
     assign inval_addr = '0;
     
+    // MMU interface
+    assign mmu_misaligned_ex_acc_cva6 = '0;
+    assign mmu_req_acc_cva6           = '0;
+    assign mmu_vaddr_acc_cva6         = '0;
+    assign mmu_is_store_acc_cva6      = '0;
+
     // Crossbar
     // Ignore axi_in_rsp[AxiIn.ara] and axi_in_req[AxiIn.ara] since here they are not defined 
 

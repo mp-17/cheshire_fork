@@ -13,7 +13,7 @@ set TESTBENCH tb_cheshire_soc
 # Default on fast simulation flags.
 if {![info exists VOPTARGS]} {
     # Log all signals
-    set VOPTARGS "-O5 -permissive +acc=+tb_cheshire_soc/fix/dut. -debugdb"
+    set VOPTARGS "-O5 -permissive +acc=p+tb_cheshire_soc/fix/dut. -debugdb"
 }
 
 # Suppress (vopt-7033) Variable '' driven in a combinational block, may not be driven by any other process.

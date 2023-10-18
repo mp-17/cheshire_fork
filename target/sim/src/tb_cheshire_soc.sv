@@ -91,12 +91,12 @@ module tb_cheshire_soc;
             end
 
             // Pause the simulation
-            $info("DEBUG: Program Counter : %h\n", fix.dut.gen_cva6_cores[0].i_core_cva6.commit_stage_i.pc_o);
+            $warning("DEBUG: Program Counter hanging for %d cycles at: 0x%h\n", MAX_CYCLES, fix.dut.gen_cva6_cores[0].i_core_cva6.commit_stage_i.pc_o);
             stop = 1'b1;
             // Wait for some time before autonomously stoppig the simulation
             // (e.g. a wrapper tb might want to do some post-execution elaboration)
             # AFTER_TIME_PS;
-            $info("DEBUG: Simulation has not been stopped yet, stopping now\n");
+            $warning("DEBUG: Simulation has not been stopped yet, stopping now\n");
             $finish(0);
     end
    

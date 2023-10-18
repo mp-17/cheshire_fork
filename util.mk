@@ -12,7 +12,7 @@
 
 # Test macros
 RVV_TEST_MAGIC 			?= f0f0f0f0f0f0f0f0
-RVV_TEST_ARA_NR_LANES 	?= 2 4 8
+RVV_TEST_ARA_NR_LANES 	?= 2 4 #8
 # Align to AxiDataWidth of VLSU
 ALIGN_VSTORES := $(shell echo "32 * $(ARA_NR_LANES) / 8" | bc -l | sed -E "s/\..+//g")
 
@@ -54,15 +54,19 @@ DATE_FORMAT ?= "+%Y-%b-%d %H:%M"
 TEST_COMMENT ?= "None"
 REPORT_FILE_ALL ?= $(CHS_RVV_TEST_RESULT_DIR)/report_all.txt
 rvv-test-report: $(RVV_TEST_TRACE) 
-	printf "$(RVV_TEST_NAME)," >> $(RVV_TEST_RESULT_FILE)
-	printf " ARA_NR_LANES=$(ARA_NR_LANES)," >> $(RVV_TEST_RESULT_FILE)
+#	Compose test report
+	printf "$(RVV_TEST_NAME)," 					>> $(RVV_TEST_RESULT_FILE)
+	printf " ARA_NR_LANES=$(ARA_NR_LANES)," 	>> $(RVV_TEST_RESULT_FILE)
 	grep --quiet $(RVV_TEST_MAGIC) $(RVV_TEST_TRACE) 	\
-		&& printf " PASSED," >> $(RVV_TEST_RESULT_FILE) \
-		|| printf " FAILED," >> $(RVV_TEST_RESULT_FILE)
-	printf " $(shell date $(DATE_FORMAT))," >> $(RVV_TEST_RESULT_FILE)
-	printf " Notes: $(TEST_COMMENT)\n" >> $(RVV_TEST_RESULT_FILE)
-	cat $(RVV_TEST_RESULT_FILE) >> $(REPORT_FILE_ALL)
-	@printf "[INFO] Test report: "; cat $(RVV_TEST_RESULT_FILE)
+		&& printf " PASSED," 					>> $(RVV_TEST_RESULT_FILE) \
+		|| printf " FAILED," 					>> $(RVV_TEST_RESULT_FILE)
+	printf " $(shell date $(DATE_FORMAT))," 	>> $(RVV_TEST_RESULT_FILE)
+	printf " Notes: \"$(TEST_COMMENT)\", " 		>> $(RVV_TEST_RESULT_FILE)
+	printf " VSIM_ROOT=$(VSIM_ROOT)" 			>> $(RVV_TEST_RESULT_FILE)
+	printf "\n"									>> $(RVV_TEST_RESULT_FILE)
+# 	Dump to general result report and terminal
+	tail -n1 $(RVV_TEST_RESULT_FILE) >> $(REPORT_FILE_ALL)
+	@printf "[INFO] Test report: "; tail -n1 $(RVV_TEST_RESULT_FILE)
 	@echo "[INFO] Check trace log at : $(RVV_TEST_TRACE)"
 	@echo "[INFO] Check transcript at: $(RVV_TEST_RESULT_DIR)/transcript"
 	@echo "[INFO] Check waves with   :"
@@ -182,7 +186,7 @@ util-launch-gdb: scripts/gdb/running_kernel.gdb scripts/gdb/in_memory_boot.gdb
 	$(GDB) -ex "target extended-remote :$(GDB_LOCAL_PORT)"
 
 chs-xil-clean-ips:
-	rm -rf $(CHS_XIL_DIR)*.xci
+	rm -rf $(CHS_XIL_DIR)/*.xci
 	cd  $(CHS_XIL_DIR)/xilinx; $(foreach ip, $(ips-names), make -C $(ip) clean;)
 
 # Call all the clean targets

@@ -21,11 +21,9 @@ int main(void) {
 
     // Helper variables and arrays
     uint64_t array_load [VLMAX];
-    uint64_t array_store [VLMAX] = {0};
+    uint64_t array_store [VLMAX];
     uint64_t* address_load = array_load;
     uint64_t* address_store = array_store;
-    uint64_t* address_misaligned;
-    uint64_t vstart_val;
 
     // Enalbe RVV
     enable_rvv();
@@ -40,6 +38,7 @@ int main(void) {
     //////////////////////////////////////////////////////////////////
     // TEST: Zero and non-zero  vstart for arithmetic instructions
     //////////////////////////////////////////////////////////////////
+    RVV_TEST_INIT( vl, avl );
 
     // Loop over vstart values
     for ( uint64_t vstart_val = 0; vstart_val < vl; vstart_val++ ) {
