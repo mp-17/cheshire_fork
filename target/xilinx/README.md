@@ -45,10 +45,21 @@ NOTE: If INT_JTAG=1, hw_server and OpenOCD cannot be used together since they at
 
 # VCU128 Linux boot
 Link cva6-sdk in the `sw/boot` directory:
+
+Instance with RVV:
 ````console
 $ ln -s $(CVA6-SDK)/install64 sw/boot/install64V
-$ make spi_boot
 ````
+
+Instance without RVV:
+````console
+$ ln -s $(CVA6-SDK)/install64 sw/boot/install64
+````
+
+To select which instance to use, export the variable `RVV=0|1`:
+- 0: `use sw/boot/install64`
+- 1: `use sw/boot/install64V`
+
 
 ## SPI flash boot
 From cva6-sdk, build OpenSBI+U-Boot and Linux images:
@@ -56,6 +67,15 @@ From cva6-sdk, build OpenSBI+U-Boot and Linux images:
 $ make clean_spi_boot
 $ make spi_boot
 ````
+### Program the flash and the FPGA
+A single make target is provided to perform SPI flash and FPGA programming:
+````console
+$ make util-fpga-run
+````
+This will take 
+These two single steps can also be run idividually, see below.
+
+This will take 5-10 minutes, depending on the flash image and bitstream size.
 
 ### Program the flash 
 This step can be skipped if the "In-memory flow" is used.
@@ -69,7 +89,7 @@ On host:
 ````console
 $ make chs-xil-flash
 ````
-This will take 3-10 minutes, depending on the flash image size.
+This will take 3-7 minutes, depending on the flash image size.
 
 ### Flash the bitstream
 On bordcomputer, start hw_server:
@@ -91,7 +111,7 @@ $ make clean_in_memory_boot
 $ make in_memory_boot
 ````
 
-### Flash the bitstreamsd
+### Flash the bitstream
 See above.
 
 ### Connect with OpenOCD + GDB

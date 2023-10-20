@@ -13,8 +13,8 @@
 #		wich are, then, used bby the source code itself to build the target configuration.
 #		The basic macros and their values are:
 #		- ARA:
-#			0. Don't instantiate Ara
-#			1. Instantiate Ara
+#			0. Don't instantiate Ara, with cv64a6_imafdc_sv39
+#			1. Instantiate Ara and cv64a6_imafdcv_sv39
 #		- ARA_NR_LANES: number of parallel lanes inside Ara
 #			- {2, 4, 8}
 #			- any other power of 2 is, in theory, supported, but nearly impossible to realistically build
@@ -25,10 +25,18 @@
 #			- ARA_INTEGRATION_V0_3: split crossbar (not yet implemented)
 ##########################################################################################################
 
-# Ara-capable CVA6
-BENDER_ARA_TARGETS += -t cv64a6_imafdcv_sv39
-
 ARA ?= 1
+
+# Select Ara-capable CVA6
+# NOTE: this will affect the MISA register and the firmware relying on it, i.e., OpenSBI
+ifeq ($(ARA),1)
+	BENDER_ARA_TARGETS += -t cv64a6_imafdcv_sv39
+else
+	BENDER_ARA_TARGETS += -t cv64a6_imafdc_sv39
+endif
+
+
+
 ARA_NR_LANES ?= 2
 VLEN := $$(($(ARA_NR_LANES) * 1024))
 # Needs to be defined alongside with RVV (cv64a6_imafdcv_sv39)

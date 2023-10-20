@@ -2,7 +2,10 @@
 # Solderpad Hardware License, Version 0.51, see LICENSE for details.
 # SPDX-License-Identifier: SHL-0.51
 #
-# Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
+# Florian Zaruba <zarubaf@iis.ee.ethz.ch>
+# Nils Wistoff <nwistoff@iis.ee.ethz.ch>
+# Cyril Koenig <cykoenig@iis.ee.ethz.ch>
+# Vincenzo Maisto <vincenzo.maisto2@unina.it>
 
 # Contraints files selection
 switch $::env(BOARD) {
@@ -60,7 +63,10 @@ remove_cell [get_cells -hier -filter {ORIG_REF_NAME == "unread" || REF_NAME == "
 
 # Add further debug nets
 if { $::env(DEBUG_NETS) eq "1" } {
-  source ../scripts/tcl/mark_debug_nets.tcl
+  # Some nets might be optimized away during synthesis
+  if { [catch {source ../scripts/tcl/mark_debug_nets.tcl} result] } {
+    puts "Warning: Some error occurred while marking nets for debug: $result"
+  }
 
   # Instantiate ILA
   set DEBUG [llength [get_nets -hier -filter {MARK_DEBUG == 1}]]
