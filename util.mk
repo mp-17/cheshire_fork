@@ -196,7 +196,7 @@ chs-xil-clean-all: chs-xil-util-clean chs-xil-clean-ips
 ## Utility ##
 #############
 
-all: util-patches
+all:
 
 # Complete fpga run
 util-fpga-run: 
