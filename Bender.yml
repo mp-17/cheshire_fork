@@ -13,22 +13,22 @@ package:
 
 dependencies:
   apb_uart:                 { git: "https://github.com/pulp-platform/apb_uart.git",               version: 0.2.1  }
-  axi:                      { git: "https://github.com/pulp-platform/axi.git",                    version: 0.39.0 }
+  axi:                      { git: "https://github.com/pulp-platform/axi.git",                    version: =0.39.0 }
   axi_llc:                  { git: "https://github.com/pulp-platform/axi_llc.git",                version: 0.2.1  }
-  axi_riscv_atomics:        { git: "https://github.com/pulp-platform/axi_riscv_atomics.git",      version: 0.8.1  }
+  axi_riscv_atomics:        { git: "https://github.com/pulp-platform/axi_riscv_atomics.git",      version: =0.8.1  }
   axi_vga:                  { git: "https://github.com/pulp-platform/axi_vga.git",                version: 0.1.1  }
-  clint:                    { git: "https://github.com/pulp-platform/clint.git",                  version: ^0.2.0 }
+  clint:                    { git: "https://github.com/pulp-platform/clint.git",                  version: 0.2.0 }
   common_cells:             { git: "https://github.com/pulp-platform/common_cells.git",           version: 1.29.0 }
   common_verification:      { git: "https://github.com/pulp-platform/common_verification.git",    version: 0.2.0  }
   cva6:                     { git: "https://github.com/MaistoV/cva6_fork.git",                rev: "ara_cheshire" } 
   ara:                      { git: "https://github.com/MaistoV/ara_fork.git",                 rev: "ara_cheshire" }
   iDMA:                     { git: "https://github.com/pulp-platform/iDMA.git",                   rev: 437ffa9    }  # TODO: master commit; use next release once out
   opentitan_peripherals:    { git: "https://github.com/pulp-platform/opentitan_peripherals.git",  version: 0.4.0  }
-  register_interface:       { git: "https://github.com/pulp-platform/register_interface.git",     version: ^0.4.1 }
+  register_interface:       { git: "https://github.com/pulp-platform/register_interface.git",     version: =0.4.1 }
   riscv-dbg:                { git: "https://github.com/pulp-platform/riscv-dbg.git",              version: 0.8.0  }
   serial_link:              { git: "https://github.com/pulp-platform/serial_link.git",            version: 1.1.0  }
   clic:                     { git: "https://github.com/pulp-platform/clic.git",                   version: 2.0.0  }
-  irq_router:               { git: "https://github.com/pulp-platform/irq_router.git",             rev: d1d3135    }  # TODO: master commit; use next release once out
+  irq_router:               { git: "https://github.com/pulp-platform/irq_router.git",             rev: =0.0.1-beta.1    }  # TODO: master commit; use next release once out
 
 export_include_dirs:
   - hw/include
@@ -42,6 +42,7 @@ sources:
   - hw/regs/axi_rt_reg_top.sv
   - hw/cheshire_pkg.sv
   - hw/cheshire_soc.sv
+  - hw/mmu_stub.sv
 
   - target: any(simulation, test)
     files:

@@ -9,8 +9,8 @@
 module mmu_stub (
     input  logic                          clk_i,
     input  logic                          rst_ni,
-    input  logic                          en_ld_st_translation_i,  // Enable bahaviour
-    input  logic                          trigger_exception_i,     // Emulate exception generation on requests
+    input  logic                          en_ld_st_translation_i,  // Enable behaviour
+    input  logic                          trigger_exception_i,     // Emulate exception generation on requests (load/store page faults)
     input  ariane_pkg::exception_t        misaligned_ex_i,         // Ignored
     input  logic                          req_i,
     input  logic [riscv::VLEN-1:0]        vaddr_i,
@@ -29,9 +29,11 @@ module mmu_stub (
   logic [riscv::PLEN-1:0] mock_paddr_d, mock_paddr_q;
   logic [riscv::VLEN-1:0] vaddr_d, vaddr_q;
   logic                   valid_d, valid_q;
+  logic                   is_store_q, is_store_d;
   `FF(mock_paddr_q, mock_paddr_d, '0, clk_i, rst_ni)
   `FF(vaddr_q     , vaddr_d     , '0, clk_i, rst_ni)
   `FF(valid_q     , valid_d     , '0, clk_i, rst_ni)
+  `FF(is_store_q  , is_store_d  , '0, clk_i, rst_ni)
 
   // Combinatorial logic
   always_comb begin : mmu_stub
@@ -46,19 +48,19 @@ module mmu_stub (
     mock_paddr_d = mock_paddr_q;
     valid_d      = valid_q;
     vaddr_d      = vaddr_q;
+    is_store_d   = is_store_q;
 
     // If trasnlation is enabled
     if ( en_ld_st_translation_i ) begin : enable_translation
       // Cycle 0
       if ( req_i ) begin : req_valid
-          // For next cycle
+          // Sample inputs, for next cycle
+          mock_paddr_d = vaddr_i; // Mock, just pass back the same vaddr
+          vaddr_d      = vaddr_i;
+          is_store_d   = is_store_i;
+
           // Pull up valid
           valid_d = 1'b1;
-          // Mock, just pass back the same vaddr
-          mock_paddr_d = vaddr_i;
-
-          // Sample vaddr_i in case of exception
-          vaddr_d = vaddr_i;
 
           // DTBL hit, assume 100%
           // NOTE: Ara does not use these
@@ -79,7 +81,7 @@ module mmu_stub (
       // Mock exception logic
       if ( trigger_exception_i & valid_q ) begin : exception
         exception_o.valid = 1'b1;
-        exception_o.cause = ( is_store_i ) ? riscv::STORE_PAGE_FAULT : riscv::LOAD_PAGE_FAULT;
+        exception_o.cause = ( is_store_q ) ? riscv::STORE_PAGE_FAULT : riscv::LOAD_PAGE_FAULT;
         exception_o.tval  = {'0, vaddr_q};
       end : exception
     end : enable_translation

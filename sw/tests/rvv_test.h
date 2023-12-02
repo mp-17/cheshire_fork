@@ -9,7 +9,11 @@
 // Quick workaround:
 #define RVV_TEST_ASSERT( expression )     if ( !(expression) ) { goto RVV_TEST_error; }
 #define RVV_TEST_ASSERT_EXCEPTION( val )  RVV_TEST_ASSERT ( exception == (uint64_t)(val) );
-#define RVV_TEST_CLEAN_EXCEPTION()        exception = 0;
+#define RVV_TEST_ASSERT_EXCEPTION_EXTENDED( valid, tval, cause )  RVV_TEST_ASSERT ( ( exception == (uint64_t)(valid) )    \
+                                                                            & ( mtval == (uint64_t)(tval) ) \
+                                                                            & ( mcause == (uint64_t)(cause) ) \
+                                                                            );
+#define RVV_TEST_CLEAN_EXCEPTION()        exception = 0; mtval = 0; mcause = 0;
 #define RVV_TEST_PASSED()                 asm volatile ( "li %0, %1" : "=r" (magic_out) : "i"(RVV_TEST_MAGIC));
 #define RVV_TEST_FAILED()                 asm volatile ( "nop;nop;nop;nop;" );
 
@@ -21,6 +25,8 @@
 // Helper test variables
 typedef uint64_t vcsr_dump_t [5];
 uint64_t exception;
+uint64_t mtval;
+uint64_t mcause;
 uint64_t magic_out;
 
 void enable_rvv() {
@@ -61,7 +67,17 @@ void vcsr_dump ( vcsr_dump_t vcsr_state ) {
 
 // Override default weak trap vector
 void trap_vector () {
+    // Set exception flag
     exception = 1;
+
+    // Save tval and mcause
+    mtval = 0;
+    mcause = 0;
+    asm volatile ("csrr %0, mtval" : "=r"(mtval));
+    asm volatile ("csrr %0, mcause" : "=r"(mcause));
+
+    // Move PC ahead
+    // NOTE: PC = PC + 4, valid only for non-compressed trapping instructions
     asm volatile (
         "nop;"
         "csrr	t6, mepc;" 

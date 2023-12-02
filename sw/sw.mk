@@ -93,10 +93,10 @@ CHS_SW_GEN_HDRS += $(OTPROOT)/.generated
 # TODO: track headers with gcc -MM!
 
 # All objects require up-to-date patches and headers
-%.o: %.c $(CHS_SW_GEN_HDRS)
+%.o: %.c $(CHS_SW_GEN_HDRS) $(CHS_SW_RVV_TEST_HDRS)
 	$(CHS_SW_CC) $(CHS_SW_INCLUDES) $(CHS_SW_CCFLAGS) -c $< -o $@ 
 
-%.o: %.S $(CHS_SW_GEN_HDRS)
+%.o: %.S $(CHS_SW_GEN_HDRS) $(CHS_SW_RVV_TEST_HDRS)
 	$(CHS_SW_CC) $(CHS_SW_INCLUDES) $(CHS_SW_CCFLAGS) -c $< -o $@
 
 define chs_ld_elf_rule

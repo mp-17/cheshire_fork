@@ -729,8 +729,9 @@ module cheshire_soc import cheshire_pkg::*; #(
       .axi_resp_i      ( axi_ara_wide_resp )
     );
 
+
     // DEBUG: MMU stub
-    // TODO: instantiate conditionally
+`ifdef MMU_STUB
     mmu_stub i_mmu_stub (
       .clk_i                  ( clk_i                       ),
       .rst_ni                 ( rst_ni                      ),
@@ -746,6 +747,14 @@ module cheshire_soc import cheshire_pkg::*; #(
       .paddr_o                ( mmu_paddr_cva6_acc          ),                 
       .exception_o            ( mmu_exception_cva6_acc      ) 
     );
+`else // !MMU_STUB     
+    // TODO: route these to CVA6
+    assign mmu_dtlb_hit_cva6_acc  = '0;
+    assign mmu_dtlb_ppn_cva6_acc  = '0;
+    assign mmu_valid_cva6_acc     = '0;
+    assign mmu_paddr_cva6_acc     = '0;
+    assign mmu_exception_cva6_acc = '0;
+`endif // MMU_STUB
 
     // Issue invalidations to CVA6 L1D$
     axi_inval_filter #(

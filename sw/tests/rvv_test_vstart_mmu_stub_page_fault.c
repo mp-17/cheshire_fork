@@ -12,13 +12,11 @@
 #include "encoding.h"
 #include "rvv_test.h"
 
-// TODO: Run both exception and no exception tests in the same run
-
 int main(void) {
 
     // Vector configuration parameters and variables
     uint64_t avl = RVV_TEST_AVL(64);
-    uint64_t vl;
+    uint64_t vl, vstart_read;
     vcsr_dump_t vcsr_state = {0};
 
     // Helper variables and arrays
@@ -38,7 +36,29 @@ int main(void) {
     //////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////
-    // TEST: No exceptions, interaction with vstart
+    // TEST: Exception generation: vector load
+    //////////////////////////////////////////////////////////////////
+    // RVV_TEST_INIT( vl, avl );
+
+    // asm volatile ("vle64.v	v0   , (%0)" : "+&r"(address_load));
+    // RVV_TEST_ASSERT_EXCEPTION_EXTENDED(1, address_load, CAUSE_LOAD_PAGE_FAULT)
+    // RVV_TEST_CLEAN_EXCEPTION()
+    
+    // RVV_TEST_CLEANUP();
+
+    // //////////////////////////////////////////////////////////////////
+    // // TEST: Exception generation: vector store
+    // //////////////////////////////////////////////////////////////////
+    // RVV_TEST_INIT( vl, avl );
+
+    // asm volatile ("vse64.v	v0   , (%0)" : "+&r"(address_store));
+    // RVV_TEST_ASSERT_EXCEPTION_EXTENDED(1, address_store, CAUSE_STORE_PAGE_FAULT)
+    // RVV_TEST_CLEAN_EXCEPTION()
+    
+    // RVV_TEST_CLEANUP();
+    
+    //////////////////////////////////////////////////////////////////
+    // TEST: Exception generation and non-zero vstart: vector load
     //////////////////////////////////////////////////////////////////
     // RVV_TEST_INIT( vl, avl );
 
@@ -46,51 +66,38 @@ int main(void) {
     // for ( uint64_t vstart_val = 0; vstart_val < vl; vstart_val++ ) {
     //   RVV_TEST_INIT( vl, avl );
 
-    //   // Init memory
-    //   for ( uint64_t i = 0; i < vl; i++ ) {
-    //     address_load[i] = i;
-    //   }
-
-    //   asm volatile ("vle64.v	v0   , (%0)" : "+&r"(address_load));
     //   asm volatile ("csrs     vstart, %0"   :: "r"(vstart_val) );
-    //   asm volatile ("vadd.vv  v0, v0, v0");
-    //   asm volatile ("vse64.v	v0   , (%0)" : "+&r"(address_store));
+    //   asm volatile ("vle64.v	v0   , (%0)" : "+&r"(address_load));
+    //   RVV_TEST_ASSERT_EXCEPTION_EXTENDED(1, address_load + vstart_val, CAUSE_LOAD_PAGE_FAULT)
+    //   RVV_TEST_CLEAN_EXCEPTION()
 
-    //   // Check pre-start
-    //   for ( uint64_t i = 0; i < vstart_val; i++ ) {
-    //     RVV_TEST_ASSERT ( address_store[i] == i );
-    //   }
-    //   // Check body
-    //   for ( uint64_t i = vstart_val; i < vl; i++ ) {
-    //     RVV_TEST_ASSERT ( address_store[i] == 2*i );
-    //   }
-
+    //   vstart_read = -1;
+    //   asm volatile ("csrr  %0, vstart"  : "=r"(vstart_read) );
+    //   RVV_TEST_ASSERT ( vstart_read == vstart_val )
+    
     //   RVV_TEST_CLEANUP();
     // }
 
     //////////////////////////////////////////////////////////////////
-    // TEST: Exception generation: vector load
+    // TEST: Exception generation and non-zero vstart: vector store
     //////////////////////////////////////////////////////////////////
     RVV_TEST_INIT( vl, avl );
 
-    asm volatile ("vle64.v	v0   , (%0)" : "+&r"(address_load));
-    RVV_TEST_ASSERT_EXCEPTION(1)
-    RVV_TEST_ASSERT_MTVAL(address_load)
-    RVV_TEST_CLEAN_EXCEPTION()
-    
-    RVV_TEST_CLEANUP();
+    // Loop over vstart values
+    for ( uint64_t vstart_val = 0; vstart_val < vl; vstart_val++ ) {
+      RVV_TEST_INIT( vl, avl );
 
-    //////////////////////////////////////////////////////////////////
-    // TEST: Exception generation: vector stores
-    //////////////////////////////////////////////////////////////////
-    RVV_TEST_INIT( vl, avl );
+      asm volatile ("csrs     vstart, %0"   :: "r"(vstart_val) );
+      asm volatile ("vse64.v	v0   , (%0)" : "+&r"(address_store));
+      RVV_TEST_ASSERT_EXCEPTION_EXTENDED(1, address_store + vstart_val, CAUSE_STORE_PAGE_FAULT)
+      RVV_TEST_CLEAN_EXCEPTION()
 
-    asm volatile ("vse64.v	v0   , (%0)" : "+&r"(address_store));
-    RVV_TEST_ASSERT_EXCEPTION(1)
-    RVV_TEST_ASSERT_MTVAL(address_store)
-    RVV_TEST_CLEAN_EXCEPTION()
+      vstart_read = -1;
+      asm volatile ("csrr  %0, vstart"  : "=r"(vstart_read) );
+      RVV_TEST_ASSERT ( vstart_read == vstart_val )
     
-    RVV_TEST_CLEANUP();
+      RVV_TEST_CLEANUP();
+    }
 
     //////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////

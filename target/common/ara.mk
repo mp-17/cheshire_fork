@@ -54,7 +54,7 @@ ifeq ($(ARA),1)
 # 		BENDER_ARA_DEFS += --define ARA_INTEGRATION_V0_3 (not yet implemented)
 #	endif
 else
-# 	Exclude RVV
+# 	Exclude V from MISA
 	BENDER_ARA_TARGETS += -t cv64a6_imafdc_sv39
 endif
 
@@ -62,6 +62,6 @@ endif
 # # Instantiate MMU interface in CVA6 and Ara
 # BENDER_ARA_DEFS += --define ACC_MMU_INTERFACE
 # Prioritize Ara translation requests to MMU
-BENDER_ARA_DEFS += --define MMU_ACC_PRIORITY
+# BENDER_ARA_DEFS += --define MMU_ACC_PRIORITY
 
 xilinx_targs := $(BENDER_ARA_TARGETS) $(BENDER_ARA_DEFS)

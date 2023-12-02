@@ -1,5 +1,5 @@
 # RVV_TEST light-weight framework
-> **_NOTE:_** This is not close to what a structured verification pipeline should look like, but it is an acceptable solution for the short time frames we have.
+> **NOTE:** This is not close to what a structured verification pipeline should look like, but it is an acceptable solution for the short time frames we have.
 
 A set of utility make targets are defined to build and automate the tests for the extensions performed on Ara integrated in Cheshire and perform regression.
 
@@ -55,4 +55,19 @@ Unset these variables for subsequent runs:
 ````console
 $ unset RVV_TEST RVV_TEST_ELF VSIM_ARGS ARA_NR_LANES TEST_COMMENT
 ````
- 
+
+# MMU Stub
+The design features a stub MMU in `cheshire_soc`, attached to Ara MMU port, which emulates address translation and exception page fault generation.
+
+- This module is instatiated only if the variable `MMU_STUB` is defined and equals `1`. If not so, instructions in the next bullets will cause the simulation build to fail. Otherwise its outputs are tied to zero. 
+
+> TODO: route its I/O to CVA6
+
+- Emulated translation is enabled only if the test name, i.e., the .c source, contains the string `mmu_stub`. E.g., `rvv_test_mmu_stub.c`.
+
+- Page faults are unconditionally generated if the test name **also** contains the string `page_fault`. E.g., `rvv_test_mmu_stub_page_fault.c`.
+
+Rebember to unset the `MMU_STUB` variable if necessary.
+````console
+$ unset MMU_STUB
+````

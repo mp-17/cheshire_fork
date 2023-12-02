@@ -36,9 +36,8 @@ chs-sim-run: $(CHS_VSIM_DIR)/compile.cheshire_soc.tcl $(CHS_VSIM_DIR)/start.ches
 	cd $(VSIM_ROOT); $(VSIM) $(VSIM_ARGS) -do $(word 1,$^) \
 						-do "set BINARY $(BINARY)" \
 						-do $(word 2,$^) \
-						-do "log -r /*"  \
 						-do $(word 3,$^) \
-						-do "run -a"
+						-do $(CHS_VSIM_DIR)/mmu_stub_run.tcl
 
 # Remove the simulation prefix
 $(CHS_VSIM_DIR)/%.post-sim.tcl: $(CHS_VSIM_DIR)/%.tcl

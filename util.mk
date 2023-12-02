@@ -10,6 +10,10 @@
 
 ## NOTE: this is very much not the correct way to do it, but time is tight...
 
+MMU_STUB ?= 1
+ifeq ($(MMU_STUB), 1)
+	BENDER_ARA_DEFS += --define MMU_STUB
+endif
 # Test macros
 RVV_TEST_MAGIC 			?= f0f0f0f0f0f0f0f0
 RVV_TEST_ARA_NR_LANES 	?= 2 4 #8
@@ -18,6 +22,8 @@ ALIGN_VSTORES := $(shell echo "32 * $(ARA_NR_LANES) / 8" | bc -l | sed -E "s/\..
 
 # Software artifacts
 CHS_SW_RVV_TEST_DIR ?= $(CHS_SW_DIR)/tests
+CHS_SW_RVV_TEST_HDRS := $(CHS_SW_RVV_TEST_DIR)/rvv_test.h
+
 RVV_TEST_SRC 	?= $(wildcard $(CHS_SW_RVV_TEST_DIR)/rvv_test_*.c)
 RVV_TEST_ELF 	?= $(RVV_TEST_SRC:.c=.spm.elf)
 
@@ -39,13 +45,14 @@ rvv-test-run rvv-test-report: RVV_TEST_RESULT_FILE=$(RVV_TEST_RESULT_DIR)/result
 rvv-test-run rvv-test-report: RVV_TEST_RESULT_DIR_LANES=$(RVV_TEST_RESULT_DIR)/ara_$(ARA_NR_LANES)_lanes
 rvv-test-run rvv-test-report: RVV_TEST_TRACE=$(RVV_TEST_RESULT_DIR)/ara_$(ARA_NR_LANES)_lanes/trace_hart_0.log 
 rvv-test-run rvv-test-report: VSIM_ROOT=$(RVV_TEST_RESULT_DIR_LANES)
-rvv-test-run: chs-sw-all
+#	TODO: add switch to stop on first failure
+rvv-test-run: chs-sw-all $(RVV_TEST_ELF)
 #	Clear old results
 	rm -rf $(RVV_TEST_RESULT_DIR_LANES)/*
 	mkdir -p $(RVV_TEST_RESULT_DIR_LANES)
 	mkdir -p $(VSIM_ROOT)
-#	TODO: add switch to stop on first failure
-	BINARY=$(RVV_TEST_ELF) 				\
+	BINARY=$(RVV_TEST_ELF) 					\
+	MMU_STUB=$(MMU_STUB) 					\
 		VSIM_ROOT=$(VSIM_ROOT) 				\
 		$(MAKE) chs-sim-clean chs-sim-run 
 	RVV_TEST_NAME=$(RVV_TEST_NAME) $(MAKE) rvv-test-report
@@ -55,17 +62,17 @@ TEST_COMMENT ?= "None"
 REPORT_FILE_ALL ?= $(CHS_RVV_TEST_RESULT_DIR)/report_all.txt
 rvv-test-report: $(RVV_TEST_TRACE) 
 #	Compose test report
-	printf "$(RVV_TEST_NAME)," 					>> $(RVV_TEST_RESULT_FILE)
-	printf " ARA_NR_LANES=$(ARA_NR_LANES)," 	>> $(RVV_TEST_RESULT_FILE)
-	grep --quiet $(RVV_TEST_MAGIC) $(RVV_TEST_TRACE) 	\
+	@printf "$(RVV_TEST_NAME)," 					>> $(RVV_TEST_RESULT_FILE)
+	@printf " ARA_NR_LANES=$(ARA_NR_LANES)," 	>> $(RVV_TEST_RESULT_FILE)
+	@grep --quiet $(RVV_TEST_MAGIC) $(RVV_TEST_TRACE) 	\
 		&& printf " PASSED," 					>> $(RVV_TEST_RESULT_FILE) \
 		|| printf " FAILED," 					>> $(RVV_TEST_RESULT_FILE)
-	printf " $(shell date $(DATE_FORMAT))," 	>> $(RVV_TEST_RESULT_FILE)
-	printf " Notes: \"$(TEST_COMMENT)\", " 		>> $(RVV_TEST_RESULT_FILE)
-	printf " VSIM_ROOT=$(VSIM_ROOT)" 			>> $(RVV_TEST_RESULT_FILE)
-	printf "\n"									>> $(RVV_TEST_RESULT_FILE)
+	@printf " $(shell date $(DATE_FORMAT))," 	>> $(RVV_TEST_RESULT_FILE)
+	@printf " Notes: \"$(TEST_COMMENT)\", " 		>> $(RVV_TEST_RESULT_FILE)
+	@printf " VSIM_ROOT=$(VSIM_ROOT)" 			>> $(RVV_TEST_RESULT_FILE)
+	@printf "\n"									>> $(RVV_TEST_RESULT_FILE)
 # 	Dump to general result report and terminal
-	tail -n1 $(RVV_TEST_RESULT_FILE) >> $(REPORT_FILE_ALL)
+	@tail -n1 $(RVV_TEST_RESULT_FILE) >> $(REPORT_FILE_ALL)
 	@printf "[INFO] Test report: "; tail -n1 $(RVV_TEST_RESULT_FILE)
 	@echo "[INFO] Check trace log at : $(RVV_TEST_TRACE)"
 	@echo "[INFO] Check transcript at: $(RVV_TEST_RESULT_DIR)/transcript"
