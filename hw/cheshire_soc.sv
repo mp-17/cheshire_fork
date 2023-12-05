@@ -732,7 +732,23 @@ module cheshire_soc import cheshire_pkg::*; #(
 
     // DEBUG: MMU stub
 `ifdef MMU_STUB
+    $info("MMU STUB enabled.");
+
+    int unsigned ex_en;
+    int unsigned ex_rate;
+    int unsigned req_rsp_lat;
+    int unsigned req_rsp_rnd;
+
+    assign ex_en       = i_regs.u_stub_ex_en.q;
+    assign ex_rate     = i_regs.u_stub_ex_rate.q;
+    assign req_rsp_lat = i_regs.u_stub_req_rsp_lat.q;
+    assign req_rsp_rnd = i_regs.u_stub_req_rsp_rnd.q;
+
     mmu_stub i_mmu_stub (
+      .ex_en_i                ( ex_en                       ),
+      .ex_rate_i              ( ex_rate                     ),
+      .req_rsp_lat_i          ( req_rsp_lat                 ),
+      .req_rsp_rnd_i          ( req_rsp_rnd                 ),
       .clk_i                  ( clk_i                       ),
       .rst_ni                 ( rst_ni                      ),
       .en_ld_st_translation_i ( xvio_en_ld_st_translation_i ),
