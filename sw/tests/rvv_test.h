@@ -1,6 +1,33 @@
 #ifndef __RVV_RVV_TEST_H__
 #define __RVV_RVV_TEST_H__
 
+#include "regs/cheshire.h"
+
+// SoC-level register declaration
+#define INIT_RVV_TEST_SOC_REGFILE \
+volatile uint32_t *rf_stub_ex_en     = reg32(&__base_regs, CHESHIRE_STUB_EX_EN_REG_OFFSET);       \
+volatile uint32_t *rf_stub_ex_rate   = reg32(&__base_regs, CHESHIRE_STUB_EX_RATE_REG_OFFSET);     \
+volatile uint32_t *rf_req_rsp_lat    = reg32(&__base_regs, CHESHIRE_STUB_REQ_RSP_LAT_REG_OFFSET); \
+volatile uint32_t *rf_req_rsp_rnd    = reg32(&__base_regs, CHESHIRE_STUB_REQ_RSP_RND_REG_OFFSET); \
+volatile uint32_t *rf_gold_exception = reg32(&__base_regs, CHESHIRE_GOLD_EXCEPTION_REG_OFFSET);
+
+#define PRINT_INIT                                                          \
+  uint32_t rtc_freq   = *reg32(&__base_regs, CHESHIRE_RTC_FREQ_REG_OFFSET); \
+  uint64_t reset_freq = clint_get_core_freq(rtc_freq, 2500);                \
+  uart_init(&__base_uart, reset_freq, 115200);                              \
+  char uart_print_str[] = {'0', '\r', '\n'};
+
+#define PRINT_CHAR(byte)                          \
+  uart_print_str[0] = (char) byte;                \
+  PRINT(uart_print_str)
+
+#define PRINT(str)                                \
+  uart_write_str(&__base_uart, str, sizeof(str)); \
+  uart_write_flush(&__base_uart);
+
+#define FAIL { return -1; }
+#define ASSERT_EQ(var, gold) if (var != gold) FAIL
+
 // Helper test macros
 #define RVV_TEST_INIT(vl, avl)            vl = reset_v_state ( avl ); exception = 0;
 #define RVV_TEST_CLEANUP()                RVV_TEST_ASSERT_EXCEPTION(0); exception = 0;
@@ -80,7 +107,7 @@ void trap_vector () {
     // NOTE: PC = PC + 4, valid only for non-compressed trapping instructions
     asm volatile (
         "nop;"
-        "csrr	t6, mepc;" 
+        "csrr	t6, mepc;"
         "addi	t6, t6, 4; # PC = PC + 4, valid only for non-compressed trapping instructions\n"
         "csrw	mepc, t6;"
         "nop;"
