@@ -48,7 +48,7 @@ int main(void) {
     RVV_TEST_ASSERT_EXCEPTION(0)
 
     RVV_TEST_CLEANUP();
-    
+
     //////////////////////////////////////////////////////////////////
     // TEST: Illegal encoding
     //////////////////////////////////////////////////////////////////
@@ -78,6 +78,7 @@ int main(void) {
     RVV_TEST_INIT( vl, avl );
 
     // NOTE: This relied on non-zero vstart support for arithmetic instructions, i.e., operand request
+    // NOTE2: supporting vstart != 0 for arithmetic instructions is NOT a spec requirement
     asm volatile ("vmv.v.i  v24, -1");
     asm volatile ("csrs     vstart, 1");
     asm volatile ("vadd.vv  v0, v24, v24");
@@ -140,9 +141,9 @@ int main(void) {
     asm volatile("csrs     vstart, 22");
     asm volatile("vle64.v	 v24   , (%0)" : "+&r"(address_load));
     RVV_TEST_ASSERT_EXCEPTION(0)
- 
+
     RVV_TEST_CLEANUP();
- 
+
     //////////////////////////////////////////////////////////////////
     // TEST: EEW misaligned loads
     //////////////////////////////////////////////////////////////////
@@ -154,7 +155,7 @@ int main(void) {
     // EEW=64
     asm volatile ("vle64.v	v16, (%0)" : "+&r"(address_misaligned));
     RVV_TEST_ASSERT_EXCEPTION(1)
-    RVV_TEST_CLEAN_EXCEPTION() 
+    RVV_TEST_CLEAN_EXCEPTION()
 
     RVV_TEST_CLEANUP();
 
@@ -169,7 +170,7 @@ int main(void) {
     // EEW=64
     asm volatile ("vse64.v	v24, (%0)" : "+&r"(address_misaligned));
     RVV_TEST_ASSERT_EXCEPTION(1)
-    RVV_TEST_CLEAN_EXCEPTION() 
+    RVV_TEST_CLEAN_EXCEPTION()
 
     RVV_TEST_CLEANUP();
 
@@ -186,10 +187,10 @@ int main(void) {
     //////////////////////////////////////////////////////////////////
 
 RVV_TEST_pass:
-    RVV_TEST_PASSED() 
+    RVV_TEST_PASSED()
 
 RVV_TEST_error:
     RVV_TEST_FAILED()
-  
+
   return 0;
 }
