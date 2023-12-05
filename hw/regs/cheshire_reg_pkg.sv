@@ -119,6 +119,11 @@ package cheshire_reg_pkg;
   parameter logic [BlockAw-1:0] CHESHIRE_LLC_SIZE_OFFSET = 7'h 50;
   parameter logic [BlockAw-1:0] CHESHIRE_VGA_PARAMS_OFFSET = 7'h 54;
   parameter logic [BlockAw-1:0] CHESHIRE_NUM_HARTS_OFFSET = 7'h 58;
+  parameter logic [BlockAw-1:0] CHESHIRE_STUB_EX_EN_OFFSET = 7'h 5c;
+  parameter logic [BlockAw-1:0] CHESHIRE_STUB_EX_RATE_OFFSET = 7'h 60;
+  parameter logic [BlockAw-1:0] CHESHIRE_STUB_REQ_RSP_LAT_OFFSET = 7'h 64;
+  parameter logic [BlockAw-1:0] CHESHIRE_STUB_REQ_RSP_RND_OFFSET = 7'h 68;
+  parameter logic [BlockAw-1:0] CHESHIRE_GOLD_EXCEPTION_OFFSET = 7'h 6c;
 
   // Reset values for hwext registers and their fields
   parameter logic [1:0] CHESHIRE_BOOT_MODE_RESVAL = 2'h 0;
@@ -153,11 +158,16 @@ package cheshire_reg_pkg;
     CHESHIRE_HW_FEATURES,
     CHESHIRE_LLC_SIZE,
     CHESHIRE_VGA_PARAMS,
-    CHESHIRE_NUM_HARTS
+    CHESHIRE_NUM_HARTS,
+    CHESHIRE_STUB_EX_EN,
+    CHESHIRE_STUB_EX_RATE,
+    CHESHIRE_STUB_REQ_RSP_LAT,
+    CHESHIRE_STUB_REQ_RSP_RND,
+    CHESHIRE_GOLD_EXCEPTION
   } cheshire_id_e;
 
   // Register width information to check illegal writes
-  parameter logic [3:0] CHESHIRE_PERMIT [23] = '{
+  parameter logic [3:0] CHESHIRE_PERMIT [28] = '{
     4'b 1111, // index[ 0] CHESHIRE_SCRATCH_0
     4'b 1111, // index[ 1] CHESHIRE_SCRATCH_1
     4'b 1111, // index[ 2] CHESHIRE_SCRATCH_2
@@ -180,7 +190,12 @@ package cheshire_reg_pkg;
     4'b 0011, // index[19] CHESHIRE_HW_FEATURES
     4'b 1111, // index[20] CHESHIRE_LLC_SIZE
     4'b 0111, // index[21] CHESHIRE_VGA_PARAMS
-    4'b 1111  // index[22] CHESHIRE_NUM_HARTS
+    4'b 1111, // index[22] CHESHIRE_NUM_HARTS
+    4'b 1111, // index[23] CHESHIRE_STUB_EX_EN
+    4'b 1111, // index[24] CHESHIRE_STUB_EX_RATE
+    4'b 1111, // index[25] CHESHIRE_STUB_REQ_RSP_LAT
+    4'b 1111, // index[26] CHESHIRE_STUB_REQ_RSP_RND
+    4'b 1111  // index[27] CHESHIRE_GOLD_EXCEPTION
   };
 
 endpackage

@@ -122,6 +122,22 @@ extern "C" {
 // Number of harts
 #define CHESHIRE_NUM_HARTS_REG_OFFSET 0x58
 
+// STUB - Exception enable
+#define CHESHIRE_STUB_EX_EN_REG_OFFSET 0x5c
+
+// STUB - Exception probability (from 0 to 1)
+#define CHESHIRE_STUB_EX_RATE_REG_OFFSET 0x60
+
+// STUB - Fixed latency from mmu-request to mmu-response
+#define CHESHIRE_STUB_REQ_RSP_LAT_REG_OFFSET 0x64
+
+// STUB - Variable latency from mmu-request to mmu-response (priority over
+// req_rsp_lat if req_rsp_rate != 0)
+#define CHESHIRE_STUB_REQ_RSP_RATE_REG_OFFSET 0x68
+
+// STUB - Written by the TB if the last STUB req generated an exception
+#define CHESHIRE_GOLD_EXCEPTION_REG_OFFSET 0x6c
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

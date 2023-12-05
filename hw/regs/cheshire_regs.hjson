@@ -130,5 +130,50 @@
       ]
     }
 
+    { name:     "stub_ex_en"
+      desc:     "STUB - Exception enable"
+      swaccess: "rw"
+      hwaccess: "none"
+      fields: [
+        { bits: "31:0", name: "stub_ex_en", desc: "STUB - Exception enable" }
+      ]
+    }
+
+    { name:     "stub_ex_rate"
+      desc:     "STUB - Throw an exception every (stub_ex_rate + 1) mmu requests"
+      swaccess: "rw"
+      hwaccess: "none"
+      fields: [
+        { bits: "31:0", name: "stub_ex_rate", desc: "STUB - Throw an exception every (stub_ex_rate + 1) mmu requests" }
+      ]
+    }
+
+    { name:     "stub_req_rsp_lat"
+      desc:     "STUB - Fixed latency from mmu-request to mmu-response"
+      swaccess: "rw"
+      hwaccess: "none"
+      fields: [
+        { bits: "31:0", name: "stub_req_rsp_lat", desc: "STUB - Fixed latency from mmu-request to mmu-response" }
+      ]
+    }
+
+    { name:     "stub_req_rsp_rnd"
+      desc:     "STUB - The req-rsp latency becomes random, and req_rsp_lat is the maximum latency value)"
+      swaccess: "rw"
+      hwaccess: "none"
+      fields: [
+        { bits: "31:0", name: "stub_req_rsp_rnd", desc: "STUB - The req-rsp latency becomes random, and req_rsp_lat is the maximum latency value" }
+      ]
+    }
+
+    { name:     "gold_exception"
+      desc:     "STUB - Written by the TB if the last STUB req generated an exception"
+      swaccess: "rw"
+      hwaccess: "none"
+      fields: [
+        { bits: "31:0", name: "gold_exception", desc: "" }
+      ]
+    }
+
   ]
 }

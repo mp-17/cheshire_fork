@@ -155,6 +155,21 @@ module cheshire_reg_top #(
   logic vga_params_blue_width_re;
   logic [31:0] num_harts_qs;
   logic num_harts_re;
+  logic [31:0] stub_ex_en_qs;
+  logic [31:0] stub_ex_en_wd;
+  logic stub_ex_en_we;
+  logic [31:0] stub_ex_rate_qs;
+  logic [31:0] stub_ex_rate_wd;
+  logic stub_ex_rate_we;
+  logic [31:0] stub_req_rsp_lat_qs;
+  logic [31:0] stub_req_rsp_lat_wd;
+  logic stub_req_rsp_lat_we;
+  logic [31:0] stub_req_rsp_rnd_qs;
+  logic [31:0] stub_req_rsp_rnd_wd;
+  logic stub_req_rsp_rnd_we;
+  logic [31:0] gold_exception_qs;
+  logic [31:0] gold_exception_wd;
+  logic gold_exception_we;
 
   // Register instances
 
@@ -900,9 +915,144 @@ module cheshire_reg_top #(
   );
 
 
+  // R[stub_ex_en]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("RW"),
+    .RESVAL  (32'h0)
+  ) u_stub_ex_en (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (stub_ex_en_we),
+    .wd     (stub_ex_en_wd),
+
+    // from internal hardware
+    .de     (1'b0),
+    .d      ('0  ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (),
+
+    // to register interface (read)
+    .qs     (stub_ex_en_qs)
+  );
 
 
-  logic [22:0] addr_hit;
+  // R[stub_ex_rate]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("RW"),
+    .RESVAL  (32'h0)
+  ) u_stub_ex_rate (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (stub_ex_rate_we),
+    .wd     (stub_ex_rate_wd),
+
+    // from internal hardware
+    .de     (1'b0),
+    .d      ('0  ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (),
+
+    // to register interface (read)
+    .qs     (stub_ex_rate_qs)
+  );
+
+
+  // R[stub_req_rsp_lat]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("RW"),
+    .RESVAL  (32'h0)
+  ) u_stub_req_rsp_lat (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (stub_req_rsp_lat_we),
+    .wd     (stub_req_rsp_lat_wd),
+
+    // from internal hardware
+    .de     (1'b0),
+    .d      ('0  ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (),
+
+    // to register interface (read)
+    .qs     (stub_req_rsp_lat_qs)
+  );
+
+
+  // R[stub_req_rsp_rnd]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("RW"),
+    .RESVAL  (32'h0)
+  ) u_stub_req_rsp_rnd (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (stub_req_rsp_rnd_we),
+    .wd     (stub_req_rsp_rnd_wd),
+
+    // from internal hardware
+    .de     (1'b0),
+    .d      ('0  ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (),
+
+    // to register interface (read)
+    .qs     (stub_req_rsp_rnd_qs)
+  );
+
+
+  // R[gold_exception]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("RW"),
+    .RESVAL  (32'h0)
+  ) u_gold_exception (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (gold_exception_we),
+    .wd     (gold_exception_wd),
+
+    // from internal hardware
+    .de     (1'b0),
+    .d      ('0  ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (),
+
+    // to register interface (read)
+    .qs     (gold_exception_qs)
+  );
+
+
+
+
+  logic [27:0] addr_hit;
   always_comb begin
     addr_hit = '0;
     addr_hit[ 0] = (reg_addr == CHESHIRE_SCRATCH_0_OFFSET);
@@ -928,6 +1078,11 @@ module cheshire_reg_top #(
     addr_hit[20] = (reg_addr == CHESHIRE_LLC_SIZE_OFFSET);
     addr_hit[21] = (reg_addr == CHESHIRE_VGA_PARAMS_OFFSET);
     addr_hit[22] = (reg_addr == CHESHIRE_NUM_HARTS_OFFSET);
+    addr_hit[23] = (reg_addr == CHESHIRE_STUB_EX_EN_OFFSET);
+    addr_hit[24] = (reg_addr == CHESHIRE_STUB_EX_RATE_OFFSET);
+    addr_hit[25] = (reg_addr == CHESHIRE_STUB_REQ_RSP_LAT_OFFSET);
+    addr_hit[26] = (reg_addr == CHESHIRE_STUB_REQ_RSP_RND_OFFSET);
+    addr_hit[27] = (reg_addr == CHESHIRE_GOLD_EXCEPTION_OFFSET);
   end
 
   assign addrmiss = (reg_re || reg_we) ? ~|addr_hit : 1'b0 ;
@@ -957,7 +1112,12 @@ module cheshire_reg_top #(
                (addr_hit[19] & (|(CHESHIRE_PERMIT[19] & ~reg_be))) |
                (addr_hit[20] & (|(CHESHIRE_PERMIT[20] & ~reg_be))) |
                (addr_hit[21] & (|(CHESHIRE_PERMIT[21] & ~reg_be))) |
-               (addr_hit[22] & (|(CHESHIRE_PERMIT[22] & ~reg_be)))));
+               (addr_hit[22] & (|(CHESHIRE_PERMIT[22] & ~reg_be))) |
+               (addr_hit[23] & (|(CHESHIRE_PERMIT[23] & ~reg_be))) |
+               (addr_hit[24] & (|(CHESHIRE_PERMIT[24] & ~reg_be))) |
+               (addr_hit[25] & (|(CHESHIRE_PERMIT[25] & ~reg_be))) |
+               (addr_hit[26] & (|(CHESHIRE_PERMIT[26] & ~reg_be))) |
+               (addr_hit[27] & (|(CHESHIRE_PERMIT[27] & ~reg_be)))));
   end
 
   assign scratch_0_we = addr_hit[0] & reg_we & !reg_error;
@@ -1047,6 +1207,21 @@ module cheshire_reg_top #(
   assign vga_params_blue_width_re = addr_hit[21] & reg_re & !reg_error;
 
   assign num_harts_re = addr_hit[22] & reg_re & !reg_error;
+
+  assign stub_ex_en_we = addr_hit[23] & reg_we & !reg_error;
+  assign stub_ex_en_wd = reg_wdata[31:0];
+
+  assign stub_ex_rate_we = addr_hit[24] & reg_we & !reg_error;
+  assign stub_ex_rate_wd = reg_wdata[31:0];
+
+  assign stub_req_rsp_lat_we = addr_hit[25] & reg_we & !reg_error;
+  assign stub_req_rsp_lat_wd = reg_wdata[31:0];
+
+  assign stub_req_rsp_rnd_we = addr_hit[26] & reg_we & !reg_error;
+  assign stub_req_rsp_rnd_wd = reg_wdata[31:0];
+
+  assign gold_exception_we = addr_hit[27] & reg_we & !reg_error;
+  assign gold_exception_wd = reg_wdata[31:0];
 
   // Read data return
   always_comb begin
@@ -1155,6 +1330,26 @@ module cheshire_reg_top #(
 
       addr_hit[22]: begin
         reg_rdata_next[31:0] = num_harts_qs;
+      end
+
+      addr_hit[23]: begin
+        reg_rdata_next[31:0] = stub_ex_en_qs;
+      end
+
+      addr_hit[24]: begin
+        reg_rdata_next[31:0] = stub_ex_rate_qs;
+      end
+
+      addr_hit[25]: begin
+        reg_rdata_next[31:0] = stub_req_rsp_lat_qs;
+      end
+
+      addr_hit[26]: begin
+        reg_rdata_next[31:0] = stub_req_rsp_rnd_qs;
+      end
+
+      addr_hit[27]: begin
+        reg_rdata_next[31:0] = gold_exception_qs;
       end
 
       default: begin

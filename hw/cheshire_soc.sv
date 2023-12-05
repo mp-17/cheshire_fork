@@ -592,8 +592,8 @@ module cheshire_soc import cheshire_pkg::*; #(
     logic             [Cfg.AddrWidth-1:0] inval_addr;
     logic                                 inval_valid;
     logic                                 inval_ready;
-    
-    // CSR 
+
+    // CSR
     logic                          en_ld_st_translation_cva6_acc;
 
     // MMU ports
@@ -666,7 +666,7 @@ module cheshire_soc import cheshire_pkg::*; #(
     );
 
 `ifdef ARA
-`ifdef ARA_INTEGRATION_V0_2  
+`ifdef ARA_INTEGRATION_V0_2
 
     // v0.2: axi data with converter
     // NOTE: might reduce Ara's load/store throughput
@@ -678,7 +678,7 @@ module cheshire_soc import cheshire_pkg::*; #(
     //                           |                                                              | axi_xbar |
     //                           v                                                              |          |
     //                         CVA6 ---(64)---> i_axi_id_serialize ------------------(64)------>|__________|
-    //                                
+    //
 
     // Configure Ara with the right AXI id width
     typedef logic [Cfg.AxiMstIdWidth-1:0] ara_id_t;
@@ -735,19 +735,19 @@ module cheshire_soc import cheshire_pkg::*; #(
     mmu_stub i_mmu_stub (
       .clk_i                  ( clk_i                       ),
       .rst_ni                 ( rst_ni                      ),
-      .en_ld_st_translation_i ( xvio_en_ld_st_translation_i ),  
-      .trigger_exception_i    ( xvio_mmu_exception_i        ),     
-      .misaligned_ex_i        ( mmu_misaligned_ex_acc_cva6  ),         
+      .en_ld_st_translation_i ( xvio_en_ld_st_translation_i ),
+      .trigger_exception_i    ( xvio_mmu_exception_i        ),
+      .misaligned_ex_i        ( mmu_misaligned_ex_acc_cva6  ),
       .req_i                  ( mmu_req_acc_cva6            ),
       .vaddr_i                ( mmu_vaddr_acc_cva6          ),
-      .is_store_i             ( mmu_is_store_acc_cva6       ),              
+      .is_store_i             ( mmu_is_store_acc_cva6       ),
       .dtlb_hit_o             ( mmu_dtlb_hit_cva6_acc       ),
-      .dtlb_ppn_o             ( mmu_dtlb_ppn_cva6_acc       ),              
+      .dtlb_ppn_o             ( mmu_dtlb_ppn_cva6_acc       ),
       .valid_o                ( mmu_valid_cva6_acc          ),
-      .paddr_o                ( mmu_paddr_cva6_acc          ),                 
-      .exception_o            ( mmu_exception_cva6_acc      ) 
+      .paddr_o                ( mmu_paddr_cva6_acc          ),
+      .exception_o            ( mmu_exception_cva6_acc      )
     );
-`else // !MMU_STUB     
+`else // !MMU_STUB
     // TODO: route these to CVA6
     assign mmu_dtlb_hit_cva6_acc  = '0;
     assign mmu_dtlb_ppn_cva6_acc  = '0;
@@ -784,7 +784,7 @@ module cheshire_soc import cheshire_pkg::*; #(
       .AxiMaxReads         ( 4                      ), // TODO: Tune this w.r.t. ARA_NR_LANES
       .AxiAddrWidth        ( Cfg.AddrWidth          ),
       .AxiIdWidth          ( Cfg.AxiMstIdWidth      ),
-      .aw_chan_t           ( axi_ara_wide_aw_chan_t ), 
+      .aw_chan_t           ( axi_ara_wide_aw_chan_t ),
       .mst_w_chan_t        ( axi_mst_w_chan_t       ),
       .slv_w_chan_t        ( axi_ara_wide_w_chan_t  ),
       .b_chan_t            ( axi_ara_wide_b_chan_t  ),
@@ -794,7 +794,7 @@ module cheshire_soc import cheshire_pkg::*; #(
       .axi_mst_req_t       ( axi_mst_req_t          ),
       .axi_mst_resp_t      ( axi_mst_rsp_t          ),
       .axi_slv_req_t       ( axi_ara_wide_req_t     ),
-      .axi_slv_resp_t      ( axi_ara_wide_resp_t    ) 
+      .axi_slv_resp_t      ( axi_ara_wide_resp_t    )
     ) i_ara_axi_dw_converter (
       .clk_i      ( clk_i                   ),
       .rst_ni     ( rst_ni                  ),
@@ -808,14 +808,14 @@ module cheshire_soc import cheshire_pkg::*; #(
     assign axi_in_req[AxiIn.ara] = axi_ara_narrow_req;
     assign axi_ara_narrow_resp = axi_in_rsp[AxiIn.ara];
 
-  `endif // ARA_INTEGRATION_V0_2  
+  `endif // ARA_INTEGRATION_V0_2
   `else // ! ARA
     // Ingnore output acc_req
     // Tie outputs to zero
-    assign acc_resp    = '0; 
+    assign acc_resp    = '0;
     assign inval_valid = '0;
     assign inval_addr = '0;
-    
+
     // MMU interface
     assign mmu_misaligned_ex_acc_cva6 = '0;
     assign mmu_req_acc_cva6           = '0;
@@ -823,7 +823,7 @@ module cheshire_soc import cheshire_pkg::*; #(
     assign mmu_is_store_acc_cva6      = '0;
 
     // Crossbar
-    // Ignore axi_in_rsp[AxiIn.ara] and axi_in_req[AxiIn.ara] since here they are not defined 
+    // Ignore axi_in_rsp[AxiIn.ara] and axi_in_req[AxiIn.ara] since here they are not defined
 
   `endif // ARA
 
