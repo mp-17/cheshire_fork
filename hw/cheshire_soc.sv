@@ -744,6 +744,18 @@ module cheshire_soc import cheshire_pkg::*; #(
     assign req_rsp_lat = i_regs.u_stub_req_rsp_lat.q;
     assign req_rsp_rnd = i_regs.u_stub_req_rsp_rnd.q;
 
+    // When the STUB returns an exception, force the corresponding gold_ex register
+    // to be asserted. Cleaning the register is up to the software.
+    always_comb begin
+      if (gen_cva6_cores[0].i_mmu_stub.exception_o.valid && gen_cva6_cores[0].i_mmu_stub.valid_o) begin
+        force i_regs.u_gold_exception.wd  = 32'd1;
+        force i_regs.u_gold_exception.we = 1'b1;
+      end else begin
+        release i_regs.u_gold_exception.wd;
+        release i_regs.u_gold_exception.we;
+      end
+    end
+
     mmu_stub i_mmu_stub (
       .ex_en_i                ( ex_en                       ),
       .ex_rate_i              ( ex_rate                     ),

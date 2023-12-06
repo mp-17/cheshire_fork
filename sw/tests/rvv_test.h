@@ -3,7 +3,10 @@
 
 #include "regs/cheshire.h"
 
-// SoC-level register declaration
+///////////////////////
+// SoC-level regfile //
+///////////////////////
+
 #define INIT_RVV_TEST_SOC_REGFILE \
 volatile uint32_t *rf_stub_ex_en     = reg32(&__base_regs, CHESHIRE_STUB_EX_EN_REG_OFFSET);       \
 volatile uint32_t *rf_stub_ex_rate   = reg32(&__base_regs, CHESHIRE_STUB_EX_RATE_REG_OFFSET);     \
@@ -11,19 +14,48 @@ volatile uint32_t *rf_req_rsp_lat    = reg32(&__base_regs, CHESHIRE_STUB_REQ_RSP
 volatile uint32_t *rf_req_rsp_rnd    = reg32(&__base_regs, CHESHIRE_STUB_REQ_RSP_RND_REG_OFFSET); \
 volatile uint32_t *rf_gold_exception = reg32(&__base_regs, CHESHIRE_GOLD_EXCEPTION_REG_OFFSET);
 
+//////////////////////
+// Print facilities //
+//////////////////////
+
 #define PRINT_INIT                                                          \
   uint32_t rtc_freq   = *reg32(&__base_regs, CHESHIRE_RTC_FREQ_REG_OFFSET); \
   uint64_t reset_freq = clint_get_core_freq(rtc_freq, 2500);                \
   uart_init(&__base_uart, reset_freq, 115200);                              \
   char uart_print_str[] = {'0', '\r', '\n'};
-
 #define PRINT_CHAR(byte)                          \
   uart_print_str[0] = (char) byte;                \
   PRINT(uart_print_str)
-
 #define PRINT(str)                                \
   uart_write_str(&__base_uart, str, sizeof(str)); \
   uart_write_flush(&__base_uart);
+
+/////////////////////
+// Stub management //
+/////////////////////
+
+// Enable/disable exceptions from the stub
+#define STUB_EX_ON  *rf_stub_ex_en   = 1;
+#define STUB_EX_OFF *rf_stub_ex_en   = 0;
+// Exception rate of 1/(1+div)
+#define STUB_EX_RATE(div) *rf_stub_ex_rate = div;
+// Stub req-2-resp latency
+#define STUB_REQ_RSP_LAT(lat) *rf_req_rsp_lat = lat;
+// Stub req-2-resp latency random mode. If asserted,
+// STUB_REQ_RSP_LAT becomes the maximum latency to expect.
+// Minimum latency is 0.
+#define STUB_REQ_RSP_RND_ON  *rf_req_rsp_rnd = 1;
+#define STUB_REQ_RSP_RND_OFF *rf_req_rsp_rnd = 0;
+
+// Check the gold-exception register. This register is at 1
+// if the last stub request generated an exception. Otherwise
+// it is at zero. Cleaning this register is up to the sw.
+#define CHECK_GOLD_EX(ex) ASSERT_EQ(*rf_gold_exception, ex);
+#define CLEAR_GOLD_EX *rf_gold_exception = 0;
+
+///////////////
+// RVV Tests //
+///////////////
 
 #define FAIL { return -1; }
 #define ASSERT_EQ(var, gold) if (var != gold) FAIL
