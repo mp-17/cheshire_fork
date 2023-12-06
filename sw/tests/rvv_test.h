@@ -1,3 +1,10 @@
+// Copyright 2023 ETH Zurich and University of Bologna.
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+//
+// Vincenzo Maisto <vincenzo.maisto2@unina.it>
+// Matteo Perotti  <mperotti@iis.ee.ethz.ch>
+
 #ifndef __RVV_RVV_TEST_H__
 #define __RVV_RVV_TEST_H__
 
@@ -35,23 +42,28 @@ volatile uint32_t *rf_gold_exception = reg32(&__base_regs, CHESHIRE_GOLD_EXCEPTI
 /////////////////////
 
 // Enable/disable exceptions from the stub
-#define STUB_EX_ON  *rf_stub_ex_en   = 1;
-#define STUB_EX_OFF *rf_stub_ex_en   = 0;
-// Exception rate of 1/(1+div)
+#define STUB_EX(val) *rf_stub_ex_en = val;
+#define STUB_EX_ON   *rf_stub_ex_en = 1;
+#define STUB_EX_OFF  *rf_stub_ex_en = 0;
+// Exception rate of 1/(div+1)
 #define STUB_EX_RATE(div) *rf_stub_ex_rate = div;
 // Stub req-2-resp latency
 #define STUB_REQ_RSP_LAT(lat) *rf_req_rsp_lat = lat;
 // Stub req-2-resp latency random mode. If asserted,
 // STUB_REQ_RSP_LAT becomes the maximum latency to expect.
 // Minimum latency is 0.
-#define STUB_REQ_RSP_RND_ON  *rf_req_rsp_rnd = 1;
-#define STUB_REQ_RSP_RND_OFF *rf_req_rsp_rnd = 0;
+#define STUB_REQ_RSP_RND(val) *rf_req_rsp_rnd = val;
+#define STUB_REQ_RSP_RND_ON   *rf_req_rsp_rnd = 1;
+#define STUB_REQ_RSP_RND_OFF  *rf_req_rsp_rnd = 0;
 
 // Check the gold-exception register. This register is at 1
 // if the last stub request generated an exception. Otherwise
 // it is at zero. Cleaning this register is up to the sw.
-#define CHECK_GOLD_EX(ex) ASSERT_EQ(*rf_gold_exception, ex);
-#define CLEAR_GOLD_EX *rf_gold_exception = 0;
+#define CHECK_AND_CLEAR_GOLD_EX             \
+  asm volatile ("fence");                   \
+  ASSERT_EQ(*rf_gold_exception, exception); \
+  *rf_gold_exception = 0;                   \
+  asm volatile ("fence");
 
 ///////////////
 // RVV Tests //
