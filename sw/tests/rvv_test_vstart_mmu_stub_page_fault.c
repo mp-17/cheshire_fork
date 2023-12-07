@@ -12,7 +12,19 @@
 #include "encoding.h"
 #include "rvv_test.h"
 
+#define param_stub_ex          1
+#define param_stub_req_rsp_lat 1
+#define param_stub_req_rsp_rnd 0
+
 int main(void) {
+
+    // This initialization is controlled through "defines" in the various
+    // derived tests.
+    INIT_RVV_TEST_SOC_REGFILE;
+    VIRTUAL_MEMORY_ON;
+    STUB_EX_ON;
+    STUB_REQ_RSP_LAT(param_stub_req_rsp_lat);
+    STUB_REQ_RSP_RND(param_stub_req_rsp_rnd);
 
     // Vector configuration parameters and variables
     uint64_t avl = RVV_TEST_AVL(64);
@@ -43,7 +55,7 @@ int main(void) {
     // asm volatile ("vle64.v	v0   , (%0)" : "+&r"(address_load));
     // RVV_TEST_ASSERT_EXCEPTION_EXTENDED(1, address_load, CAUSE_LOAD_PAGE_FAULT)
     // RVV_TEST_CLEAN_EXCEPTION()
-    
+
     // RVV_TEST_CLEANUP();
 
     // //////////////////////////////////////////////////////////////////
@@ -54,9 +66,9 @@ int main(void) {
     // asm volatile ("vse64.v	v0   , (%0)" : "+&r"(address_store));
     // RVV_TEST_ASSERT_EXCEPTION_EXTENDED(1, address_store, CAUSE_STORE_PAGE_FAULT)
     // RVV_TEST_CLEAN_EXCEPTION()
-    
+
     // RVV_TEST_CLEANUP();
-    
+
     //////////////////////////////////////////////////////////////////
     // TEST: Exception generation and non-zero vstart: vector load
     //////////////////////////////////////////////////////////////////
@@ -74,7 +86,7 @@ int main(void) {
     //   vstart_read = -1;
     //   asm volatile ("csrr  %0, vstart"  : "=r"(vstart_read) );
     //   RVV_TEST_ASSERT ( vstart_read == vstart_val )
-    
+
     //   RVV_TEST_CLEANUP();
     // }
 
@@ -88,6 +100,7 @@ int main(void) {
       RVV_TEST_INIT( vl, avl );
 
       asm volatile ("csrs     vstart, %0"   :: "r"(vstart_val) );
+
       asm volatile ("vse64.v	v0   , (%0)" : "+&r"(address_store));
       RVV_TEST_ASSERT_EXCEPTION_EXTENDED(1, address_store + vstart_val, CAUSE_STORE_PAGE_FAULT)
       RVV_TEST_CLEAN_EXCEPTION()
@@ -95,7 +108,7 @@ int main(void) {
       vstart_read = -1;
       asm volatile ("csrr  %0, vstart"  : "=r"(vstart_read) );
       RVV_TEST_ASSERT ( vstart_read == vstart_val )
-    
+
       RVV_TEST_CLEANUP();
     }
 
@@ -106,10 +119,10 @@ int main(void) {
     //////////////////////////////////////////////////////////////////
 
 RVV_TEST_pass:
-    RVV_TEST_PASSED() 
+    RVV_TEST_PASSED()
 
 RVV_TEST_error:
     RVV_TEST_FAILED()
-  
+
   return 0;
 }
