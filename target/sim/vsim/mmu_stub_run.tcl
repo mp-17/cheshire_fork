@@ -7,9 +7,9 @@ if { $::env(MMU_STUB) eq "1"} {
 }
 run 100
 if {[string first "mmu_stub" $BINARY] != -1} {
-    force -deposit sim:/tb_cheshire_soc/fix/dut/xvio_mmu_exception_i 1'h1 0
+    force -deposit sim:/tb_cheshire_soc/fix/dut/xvio_en_ld_st_translation_i 1'h1 0
     if {[string first "page_fault" $BINARY] != -1} {
-        force -deposit sim:/tb_cheshire_soc/fix/dut/xvio_en_ld_st_translation_i 1'h1 0
+        force -deposit sim:/tb_cheshire_soc/fix/dut/xvio_mmu_exception_i 1'h1 0
     }
 }
 run -a
