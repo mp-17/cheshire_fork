@@ -135,16 +135,7 @@
       swaccess: "rw"
       hwaccess: "none"
       fields: [
-        { bits: "31:0", name: "stub_ex_en", desc: "STUB - Exception enable" }
-      ]
-    }
-
-    { name:     "stub_ex_rate"
-      desc:     "STUB - Throw an exception every (stub_ex_rate + 1) mmu requests"
-      swaccess: "rw"
-      hwaccess: "none"
-      fields: [
-        { bits: "31:0", name: "stub_ex_rate", desc: "STUB - Throw an exception every (stub_ex_rate + 1) mmu requests" }
+        { bits: "31:0", name: "stub_ex_en", desc: "STUB - Exception enable - Every request to the STUB will throw an exception" }
       ]
     }
 
@@ -166,12 +157,12 @@
       ]
     }
 
-    { name:     "gold_exception"
-      desc:     "STUB - Written by the TB if the last STUB req generated an exception"
+    { name:     "ara_virt_mem_en"
+      desc:     "Ara, STUB - Enable virtual memory requests"
       swaccess: "rw"
       hwaccess: "none"
       fields: [
-        { bits: "31:0", name: "gold_exception", desc: "" }
+        { bits: "31:0", name: "ara_virt_mem_en", desc: "Ara, STUB - Enable virtual memory requests" }
       ]
     }
 

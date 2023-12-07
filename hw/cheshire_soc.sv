@@ -24,9 +24,6 @@ module cheshire_soc import cheshire_pkg::*; #(
   parameter type reg_ext_req_t      = logic,
   parameter type reg_ext_rsp_t      = logic
 ) (
-  // DEBUG
-  input  logic        xvio_en_ld_st_translation_i,
-  input  logic        xvio_mmu_exception_i,
   input  logic        clk_i,
   input  logic        rst_ni,
   input  logic        test_mode_i,
@@ -693,6 +690,16 @@ module cheshire_soc import cheshire_pkg::*; #(
     axi_mst_req_t     axi_ara_narrow_req;
     axi_mst_rsp_t     axi_ara_narrow_resp;
 
+    // SoC-level regfile helpers for STUB and Ara
+    logic virt_mem_en;
+    logic ex_en;
+    logic [31:0] req_rsp_lat;
+    logic [31:0] req_rsp_rnd;
+    assign virt_mem_en = i_regs.u_ara_virt_mem_en.q[0];
+    assign ex_en       = i_regs.u_stub_ex_en.q[0];
+    assign req_rsp_lat = i_regs.u_stub_req_rsp_lat.q;
+    assign req_rsp_rnd = i_regs.u_stub_req_rsp_rnd.q;
+
     ara #(
       .NrLanes      ( `ARA_NR_LANES          ),
       .AxiDataWidth ( AraDataWideWidth       ),
@@ -712,16 +719,16 @@ module cheshire_soc import cheshire_pkg::*; #(
       .scan_data_o     ( /* Unused */      ),
   // `ifdef ACC_MMU_INTERFACE
       // .en_ld_st_translation_i ( en_ld_st_translation_cva6_acc ),
-      .en_ld_st_translation_i ( xvio_en_ld_st_translation_i ),
-      .mmu_misaligned_ex_o ( mmu_misaligned_ex_acc_cva6 ),
-      .mmu_req_o           ( mmu_req_acc_cva6           ),
-      .mmu_vaddr_o         ( mmu_vaddr_acc_cva6         ),
-      .mmu_is_store_o      ( mmu_is_store_acc_cva6      ),
-      .mmu_dtlb_hit_i      ( mmu_dtlb_hit_cva6_acc      ),
-      .mmu_dtlb_ppn_i      ( mmu_dtlb_ppn_cva6_acc      ),
-      .mmu_valid_i         ( mmu_valid_cva6_acc         ),
-      .mmu_paddr_i         ( mmu_paddr_cva6_acc         ),
-      .mmu_exception_i     ( mmu_exception_cva6_acc     ),
+      .en_ld_st_translation_i ( virt_mem_en                ),
+      .mmu_misaligned_ex_o    ( mmu_misaligned_ex_acc_cva6 ),
+      .mmu_req_o              ( mmu_req_acc_cva6           ),
+      .mmu_vaddr_o            ( mmu_vaddr_acc_cva6         ),
+      .mmu_is_store_o         ( mmu_is_store_acc_cva6      ),
+      .mmu_dtlb_hit_i         ( mmu_dtlb_hit_cva6_acc      ),
+      .mmu_dtlb_ppn_i         ( mmu_dtlb_ppn_cva6_acc      ),
+      .mmu_valid_i            ( mmu_valid_cva6_acc         ),
+      .mmu_paddr_i            ( mmu_paddr_cva6_acc         ),
+      .mmu_exception_i        ( mmu_exception_cva6_acc     ),
   // `endif // ACC_MMU_INTERFACE
       .acc_req_i       ( acc_req           ),
       .acc_resp_o      ( acc_resp          ),
@@ -734,37 +741,13 @@ module cheshire_soc import cheshire_pkg::*; #(
 `ifdef MMU_STUB
     $info("MMU STUB enabled.");
 
-    int unsigned ex_en;
-    int unsigned ex_rate;
-    int unsigned req_rsp_lat;
-    int unsigned req_rsp_rnd;
-
-    assign ex_en       = i_regs.u_stub_ex_en.q;
-    assign ex_rate     = i_regs.u_stub_ex_rate.q;
-    assign req_rsp_lat = i_regs.u_stub_req_rsp_lat.q;
-    assign req_rsp_rnd = i_regs.u_stub_req_rsp_rnd.q;
-
-    // When the STUB returns an exception, force the corresponding gold_ex register
-    // to be asserted. Cleaning the register is up to the software.
-    always_comb begin
-      if (gen_cva6_cores[0].i_mmu_stub.exception_o.valid && gen_cva6_cores[0].i_mmu_stub.valid_o) begin
-        force i_regs.u_gold_exception.wd  = 32'd1;
-        force i_regs.u_gold_exception.we = 1'b1;
-      end else begin
-        release i_regs.u_gold_exception.wd;
-        release i_regs.u_gold_exception.we;
-      end
-    end
-
     mmu_stub i_mmu_stub (
       .ex_en_i                ( ex_en                       ),
-      .ex_rate_i              ( ex_rate                     ),
       .req_rsp_lat_i          ( req_rsp_lat                 ),
       .req_rsp_rnd_i          ( req_rsp_rnd                 ),
       .clk_i                  ( clk_i                       ),
       .rst_ni                 ( rst_ni                      ),
-      .en_ld_st_translation_i ( xvio_en_ld_st_translation_i ),
-      .trigger_exception_i    ( xvio_mmu_exception_i        ),
+      .en_ld_st_translation_i ( virt_mem_en                 ),
       .misaligned_ex_i        ( mmu_misaligned_ex_acc_cva6  ),
       .req_i                  ( mmu_req_acc_cva6            ),
       .vaddr_i                ( mmu_vaddr_acc_cva6          ),

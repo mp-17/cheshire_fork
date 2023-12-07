@@ -8,15 +8,13 @@
 
 module mmu_stub (
     // Configuration from SoC regfile
-    input int unsigned			   ex_en_i, // Exception enable
-    input int unsigned			   ex_rate_i, // Throw an exception every (ex_rate_i + 1) mmu requests
-    input int unsigned			   req_rsp_lat_i, // Latency between request and response
-    input int unsigned			   req_rsp_rnd_i, // If 1, the latency is random, and req_rsp_lat_i is the maximum
+    input logic					   ex_en_i, // Exception enable
+    input logic [31:0]			   req_rsp_lat_i, // Latency between request and response
+    input logic [31:0]			   req_rsp_rnd_i, // If 1, the latency is random, and req_rsp_lat_i is the maximum
     // Interface
     input logic					   clk_i,
     input logic					   rst_ni,
     input logic					   en_ld_st_translation_i, // Enable behaviour
-    input logic					   trigger_exception_i, // Emulate exception generation on requests (load/store page faults)
     input						   ariane_pkg::exception_t misaligned_ex_i, // Ignored
     input logic					   req_i,
     input logic [riscv::VLEN-1:0]  vaddr_i,
@@ -103,7 +101,7 @@ module mmu_stub (
       end : valid
 
       // Mock exception logic. Throw exception with a probability of 1/(ex_rate_i + 1)
-      if (ex_en_i && valid_o && !({$random} % (ex_rate_i + 1))) begin : exception
+      if (ex_en_i && valid_o) begin : exception
         exception_o.valid = 1'b1;
         exception_o.cause = ( is_store_q ) ? riscv::STORE_PAGE_FAULT : riscv::LOAD_PAGE_FAULT;
         exception_o.tval  = {'0, vaddr_q};

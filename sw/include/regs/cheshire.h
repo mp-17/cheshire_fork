@@ -125,18 +125,15 @@ extern "C" {
 // STUB - Exception enable
 #define CHESHIRE_STUB_EX_EN_REG_OFFSET 0x5c
 
-// STUB - Throw an exception every (stub_ex_rate + 1) mmu requests
-#define CHESHIRE_STUB_EX_RATE_REG_OFFSET 0x60
-
 // STUB - Fixed latency from mmu-request to mmu-response
-#define CHESHIRE_STUB_REQ_RSP_LAT_REG_OFFSET 0x64
+#define CHESHIRE_STUB_REQ_RSP_LAT_REG_OFFSET 0x60
 
 // STUB - The req-rsp latency becomes random, and req_rsp_lat is the maximum
 // latency value)
-#define CHESHIRE_STUB_REQ_RSP_RND_REG_OFFSET 0x68
+#define CHESHIRE_STUB_REQ_RSP_RND_REG_OFFSET 0x64
 
-// STUB - Written by the TB if the last STUB req generated an exception
-#define CHESHIRE_GOLD_EXCEPTION_REG_OFFSET 0x6c
+// Ara, STUB - Enable virtual memory requests
+#define CHESHIRE_ARA_VIRT_MEM_EN_REG_OFFSET 0x68
 
 #ifdef __cplusplus
 }  // extern "C"

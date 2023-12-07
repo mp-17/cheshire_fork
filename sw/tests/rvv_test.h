@@ -15,11 +15,10 @@
 ///////////////////////
 
 #define INIT_RVV_TEST_SOC_REGFILE \
-volatile uint32_t *rf_stub_ex_en     = reg32(&__base_regs, CHESHIRE_STUB_EX_EN_REG_OFFSET);       \
-volatile uint32_t *rf_stub_ex_rate   = reg32(&__base_regs, CHESHIRE_STUB_EX_RATE_REG_OFFSET);     \
-volatile uint32_t *rf_req_rsp_lat    = reg32(&__base_regs, CHESHIRE_STUB_REQ_RSP_LAT_REG_OFFSET); \
-volatile uint32_t *rf_req_rsp_rnd    = reg32(&__base_regs, CHESHIRE_STUB_REQ_RSP_RND_REG_OFFSET); \
-volatile uint32_t *rf_gold_exception = reg32(&__base_regs, CHESHIRE_GOLD_EXCEPTION_REG_OFFSET);
+volatile uint32_t *rf_stub_ex_en  = reg32(&__base_regs, CHESHIRE_STUB_EX_EN_REG_OFFSET);       \
+volatile uint32_t *rf_req_rsp_lat = reg32(&__base_regs, CHESHIRE_STUB_REQ_RSP_LAT_REG_OFFSET); \
+volatile uint32_t *rf_req_rsp_rnd = reg32(&__base_regs, CHESHIRE_STUB_REQ_RSP_RND_REG_OFFSET); \
+volatile uint32_t *rf_virt_mem_en = reg32(&__base_regs, CHESHIRE_ARA_VIRT_MEM_EN_REG_OFFSET);
 
 //////////////////////
 // Print facilities //
@@ -41,12 +40,14 @@ volatile uint32_t *rf_gold_exception = reg32(&__base_regs, CHESHIRE_GOLD_EXCEPTI
 // Stub management //
 /////////////////////
 
+// Enable virtual memory Ara->STUB requests
+#define VIRTUAL_MEMORY(val) *rf_virt_mem_en = val;
+#define VIRTUAL_MEMORY_ON   *rf_virt_mem_en = 1;
+#define VIRTUAL_MEMORY_OFF  *rf_virt_mem_en = 0;
 // Enable/disable exceptions from the stub
 #define STUB_EX(val) *rf_stub_ex_en = val;
 #define STUB_EX_ON   *rf_stub_ex_en = 1;
 #define STUB_EX_OFF  *rf_stub_ex_en = 0;
-// Exception rate of 1/(div+1)
-#define STUB_EX_RATE(div) *rf_stub_ex_rate = div;
 // Stub req-2-resp latency
 #define STUB_REQ_RSP_LAT(lat) *rf_req_rsp_lat = lat;
 // Stub req-2-resp latency random mode. If asserted,
@@ -55,15 +56,6 @@ volatile uint32_t *rf_gold_exception = reg32(&__base_regs, CHESHIRE_GOLD_EXCEPTI
 #define STUB_REQ_RSP_RND(val) *rf_req_rsp_rnd = val;
 #define STUB_REQ_RSP_RND_ON   *rf_req_rsp_rnd = 1;
 #define STUB_REQ_RSP_RND_OFF  *rf_req_rsp_rnd = 0;
-
-// Check the gold-exception register. This register is at 1
-// if the last stub request generated an exception. Otherwise
-// it is at zero. Cleaning this register is up to the sw.
-#define CHECK_AND_CLEAR_GOLD_EX             \
-  asm volatile ("fence");                   \
-  ASSERT_EQ(*rf_gold_exception, exception); \
-  *rf_gold_exception = 0;                   \
-  asm volatile ("fence");
 
 ///////////////
 // RVV Tests //

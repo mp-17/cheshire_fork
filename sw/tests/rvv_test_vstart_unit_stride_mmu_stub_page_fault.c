@@ -7,7 +7,6 @@
 
 // Every request generates an exception after 1 cycle
 #define param_stub_ex          1
-#define param_stub_ex_rate     0
 #define param_stub_req_rsp_lat 1
 #define param_stub_req_rsp_rnd 0
 

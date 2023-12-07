@@ -41,8 +41,8 @@ int main(void) {
     // This initialization is controlled through "defines" in the various
     // derived tests.
     INIT_RVV_TEST_SOC_REGFILE;
+    VIRTUAL_MEMORY_ON;
     STUB_EX(param_stub_ex);
-    STUB_EX_RATE(param_stub_ex_rate);
     STUB_REQ_RSP_LAT(param_stub_req_rsp_lat);
     STUB_REQ_RSP_RND(param_stub_req_rsp_rnd);
 
@@ -70,7 +70,6 @@ int main(void) {
       }
       // Init VRF with prestart
       asm volatile ("vle64.v	v0    , (%0)" : "+&r"(address_load));
-      CHECK_AND_CLEAR_GOLD_EX;
 
       // Init memory
       for ( uint64_t i = vstart_val; i < vl; i++ ) {
@@ -80,10 +79,8 @@ int main(void) {
       asm volatile ("csrs     vstart, %0"   :: "r"(vstart_val) );
       // Test target: load vr group body
       asm volatile ("vle64.v	v0    , (%0)" : "+&r"(address_load));
-      CHECK_AND_CLEAR_GOLD_EX;
       // Store whole vr group
       asm volatile ("vse64.v	v0    , (%0)" : "+&r"(address_store));
-      CHECK_AND_CLEAR_GOLD_EX;
 
       // Check pre-start
       for ( uint64_t i = 0; i < vstart_val; i++ ) {
@@ -117,10 +114,8 @@ int main(void) {
       }
 
       asm volatile ("vle64.v	v24   , (%0)" : "+&r"(address_load));
-      CHECK_AND_CLEAR_GOLD_EX;
       asm volatile ("csrs     vstart, %0"   :: "r"(vstart_val) );
       asm volatile ("vse64.v	v24   , (%0)" : "+&r"(address_store));
-      CHECK_AND_CLEAR_GOLD_EX;
 
       // Check pre-start
       for ( uint64_t i = 0; i < vstart_val; i++ ) {
