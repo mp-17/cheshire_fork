@@ -70,15 +70,13 @@ volatile uint32_t *rf_virt_mem_en = reg32(&__base_regs, CHESHIRE_ARA_VIRT_MEM_EN
 // BUG: Can't return a non-zero value from here...
 // #define RVV_TEST_ASSERT( expression ) if ( !expression ) { return -1; }
 // Quick workaround:
-#define RVV_TEST_ASSERT( expression )     if ( !(expression) ) { goto RVV_TEST_error; }
+#define RVV_TEST_ASSERT( expression )     if ( !(expression) ) FAIL
 #define RVV_TEST_ASSERT_EXCEPTION( val )  RVV_TEST_ASSERT ( exception == (uint64_t)(val) );
 #define RVV_TEST_ASSERT_EXCEPTION_EXTENDED( valid, tval, cause )  RVV_TEST_ASSERT ( ( exception == (uint64_t)(valid) )    \
                                                                             & ( mtval == (uint64_t)(tval) ) \
                                                                             & ( mcause == (uint64_t)(cause) ) \
                                                                             );
 #define RVV_TEST_CLEAN_EXCEPTION()        exception = 0; mtval = 0; mcause = 0;
-#define RVV_TEST_PASSED()                 asm volatile ( "li %0, %1" : "=r" (magic_out) : "i"(RVV_TEST_MAGIC));
-#define RVV_TEST_FAILED()                 asm volatile ( "nop;nop;nop;nop;" );
 
 #define VLMAX (1024 * ARA_NR_LANES)
 #ifndef RVV_TEST_AVL
