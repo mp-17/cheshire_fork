@@ -169,6 +169,7 @@ int main(void) {
             RVV_TEST_CLEAN_EXCEPTION()
 
             // Recover the instruction
+            // The following instructions resets the STUB counter for the exceptions, too!
             STUB_EX_OFF;
             asm volatile("vse64.v v0, (%0)" : "+&r"(address_store));
             STUB_EX_ON;

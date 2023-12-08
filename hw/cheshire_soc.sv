@@ -697,6 +697,7 @@ module cheshire_soc import cheshire_pkg::*; #(
     logic [31:0] req_rsp_rnd;
     assign virt_mem_en = i_regs.u_ara_virt_mem_en.q[0];
     assign ex_en       = i_regs.u_stub_ex_en.q[0];
+    assign no_ex_lat   = i_regs.u_stub_no_ex_lat.q;
     assign req_rsp_lat = i_regs.u_stub_req_rsp_lat.q;
     assign req_rsp_rnd = i_regs.u_stub_req_rsp_rnd.q;
 
@@ -743,6 +744,7 @@ module cheshire_soc import cheshire_pkg::*; #(
 
     mmu_stub i_mmu_stub (
       .ex_en_i                ( ex_en                       ),
+      .no_ex_lat_i            ( no_ex_lat                   ),
       .req_rsp_lat_i          ( req_rsp_lat                 ),
       .req_rsp_rnd_i          ( req_rsp_rnd                 ),
       .clk_i                  ( clk_i                       ),

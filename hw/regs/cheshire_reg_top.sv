@@ -158,6 +158,9 @@ module cheshire_reg_top #(
   logic [31:0] stub_ex_en_qs;
   logic [31:0] stub_ex_en_wd;
   logic stub_ex_en_we;
+  logic [31:0] stub_no_ex_lat_qs;
+  logic [31:0] stub_no_ex_lat_wd;
+  logic stub_no_ex_lat_we;
   logic [31:0] stub_req_rsp_lat_qs;
   logic [31:0] stub_req_rsp_lat_wd;
   logic stub_req_rsp_lat_we;
@@ -939,6 +942,33 @@ module cheshire_reg_top #(
   );
 
 
+  // R[stub_no_ex_lat]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("RW"),
+    .RESVAL  (32'h0)
+  ) u_stub_no_ex_lat (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (stub_no_ex_lat_we),
+    .wd     (stub_no_ex_lat_wd),
+
+    // from internal hardware
+    .de     (1'b0),
+    .d      ('0  ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (),
+
+    // to register interface (read)
+    .qs     (stub_no_ex_lat_qs)
+  );
+
+
   // R[stub_req_rsp_lat]: V(False)
 
   prim_subreg #(
@@ -1022,7 +1052,7 @@ module cheshire_reg_top #(
 
 
 
-  logic [26:0] addr_hit;
+  logic [27:0] addr_hit;
   always_comb begin
     addr_hit = '0;
     addr_hit[ 0] = (reg_addr == CHESHIRE_SCRATCH_0_OFFSET);
@@ -1049,9 +1079,10 @@ module cheshire_reg_top #(
     addr_hit[21] = (reg_addr == CHESHIRE_VGA_PARAMS_OFFSET);
     addr_hit[22] = (reg_addr == CHESHIRE_NUM_HARTS_OFFSET);
     addr_hit[23] = (reg_addr == CHESHIRE_STUB_EX_EN_OFFSET);
-    addr_hit[24] = (reg_addr == CHESHIRE_STUB_REQ_RSP_LAT_OFFSET);
-    addr_hit[25] = (reg_addr == CHESHIRE_STUB_REQ_RSP_RND_OFFSET);
-    addr_hit[26] = (reg_addr == CHESHIRE_ARA_VIRT_MEM_EN_OFFSET);
+    addr_hit[24] = (reg_addr == CHESHIRE_STUB_NO_EX_LAT_OFFSET);
+    addr_hit[25] = (reg_addr == CHESHIRE_STUB_REQ_RSP_LAT_OFFSET);
+    addr_hit[26] = (reg_addr == CHESHIRE_STUB_REQ_RSP_RND_OFFSET);
+    addr_hit[27] = (reg_addr == CHESHIRE_ARA_VIRT_MEM_EN_OFFSET);
   end
 
   assign addrmiss = (reg_re || reg_we) ? ~|addr_hit : 1'b0 ;
@@ -1085,7 +1116,8 @@ module cheshire_reg_top #(
                (addr_hit[23] & (|(CHESHIRE_PERMIT[23] & ~reg_be))) |
                (addr_hit[24] & (|(CHESHIRE_PERMIT[24] & ~reg_be))) |
                (addr_hit[25] & (|(CHESHIRE_PERMIT[25] & ~reg_be))) |
-               (addr_hit[26] & (|(CHESHIRE_PERMIT[26] & ~reg_be)))));
+               (addr_hit[26] & (|(CHESHIRE_PERMIT[26] & ~reg_be))) |
+               (addr_hit[27] & (|(CHESHIRE_PERMIT[27] & ~reg_be)))));
   end
 
   assign scratch_0_we = addr_hit[0] & reg_we & !reg_error;
@@ -1179,13 +1211,16 @@ module cheshire_reg_top #(
   assign stub_ex_en_we = addr_hit[23] & reg_we & !reg_error;
   assign stub_ex_en_wd = reg_wdata[31:0];
 
-  assign stub_req_rsp_lat_we = addr_hit[24] & reg_we & !reg_error;
+  assign stub_no_ex_lat_we = addr_hit[24] & reg_we & !reg_error;
+  assign stub_no_ex_lat_wd = reg_wdata[31:0];
+
+  assign stub_req_rsp_lat_we = addr_hit[25] & reg_we & !reg_error;
   assign stub_req_rsp_lat_wd = reg_wdata[31:0];
 
-  assign stub_req_rsp_rnd_we = addr_hit[25] & reg_we & !reg_error;
+  assign stub_req_rsp_rnd_we = addr_hit[26] & reg_we & !reg_error;
   assign stub_req_rsp_rnd_wd = reg_wdata[31:0];
 
-  assign ara_virt_mem_en_we = addr_hit[26] & reg_we & !reg_error;
+  assign ara_virt_mem_en_we = addr_hit[27] & reg_we & !reg_error;
   assign ara_virt_mem_en_wd = reg_wdata[31:0];
 
   // Read data return
@@ -1302,14 +1337,18 @@ module cheshire_reg_top #(
       end
 
       addr_hit[24]: begin
-        reg_rdata_next[31:0] = stub_req_rsp_lat_qs;
+        reg_rdata_next[31:0] = stub_no_ex_lat_qs;
       end
 
       addr_hit[25]: begin
-        reg_rdata_next[31:0] = stub_req_rsp_rnd_qs;
+        reg_rdata_next[31:0] = stub_req_rsp_lat_qs;
       end
 
       addr_hit[26]: begin
+        reg_rdata_next[31:0] = stub_req_rsp_rnd_qs;
+      end
+
+      addr_hit[27]: begin
         reg_rdata_next[31:0] = ara_virt_mem_en_qs;
       end
 

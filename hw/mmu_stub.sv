@@ -8,7 +8,8 @@
 
 module mmu_stub (
     // Configuration from SoC regfile
-    input logic					   ex_en_i, // Exception enable
+    input logic					   ex_en_i, // Exception enable/disable. If disable, the internal status for the exception is reset
+    input logic	[31:0]			   no_ex_lat_i, // Number of requests to accept before throwing an exception
     input logic [31:0]			   req_rsp_lat_i, // Latency between request and response
     input logic [31:0]			   req_rsp_rnd_i, // If 1, the latency is random, and req_rsp_lat_i is the maximum
     // Interface
@@ -36,12 +37,14 @@ module mmu_stub (
   logic                   lat_cnt_en, lat_cnt_clr;
   logic [31:0]            lat_cnt_q, lat_cnt_d;
   logic [31:0]            req_rsp_lat_q, req_rsp_lat_d;
+  logic [31:0]            no_ex_lat_cnt_q, no_ex_lat_cnt_d;
   `FF(mock_paddr_q , mock_paddr_d , '0, clk_i, rst_ni)
   `FF(vaddr_q      , vaddr_d      , '0, clk_i, rst_ni)
   `FF(is_store_q   , is_store_d   , '0, clk_i, rst_ni)
   `FF(lat_cnt_q    , lat_cnt_d    , '0, clk_i, rst_ni)
   // Start with 1 cycle latency for the very first req when we allow random latency
   `FF(req_rsp_lat_q, req_rsp_lat_d, 1, clk_i, rst_ni)
+  `FF(no_ex_lat_cnt_q, no_ex_lat_cnt_d, 0, clk_i, rst_ni)
 
   // Combinatorial logic
   always_comb begin : mmu_stub
@@ -57,16 +60,17 @@ module mmu_stub (
     lat_cnt_clr = 1'b0;
 
     // Registers feedback
-    mock_paddr_d  = mock_paddr_q;
-    vaddr_d       = vaddr_q;
-    is_store_d    = is_store_q;
-    lat_cnt_d     = lat_cnt_q;
+    mock_paddr_d    = mock_paddr_q;
+    vaddr_d         = vaddr_q;
+    is_store_d      = is_store_q;
+    lat_cnt_d       = lat_cnt_q;
+    no_ex_lat_cnt_d = no_ex_lat_cnt_q;
     if (req_rsp_rnd_i)
       req_rsp_lat_d = req_rsp_lat_q;
     else
       req_rsp_lat_d = req_rsp_lat_i;
 
-    // If trasnlation is enabled
+    // If translation is enabled
     if ( en_ld_st_translation_i ) begin : enable_translation
       // Cycle 0
       if ( req_i ) begin : req_valid
@@ -98,14 +102,23 @@ module mmu_stub (
         if (req_rsp_rnd_i) begin
           req_rsp_lat_d = ({$random} % (req_rsp_lat_i)) + 1;
         end
+
+        // Another answer without exception!
+        no_ex_lat_cnt_d = no_ex_lat_cnt_q + 1;
       end : valid
 
-      // Mock exception logic. Throw exception with a probability of 1/(ex_rate_i + 1)
-      if (ex_en_i && valid_o) begin : exception
+      // Mock exception logic
+      if (ex_en_i && no_ex_lat_cnt_q == no_ex_lat_i && valid_o) begin : exception
         exception_o.valid = 1'b1;
         exception_o.cause = ( is_store_q ) ? riscv::STORE_PAGE_FAULT : riscv::LOAD_PAGE_FAULT;
         exception_o.tval  = {'0, vaddr_q};
+        // Reset the ex_lat counter
+        no_ex_lat_cnt_d = '0;
       end : exception
+      // Reset the ex_lat counter if the exception engine is turned off
+      if (!ex_en_i) begin
+        no_ex_lat_cnt_d = '0;
+      end
     end : enable_translation
   end : mmu_stub
 endmodule : mmu_stub

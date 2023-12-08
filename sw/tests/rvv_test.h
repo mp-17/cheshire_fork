@@ -25,6 +25,7 @@
 
 #define INIT_RVV_TEST_SOC_REGFILE \
 volatile uint32_t *rf_stub_ex_en  = reg32(&__base_regs, CHESHIRE_STUB_EX_EN_REG_OFFSET);       \
+volatile uint32_t *rf_no_ex_lat   = reg32(&__base_regs, CHESHIRE_STUB_NO_EX_LAT_REG_OFFSET);   \
 volatile uint32_t *rf_req_rsp_lat = reg32(&__base_regs, CHESHIRE_STUB_REQ_RSP_LAT_REG_OFFSET); \
 volatile uint32_t *rf_req_rsp_rnd = reg32(&__base_regs, CHESHIRE_STUB_REQ_RSP_RND_REG_OFFSET); \
 volatile uint32_t *rf_virt_mem_en = reg32(&__base_regs, CHESHIRE_ARA_VIRT_MEM_EN_REG_OFFSET);
@@ -53,7 +54,8 @@ volatile uint32_t *rf_virt_mem_en = reg32(&__base_regs, CHESHIRE_ARA_VIRT_MEM_EN
 #define VIRTUAL_MEMORY(val) *rf_virt_mem_en = val;
 #define VIRTUAL_MEMORY_ON   *rf_virt_mem_en = 1;
 #define VIRTUAL_MEMORY_OFF  *rf_virt_mem_en = 0;
-// Enable/disable exceptions from the stub
+// Enable/disable exceptions from the stub. This registers also resets the status of the stub
+// for what conerns the exceptions (e.g., the counter for the no-ex-latency).
 #define STUB_EX(val) *rf_stub_ex_en = val;
 #define STUB_EX_ON   *rf_stub_ex_en = 1;
 #define STUB_EX_OFF  *rf_stub_ex_en = 0;
@@ -65,6 +67,8 @@ volatile uint32_t *rf_virt_mem_en = reg32(&__base_regs, CHESHIRE_ARA_VIRT_MEM_EN
 #define STUB_REQ_RSP_RND(val) *rf_req_rsp_rnd = val;
 #define STUB_REQ_RSP_RND_ON   *rf_req_rsp_rnd = 1;
 #define STUB_REQ_RSP_RND_OFF  *rf_req_rsp_rnd = 0;
+// Exception latency (per transaction)
+#define STUB_NO_EX_LAT(lat) *rf_no_ex_lat = lat;
 
 ///////////////
 // RVV Tests //
@@ -197,12 +201,10 @@ uint64_t get_body_elm_pre_exception(axi_burst_log_t axi_log, uint64_t T, uint64_
 axi_burst_log_t get_unit_stride_bursts(uint64_t addr, uint64_t vl_eff, uint64_t enc_ew, uint64_t log2_balign) {
   axi_burst_log_t axi_log;
 
-
   // Requests are aligned to the memory bus
   uint64_t aligned_addr = (addr >> log2_balign) << log2_balign;
 
   // Calculate the number of elements per burst
-
   uint64_t start_addr_misaligned = addr;
   uint64_t start_addr            = aligned_addr;
   uint64_t final_addr = start_addr_misaligned + (vl_eff << enc_ew);

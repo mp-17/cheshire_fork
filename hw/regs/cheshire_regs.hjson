@@ -139,6 +139,15 @@
       ]
     }
 
+    { name:     "stub_no_ex_lat"
+      desc:     "STUB - How many requests we answer before throwing an exception"
+      swaccess: "rw"
+      hwaccess: "none"
+      fields: [
+        { bits: "31:0", name: "stub_no_ex_lat", desc: "STUB - How many requests we answer before throwing an exception" }
+      ]
+    }
+
     { name:     "stub_req_rsp_lat"
       desc:     "STUB - Fixed latency from mmu-request to mmu-response"
       swaccess: "rw"
