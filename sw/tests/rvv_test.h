@@ -10,6 +10,15 @@
 
 #include "regs/cheshire.h"
 
+
+//////////////////
+// Return codes //
+//////////////////
+
+#define RET_CODE_SUCCESS     0
+#define RET_CODE_FAIL       -1
+#define RET_CODE_WRONG_CASE -2
+
 ///////////////////////
 // SoC-level regfile //
 ///////////////////////
@@ -61,7 +70,7 @@ volatile uint32_t *rf_virt_mem_en = reg32(&__base_regs, CHESHIRE_ARA_VIRT_MEM_EN
 // RVV Tests //
 ///////////////
 
-#define FAIL { return -1; }
+#define FAIL { return RET_CODE_FAIL; }
 #define ASSERT_EQ(var, gold) if (var != gold) FAIL
 
 // Helper test macros
@@ -146,6 +155,111 @@ void trap_vector () {
         "csrw	mepc, t6;"
         "nop;"
     );
+}
+
+#define INIT_NONZERO_VAL_ST 37
+#define MAGIC_NUM 5
+
+#define EW64 64
+#define EW32 32
+#define EW16 16
+#define EW8  8
+// Is this true? Anyway, okay with 2 lanes
+#define MEM_BUS_BYTE 4 * ARA_NR_LANES
+
+// Helper
+#define LOG2_4Ki 12
+// Max number of bursts in a single AXI unit-stride memory op
+// 16 lanes, 16 KiB vector register (LMUL == 8)
+// MAX 256 beats in a burst (BUS_WIDTH_min == 8B): 16KiB / (256 * 8B) = 8
+// No 4KiB page crossings: max bursts -> 16KiB / 4KiB + 1 = 5
+// Use a safe value higher than the previous bounds
+#define MAX_BURSTS 16
+
+typedef struct axi_burst_log_s {
+  uint64_t bursts;
+  uint64_t burst_vec_elm[MAX_BURSTS];
+  uint64_t burst_start_addr[MAX_BURSTS];
+} axi_burst_log_t;
+
+// Get the number of elements correctly processed before the exception at burst T in [0,N_BURSTS-1].
+uint64_t get_body_elm_pre_exception(axi_burst_log_t axi_log, uint64_t T, uint64_t vstart) {
+  // Calculate how many elements before exception
+  uint64_t elm = 0;
+  for (int i = 0; i < T; i++) {
+    elm += axi_log.burst_vec_elm[i];
+  }
+  return elm;
+}
+
+// Get the number of bursts per vector unit-stride memory operation from an address and a number of elements
+// with 2^(enc_ew) Byte each, and a memory bus of 2^(log2_balign) Byte.
+axi_burst_log_t get_unit_stride_bursts(uint64_t addr, uint64_t vl_eff, uint64_t enc_ew, uint64_t log2_balign) {
+  axi_burst_log_t axi_log;
+
+
+  // Requests are aligned to the memory bus
+  uint64_t aligned_addr = (addr >> log2_balign) << log2_balign;
+
+  // Calculate the number of elements per burst
+
+  uint64_t start_addr_misaligned = addr;
+  uint64_t start_addr            = aligned_addr;
+  uint64_t final_addr = start_addr_misaligned + (vl_eff << enc_ew);
+  uint64_t end_addr;
+  axi_log.bursts = 0;
+   while (start_addr < final_addr) {
+    // Find the end address (minimum address among the various limits)
+    // Burst cannot be made of more than 256 beats
+    uint64_t end_addr_lim_0 = start_addr + (256 << log2_balign);
+    // Burst cannot cross 4KiB pages
+    uint64_t end_addr_lim_1 = (start_addr >> LOG2_4Ki) << LOG2_4Ki;
+    // The end address is finally limited by the vector length
+    uint64_t end_addr_lim_2 = start_addr_misaligned + (vl_eff << enc_ew);
+    // Find the minimum end address
+    if (end_addr_lim_0 < end_addr_lim_1 && end_addr_lim_0 < end_addr_lim_2) {
+      end_addr = end_addr_lim_0;
+    } else if (end_addr_lim_1 < end_addr_lim_0 && end_addr_lim_1 < end_addr_lim_2) {
+      end_addr = end_addr_lim_1;
+    } else {
+      end_addr = end_addr_lim_2;
+    }
+
+    // How many elements in this burst
+    uint64_t elm_per_burst = (end_addr - start_addr_misaligned) >> enc_ew;
+    vl_eff -= elm_per_burst;
+    // Log burst info
+    axi_log.burst_vec_elm[axi_log.bursts]    = elm_per_burst;
+    axi_log.burst_start_addr[axi_log.bursts++] = start_addr_misaligned;
+
+    // Find next start address
+    start_addr = end_addr;
+    // After the first burst, the address is always aligned with the bus width
+    start_addr_misaligned = start_addr;
+  }
+
+  return axi_log;
+}
+
+// Get the number of bursts per vector unit-stride AXI memory operation and the number of elements per burst.
+// This function calculates the effective vl and address from vl, addr, and vstart, some other helpers,
+// and then fall through the real function.
+axi_burst_log_t get_unit_stride_bursts_wrap(uint64_t addr, uint64_t vl, uint64_t ew, uint64_t mem_bus_byte, uint64_t vstart) {
+  // Encode ew [bits] in a [byte] exponent
+  uint64_t enc_ew = (31 - __builtin_clz(ew)) - 3;
+  // Find log2 byte alignment
+  uint64_t log2_balign = (31 - __builtin_clz(mem_bus_byte));
+  // Effective starting address
+  uint64_t eff_addr = addr + (vstart << enc_ew);
+  uint64_t eff_vl   = vl - vstart;
+
+  return get_unit_stride_bursts(eff_addr, eff_vl, enc_ew, log2_balign);
+}
+
+// Quick pseudo-rand from 0 to max
+uint64_t pseudo_rand(uint64_t max) {
+  static uint64_t x = 0;
+  return (x = (x + 7) % (max + 1));
 }
 
 #endif // __RVV_RVV_TEST_H__
