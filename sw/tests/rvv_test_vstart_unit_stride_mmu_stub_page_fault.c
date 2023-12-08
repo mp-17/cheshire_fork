@@ -11,4 +11,4 @@
 #define param_stub_req_rsp_rnd 0
 
 // Test body
-#include "rvv_test_vstart_unit_stride.c.body"
+#include "rvv_test_vstart_unit_stride_mmu_stub_page_fault.c.body"
