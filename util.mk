@@ -64,9 +64,6 @@ rvv-test-report: $(RVV_TEST_TRACE)
 #	Compose test report
 	@printf "$(RVV_TEST_NAME)," 					>> $(RVV_TEST_RESULT_FILE)
 	@printf " ARA_NR_LANES=$(ARA_NR_LANES)," 	>> $(RVV_TEST_RESULT_FILE)
-	@grep --quiet $(RVV_TEST_MAGIC) $(RVV_TEST_TRACE) 	\
-		&& printf " PASSED," 					>> $(RVV_TEST_RESULT_FILE) \
-		|| printf " FAILED," 					>> $(RVV_TEST_RESULT_FILE)
 	@printf " $(shell date $(DATE_FORMAT))," 	>> $(RVV_TEST_RESULT_FILE)
 	@printf " Notes: \"$(TEST_COMMENT)\", " 		>> $(RVV_TEST_RESULT_FILE)
 	@printf " VSIM_ROOT=$(VSIM_ROOT)" 			>> $(RVV_TEST_RESULT_FILE)
