@@ -157,15 +157,6 @@
       ]
     }
 
-    { name:     "stub_req_rsp_rnd"
-      desc:     "STUB - The req-rsp latency becomes random, and req_rsp_lat is the maximum latency value)"
-      swaccess: "rw"
-      hwaccess: "none"
-      fields: [
-        { bits: "31:0", name: "stub_req_rsp_rnd", desc: "STUB - The req-rsp latency becomes random, and req_rsp_lat is the maximum latency value" }
-      ]
-    }
-
     { name:     "ara_virt_mem_en"
       desc:     "Ara, STUB - Enable virtual memory requests"
       swaccess: "rw"

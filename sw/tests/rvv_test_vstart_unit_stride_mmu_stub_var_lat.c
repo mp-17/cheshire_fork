@@ -4,12 +4,12 @@
 //
 // Matteo Perotti <mperotti@iis.ee.ethz.ch>
 
-// No exceptions are generated
-// Variable response latency from 0 to 10 cycles
-#define param_stub_ex          0
-#define param_stub_ex_rate     0
-#define param_stub_req_rsp_lat 10
-#define param_stub_req_rsp_rnd 1
+// Enable virtual memory
+#define param_stub_virt_mem 1
+
+// Variable req-rsp latency (from 1 to 10 cycles)
+#define param_stub_req_rsp_lat_ctrl 1
+#define param_stub_req_rsp_lat      10
 
 // Test body
 #include "rvv_test_vstart_unit_stride.c.body"

@@ -27,7 +27,6 @@
 volatile uint32_t *rf_stub_ex_en  = reg32(&__base_regs, CHESHIRE_STUB_EX_EN_REG_OFFSET);       \
 volatile uint32_t *rf_no_ex_lat   = reg32(&__base_regs, CHESHIRE_STUB_NO_EX_LAT_REG_OFFSET);   \
 volatile uint32_t *rf_req_rsp_lat = reg32(&__base_regs, CHESHIRE_STUB_REQ_RSP_LAT_REG_OFFSET); \
-volatile uint32_t *rf_req_rsp_rnd = reg32(&__base_regs, CHESHIRE_STUB_REQ_RSP_RND_REG_OFFSET); \
 volatile uint32_t *rf_virt_mem_en = reg32(&__base_regs, CHESHIRE_ARA_VIRT_MEM_EN_REG_OFFSET);
 
 //////////////////////
@@ -61,12 +60,6 @@ volatile uint32_t *rf_virt_mem_en = reg32(&__base_regs, CHESHIRE_ARA_VIRT_MEM_EN
 #define STUB_EX_OFF  *rf_stub_ex_en = 0;
 // Stub req-2-resp latency
 #define STUB_REQ_RSP_LAT(lat) *rf_req_rsp_lat = lat;
-// Stub req-2-resp latency random mode. If asserted,
-// STUB_REQ_RSP_LAT becomes the maximum latency to expect.
-// Minimum latency is 0.
-#define STUB_REQ_RSP_RND(val) *rf_req_rsp_rnd = val;
-#define STUB_REQ_RSP_RND_ON   *rf_req_rsp_rnd = 1;
-#define STUB_REQ_RSP_RND_OFF  *rf_req_rsp_rnd = 0;
 // Exception latency (per transaction)
 #define STUB_NO_EX_LAT(lat) *rf_no_ex_lat = lat;
 
@@ -164,6 +157,9 @@ void trap_vector () {
 #define INIT_NONZERO_VAL_ST 37
 #define MAGIC_NUM 5
 
+// Maximum STUB req-rsp latency (power of 2 to speed up the code)
+#define MAX_LAT_P2 8
+
 #define EW64 64
 #define EW32 32
 #define EW16 16
@@ -181,8 +177,11 @@ void trap_vector () {
 #define MAX_BURSTS 16
 
 typedef struct axi_burst_log_s {
+  // Number of bursts in this AXI transaction
   uint64_t bursts;
+  // Number of vector elemetns per AXI burst
   uint64_t burst_vec_elm[MAX_BURSTS];
+  // Start address of each AXI burst
   uint64_t burst_start_addr[MAX_BURSTS];
 } axi_burst_log_t;
 

@@ -32,13 +32,11 @@ int main(void) {
   *rf_virt_mem_en    = '1';
   *rf_stub_ex_en     = '2';
   *rf_req_rsp_lat    = '3';
-  *rf_req_rsp_rnd    = '4';
 
   // Read the register file again (check written values)
   ASSERT_EQ(*rf_virt_mem_en,    '1');
   ASSERT_EQ(*rf_stub_ex_en,     '2');
   ASSERT_EQ(*rf_req_rsp_lat,    '3');
-  ASSERT_EQ(*rf_req_rsp_rnd,    '4');
 
 #if (COND_PRINT == 1)
   // Initialize UART and print
@@ -48,7 +46,6 @@ int main(void) {
   PRINT_CHAR(*rf_virt_mem_en);
   PRINT_CHAR(*rf_stub_ex_en);
   PRINT_CHAR(*rf_req_rsp_lat);
-  PRINT_CHAR(*rf_req_rsp_rnd);
 #endif
 
   return 0;

@@ -5,10 +5,12 @@
 // Vincenzo Maisto <vincenzo.maisto2@unina.it>
 // Matteo Perotti  <mperotti@iis.ee.ethz.ch>
 
-// No exceptions are generated
-#define param_stub_ex          0
-#define param_stub_req_rsp_lat 1
-#define param_stub_req_rsp_rnd 0
+// Disable virtual memory
+#define param_stub_virt_mem 0
+
+// Fixed req-rsp latency of 1 cycle
+#define param_stub_req_rsp_lat_ctrl 0
+#define param_stub_req_rsp_lat      1
 
 // Test body
 #include "rvv_test_vstart_unit_stride.c.body"

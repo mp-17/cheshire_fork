@@ -20,8 +20,8 @@ int main(void) {
     INIT_RVV_TEST_SOC_REGFILE;
     VIRTUAL_MEMORY_ON;
     STUB_EX_ON;
+    STUB_NO_EX_LAT(0); // Always exception at every STUB request!
     STUB_REQ_RSP_LAT(param_stub_req_rsp_lat);
-    STUB_REQ_RSP_RND(param_stub_req_rsp_rnd);
 
     // Vector configuration parameters and variables
     uint64_t avl = RVV_TEST_AVL(64);
@@ -75,6 +75,11 @@ int main(void) {
     for ( uint64_t vstart_val = 0; vstart_val < vl; vstart_val++ ) {
       RVV_TEST_INIT( vl, avl );
 
+      if (param_stub_req_rsp_lat_ctrl) {
+        // Random STUB req-rsp latency (minimum value should be 1)
+        STUB_REQ_RSP_LAT((vstart_val % param_stub_req_rsp_lat) + 1);
+      }
+
       asm volatile ("csrs     vstart, %0"   :: "r"(vstart_val) );
       asm volatile ("vle64.v	v0   , (%0)" : "+&r"(address_load));
       RVV_TEST_ASSERT_EXCEPTION_EXTENDED(1, address_load + vstart_val, CAUSE_LOAD_PAGE_FAULT)
@@ -95,6 +100,11 @@ int main(void) {
     // Loop over vstart values
     for ( uint64_t vstart_val = 0; vstart_val < vl; vstart_val++ ) {
       RVV_TEST_INIT( vl, avl );
+
+      if (param_stub_req_rsp_lat_ctrl) {
+        // Random STUB req-rsp latency (minimum value should be 1)
+        STUB_REQ_RSP_LAT((vstart_val % param_stub_req_rsp_lat) + 1);
+      }
 
       asm volatile ("csrs     vstart, %0"   :: "r"(vstart_val) );
 

@@ -4,11 +4,12 @@
 //
 // Matteo Perotti  <mperotti@iis.ee.ethz.ch>
 
-// Every request generates an exception after 1 cycle
-// Variable response latency from 0 to 10 cycles
-#define param_stub_ex          1
-#define param_stub_req_rsp_lat 10
-#define param_stub_req_rsp_rnd 1
+// Enable virtual memory
+#define param_stub_virt_mem 1
+
+// Fixed req-rsp latency of 1 cycle
+#define param_stub_req_rsp_lat_ctrl 1
+#define param_stub_req_rsp_lat      10
 
 // Test body
 #include "rvv_test_vstart_unit_stride_mmu_stub_page_fault.c.body"

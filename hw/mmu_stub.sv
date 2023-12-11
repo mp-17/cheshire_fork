@@ -11,7 +11,6 @@ module mmu_stub (
     input logic					   ex_en_i, // Exception enable/disable. If disable, the internal status for the exception is reset
     input logic	[31:0]			   no_ex_lat_i, // Number of requests to accept before throwing an exception
     input logic [31:0]			   req_rsp_lat_i, // Latency between request and response
-    input logic [31:0]			   req_rsp_rnd_i, // If 1, the latency is random, and req_rsp_lat_i is the maximum
     // Interface
     input logic					   clk_i,
     input logic					   rst_ni,
@@ -38,13 +37,12 @@ module mmu_stub (
   logic [31:0]            lat_cnt_q, lat_cnt_d;
   logic [31:0]            req_rsp_lat_q, req_rsp_lat_d;
   logic [31:0]            no_ex_lat_cnt_q, no_ex_lat_cnt_d;
-  `FF(mock_paddr_q , mock_paddr_d , '0, clk_i, rst_ni)
-  `FF(vaddr_q      , vaddr_d      , '0, clk_i, rst_ni)
-  `FF(is_store_q   , is_store_d   , '0, clk_i, rst_ni)
-  `FF(lat_cnt_q    , lat_cnt_d    , '0, clk_i, rst_ni)
-  // Start with 1 cycle latency for the very first req when we allow random latency
-  `FF(req_rsp_lat_q, req_rsp_lat_d, 1, clk_i, rst_ni)
-  `FF(no_ex_lat_cnt_q, no_ex_lat_cnt_d, 0, clk_i, rst_ni)
+  `FF(mock_paddr_q   , mock_paddr_d   , '0, clk_i, rst_ni)
+  `FF(vaddr_q        , vaddr_d        , '0, clk_i, rst_ni)
+  `FF(is_store_q     , is_store_d     , '0, clk_i, rst_ni)
+  `FF(lat_cnt_q      , lat_cnt_d      , '0, clk_i, rst_ni)
+  `FF(req_rsp_lat_q  , req_rsp_lat_d  , '0, clk_i, rst_ni)
+  `FF(no_ex_lat_cnt_q, no_ex_lat_cnt_d, '0, clk_i, rst_ni)
 
   // Combinatorial logic
   always_comb begin : mmu_stub
@@ -65,10 +63,7 @@ module mmu_stub (
     is_store_d      = is_store_q;
     lat_cnt_d       = lat_cnt_q;
     no_ex_lat_cnt_d = no_ex_lat_cnt_q;
-    if (req_rsp_rnd_i)
-      req_rsp_lat_d = req_rsp_lat_q;
-    else
-      req_rsp_lat_d = req_rsp_lat_i;
+    req_rsp_lat_d   = req_rsp_lat_i;
 
     // If translation is enabled
     if ( en_ld_st_translation_i ) begin : enable_translation
@@ -97,11 +92,6 @@ module mmu_stub (
 
         // Reset the latency counter
         lat_cnt_d = '0;
-        // If the latency is random, calculate the next latency
-        // Minimum latency is 1 cycle
-        if (req_rsp_rnd_i) begin
-          req_rsp_lat_d = ({$random} % (req_rsp_lat_i)) + 1;
-        end
 
         // Another answer without exception!
         no_ex_lat_cnt_d = no_ex_lat_cnt_q + 1;

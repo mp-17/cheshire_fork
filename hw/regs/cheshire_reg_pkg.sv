@@ -122,8 +122,7 @@ package cheshire_reg_pkg;
   parameter logic [BlockAw-1:0] CHESHIRE_STUB_EX_EN_OFFSET = 7'h 5c;
   parameter logic [BlockAw-1:0] CHESHIRE_STUB_NO_EX_LAT_OFFSET = 7'h 60;
   parameter logic [BlockAw-1:0] CHESHIRE_STUB_REQ_RSP_LAT_OFFSET = 7'h 64;
-  parameter logic [BlockAw-1:0] CHESHIRE_STUB_REQ_RSP_RND_OFFSET = 7'h 68;
-  parameter logic [BlockAw-1:0] CHESHIRE_ARA_VIRT_MEM_EN_OFFSET = 7'h 6c;
+  parameter logic [BlockAw-1:0] CHESHIRE_ARA_VIRT_MEM_EN_OFFSET = 7'h 68;
 
   // Reset values for hwext registers and their fields
   parameter logic [1:0] CHESHIRE_BOOT_MODE_RESVAL = 2'h 0;
@@ -162,12 +161,11 @@ package cheshire_reg_pkg;
     CHESHIRE_STUB_EX_EN,
     CHESHIRE_STUB_NO_EX_LAT,
     CHESHIRE_STUB_REQ_RSP_LAT,
-    CHESHIRE_STUB_REQ_RSP_RND,
     CHESHIRE_ARA_VIRT_MEM_EN
   } cheshire_id_e;
 
   // Register width information to check illegal writes
-  parameter logic [3:0] CHESHIRE_PERMIT [28] = '{
+  parameter logic [3:0] CHESHIRE_PERMIT [27] = '{
     4'b 1111, // index[ 0] CHESHIRE_SCRATCH_0
     4'b 1111, // index[ 1] CHESHIRE_SCRATCH_1
     4'b 1111, // index[ 2] CHESHIRE_SCRATCH_2
@@ -194,8 +192,7 @@ package cheshire_reg_pkg;
     4'b 1111, // index[23] CHESHIRE_STUB_EX_EN
     4'b 1111, // index[24] CHESHIRE_STUB_NO_EX_LAT
     4'b 1111, // index[25] CHESHIRE_STUB_REQ_RSP_LAT
-    4'b 1111, // index[26] CHESHIRE_STUB_REQ_RSP_RND
-    4'b 1111  // index[27] CHESHIRE_ARA_VIRT_MEM_EN
+    4'b 1111  // index[26] CHESHIRE_ARA_VIRT_MEM_EN
   };
 
 endpackage

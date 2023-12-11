@@ -41,10 +41,9 @@ int main(void) {
     // This initialization is controlled through "defines" in the various
     // derived tests.
     INIT_RVV_TEST_SOC_REGFILE;
-    VIRTUAL_MEMORY_ON;
-    STUB_EX(param_stub_ex);
+    VIRTUAL_MEMORY(param_stub_virt_mem);
+    STUB_EX_OFF;
     STUB_REQ_RSP_LAT(param_stub_req_rsp_lat);
-    STUB_REQ_RSP_RND(param_stub_req_rsp_rnd);
 
     //////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////
@@ -59,7 +58,12 @@ int main(void) {
 
     // Loop over vstart values
     for ( uint64_t vstart_val = 0; vstart_val < vl; vstart_val++ ) {
-      RVV_TEST_INIT( vl, avl );
+      RVV_TEST_INIT( vl, avl )
+
+      if (param_stub_req_rsp_lat_ctrl) {
+        // Random STUB req-rsp latency (minimum value should be 1)
+        STUB_REQ_RSP_LAT((vstart_val % param_stub_req_rsp_lat) + 1);
+      }
 
       // Init memory
       for ( uint64_t i = 0; i < vstart_val; i++ ) {
@@ -102,6 +106,11 @@ int main(void) {
     // Loop over vstart values
     for ( uint64_t vstart_val = 0; vstart_val < vl; vstart_val++ ) {
       RVV_TEST_INIT( vl, avl );
+
+      if (param_stub_req_rsp_lat_ctrl) {
+        // Random STUB req-rsp latency (minimum value should be 1)
+        STUB_REQ_RSP_LAT((vstart_val % param_stub_req_rsp_lat) + 1);
+      }
 
       store_val = vl;
 

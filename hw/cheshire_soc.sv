@@ -693,13 +693,12 @@ module cheshire_soc import cheshire_pkg::*; #(
     // SoC-level regfile helpers for STUB and Ara
     logic virt_mem_en;
     logic ex_en;
+    logic [31:0] no_ex_lat;
     logic [31:0] req_rsp_lat;
-    logic [31:0] req_rsp_rnd;
     assign virt_mem_en = i_regs.u_ara_virt_mem_en.q[0];
     assign ex_en       = i_regs.u_stub_ex_en.q[0];
     assign no_ex_lat   = i_regs.u_stub_no_ex_lat.q;
     assign req_rsp_lat = i_regs.u_stub_req_rsp_lat.q;
-    assign req_rsp_rnd = i_regs.u_stub_req_rsp_rnd.q;
 
     ara #(
       .NrLanes      ( `ARA_NR_LANES          ),
@@ -746,7 +745,6 @@ module cheshire_soc import cheshire_pkg::*; #(
       .ex_en_i                ( ex_en                       ),
       .no_ex_lat_i            ( no_ex_lat                   ),
       .req_rsp_lat_i          ( req_rsp_lat                 ),
-      .req_rsp_rnd_i          ( req_rsp_rnd                 ),
       .clk_i                  ( clk_i                       ),
       .rst_ni                 ( rst_ni                      ),
       .en_ld_st_translation_i ( virt_mem_en                 ),
