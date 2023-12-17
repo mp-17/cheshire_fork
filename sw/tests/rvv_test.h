@@ -10,6 +10,37 @@
 
 #include "regs/cheshire.h"
 
+/////////////////
+// SEW and EEW //
+/////////////////
+
+// Public defines
+#if EEW == 64
+#define _DTYPE                   __DTYPE(64)
+#define _VLD(vreg,address_load)  __VLD(vreg,64,address_load)
+#define _VST(vreg,address_store) __VST(vreg,64,address_store)
+#elif EEW == 32
+#define _DTYPE                   __DTYPE(32)
+#define _VLD(vreg,address_load)  __VLD(vreg,32,address_load)
+#define _VST(vreg,address_store) __VST(vreg,32,address_store)
+#elif EEW == 16
+#define _DTYPE                   __DTYPE(16)
+#define _VLD(vreg,address_load)  __VLD(vreg,16,address_load)
+#define _VST(vreg,address_store) __VST(vreg,16,address_store)
+#elif EEW == 8
+#define _DTYPE                   __DTYPE(8)
+#define _VLD(vreg,address_load)  __VLD(vreg,8,address_load)
+#define _VST(vreg,address_store) __VST(vreg,8,address_store)
+#else
+#error "ERROR: No EEW was defined. Please specify one in [8,16,32,64]."
+#endif
+
+#define _VADD(vd,vs1,vs2) asm volatile ("vadd.vv "#vd", "#vs1", "#vs2"");
+
+// Private defines
+#define __DTYPE(eew)                  uint##eew##_t
+#define __VLD(vreg,eew,address_load)  asm volatile ("vle"#eew".v "#vreg", (%0)"  : "+&r"(address_load));
+#define __VST(vreg,eew,address_store) asm volatile ("vse"#eew".v "#vreg", (%0)"  : "+&r"(address_store));
 
 //////////////////
 // Return codes //
@@ -24,10 +55,10 @@
 ///////////////////////
 
 #define INIT_RVV_TEST_SOC_REGFILE \
-volatile uint32_t *rf_stub_ex_en  = reg32(&__base_regs, CHESHIRE_STUB_EX_EN_REG_OFFSET);       \
-volatile uint32_t *rf_no_ex_lat   = reg32(&__base_regs, CHESHIRE_STUB_NO_EX_LAT_REG_OFFSET);   \
-volatile uint32_t *rf_req_rsp_lat = reg32(&__base_regs, CHESHIRE_STUB_REQ_RSP_LAT_REG_OFFSET); \
-volatile uint32_t *rf_virt_mem_en = reg32(&__base_regs, CHESHIRE_ARA_VIRT_MEM_EN_REG_OFFSET);
+volatile uint32_t *rf_stub_ex_en     = reg32(&__base_regs, CHESHIRE_STUB_EX_EN_REG_OFFSET);       \
+volatile uint32_t *rf_stub_no_ex_lat = reg32(&__base_regs, CHESHIRE_STUB_NO_EX_LAT_REG_OFFSET);   \
+volatile uint32_t *rf_req_rsp_lat    = reg32(&__base_regs, CHESHIRE_STUB_REQ_RSP_LAT_REG_OFFSET); \
+volatile uint32_t *rf_virt_mem_en    = reg32(&__base_regs, CHESHIRE_ARA_VIRT_MEM_EN_REG_OFFSET);
 
 //////////////////////
 // Print facilities //
@@ -61,13 +92,13 @@ volatile uint32_t *rf_virt_mem_en = reg32(&__base_regs, CHESHIRE_ARA_VIRT_MEM_EN
 // Stub req-2-resp latency
 #define STUB_REQ_RSP_LAT(lat) *rf_req_rsp_lat = lat;
 // Exception latency (per transaction)
-#define STUB_NO_EX_LAT(lat) *rf_no_ex_lat = lat;
+#define STUB_NO_EX_LAT(lat) *rf_stub_no_ex_lat = lat;
 
 ///////////////
 // RVV Tests //
 ///////////////
 
-#define FAIL { return RET_CODE_FAIL; }
+#define FAIL { return ret_cnt + 1; }
 #define ASSERT_EQ(var, gold) if (var != gold) FAIL
 
 // Helper test macros
@@ -95,6 +126,8 @@ uint64_t exception;
 uint64_t mtval;
 uint64_t mcause;
 uint64_t magic_out;
+// Return counter to ease debug
+uint64_t ret_cnt;
 
 void enable_rvv() {
   // Enalbe RVV by seting MSTATUS.VS
@@ -160,11 +193,6 @@ void trap_vector () {
 // Maximum STUB req-rsp latency (power of 2 to speed up the code)
 #define MAX_LAT_P2 8
 
-#define EW64 64
-#define EW32 32
-#define EW16 16
-#define EW8  8
-// Is this true? Anyway, okay with 2 lanes
 #define MEM_BUS_BYTE 4 * ARA_NR_LANES
 
 // Helper
@@ -186,7 +214,7 @@ typedef struct axi_burst_log_s {
 } axi_burst_log_t;
 
 // Get the number of elements correctly processed before the exception at burst T in [0,N_BURSTS-1].
-uint64_t get_body_elm_pre_exception(axi_burst_log_t axi_log, uint64_t T, uint64_t vstart) {
+uint64_t get_body_elm_pre_exception(axi_burst_log_t axi_log, uint64_t T) {
   // Calculate how many elements before exception
   uint64_t elm = 0;
   for (int i = 0; i < T; i++) {
@@ -214,7 +242,7 @@ axi_burst_log_t get_unit_stride_bursts(uint64_t addr, uint64_t vl_eff, uint64_t 
     // Burst cannot be made of more than 256 beats
     uint64_t end_addr_lim_0 = start_addr + (256 << log2_balign);
     // Burst cannot cross 4KiB pages
-    uint64_t end_addr_lim_1 = (start_addr >> LOG2_4Ki) << LOG2_4Ki;
+    uint64_t end_addr_lim_1 = ((start_addr >> LOG2_4Ki) << LOG2_4Ki) + (1 << LOG2_4Ki);
     // The end address is finally limited by the vector length
     uint64_t end_addr_lim_2 = start_addr_misaligned + (vl_eff << enc_ew);
     // Find the minimum end address

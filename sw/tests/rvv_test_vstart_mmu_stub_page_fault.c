@@ -42,10 +42,10 @@ int main(void) {
     vcsr_dump_t vcsr_state = {0};
 
     // Helper variables and arrays
-    uint64_t array_load [VLMAX];
-    uint64_t array_store [VLMAX];
-    uint64_t* address_load = array_load;
-    uint64_t* address_store = array_store;
+    _DTYPE array_load [VLMAX];
+    _DTYPE array_store [VLMAX];
+    _DTYPE* address_load = array_load;
+    _DTYPE* address_store = array_store;
 
     // Enalbe RVV
     enable_rvv();
@@ -97,7 +97,7 @@ int main(void) {
 
         // Get information about the next axi transfer
         axi_burst_log_t axi_log =
-          get_unit_stride_bursts_wrap(address_store, vl, EW64, MEM_BUS_BYTE, vstart_val);
+          get_unit_stride_bursts_wrap(address_store, vl, EEW, MEM_BUS_BYTE, vstart_val);
 
         // Load the whole register
         asm volatile("vle64.v v0, (%0)" : "+&r"(address_load));
@@ -130,7 +130,7 @@ int main(void) {
         }
 
         // Get information about the next vstart
-        uint64_t body_elm_pre_exception = get_body_elm_pre_exception(axi_log, ex_lat, vstart_val);
+        uint64_t body_elm_pre_exception = get_body_elm_pre_exception(axi_log, ex_lat);
         uint64_t vstart_post_ex = vstart_val + body_elm_pre_exception;
 
         PRINT_CHAR('B');

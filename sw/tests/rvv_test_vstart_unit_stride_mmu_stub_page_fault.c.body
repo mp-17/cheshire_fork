@@ -29,10 +29,10 @@ int main(void) {
     vcsr_dump_t vcsr_state = {0};
 
     // Helper variables and arrays
-    uint64_t array_load [VLMAX];
-    uint64_t array_store [VLMAX];
-    uint64_t* address_load = array_load;
-    uint64_t* address_store = array_store;
+    _DTYPE  array_load  [VLMAX];
+    _DTYPE  array_store [VLMAX];
+    _DTYPE* address_load  = array_load;
+    _DTYPE* address_store = array_store;
 
     // Enalbe RVV
     enable_rvv();
@@ -49,7 +49,7 @@ int main(void) {
     //////////////////////////////////////////////////////////////////
     RVV_TEST_INIT( vl, avl );
 
-    asm volatile ("vle64.v	v0   , (%0)" : "+&r"(address_load));
+    _VLD(v0,address_load)
     RVV_TEST_ASSERT_EXCEPTION_EXTENDED(1, address_load, CAUSE_LOAD_PAGE_FAULT)
     RVV_TEST_CLEAN_EXCEPTION()
 
@@ -60,7 +60,7 @@ int main(void) {
     // //////////////////////////////////////////////////////////////////
     RVV_TEST_INIT( vl, avl );
 
-    asm volatile ("vse64.v	v0   , (%0)" : "+&r"(address_store));
+    _VST(v0, address_store)
     RVV_TEST_ASSERT_EXCEPTION_EXTENDED(1, address_store, CAUSE_STORE_PAGE_FAULT)
     RVV_TEST_CLEAN_EXCEPTION()
 
@@ -81,7 +81,7 @@ int main(void) {
       }
 
       asm volatile ("csrs     vstart, %0"   :: "r"(vstart_val) );
-      asm volatile ("vle64.v	v0   , (%0)" : "+&r"(address_load));
+      _VLD(v0, address_load)
       RVV_TEST_ASSERT_EXCEPTION_EXTENDED(1, address_load + vstart_val, CAUSE_LOAD_PAGE_FAULT)
       RVV_TEST_CLEAN_EXCEPTION()
 
@@ -90,6 +90,7 @@ int main(void) {
       RVV_TEST_ASSERT ( vstart_read == vstart_val )
 
       RVV_TEST_CLEANUP();
+      ret_cnt++;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -108,7 +109,7 @@ int main(void) {
 
       asm volatile ("csrs     vstart, %0"   :: "r"(vstart_val) );
 
-      asm volatile ("vse64.v	v0   , (%0)" : "+&r"(address_store));
+      _VST(v0, address_store)
       RVV_TEST_ASSERT_EXCEPTION_EXTENDED(1, address_store + vstart_val, CAUSE_STORE_PAGE_FAULT)
       RVV_TEST_CLEAN_EXCEPTION()
 
@@ -117,6 +118,7 @@ int main(void) {
       RVV_TEST_ASSERT( vstart_read == vstart_val );
 
       RVV_TEST_CLEANUP();
+      ret_cnt++;
     }
 
     return 0;

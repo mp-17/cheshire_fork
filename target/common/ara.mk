@@ -31,7 +31,7 @@ VLEN := $$(($(ARA_NR_LANES) * 1024))
 
 # Questa requires these to be defined regardless the value of ARA,
 # since bender includes Ara sources, and Questa builds them anyway
-BENDER_ARA_DEFS += --define ARA_NR_LANES=$(ARA_NR_LANES)  
+BENDER_ARA_DEFS += --define ARA_NR_LANES=$(ARA_NR_LANES) --define NR_LANES=$(ARA_NR_LANES)
 BENDER_ARA_DEFS += --define VLEN=$(VLEN)
 
 # Keep the WT cache regardless of Ara
