@@ -14,6 +14,8 @@ MMU_STUB ?= 1
 ifeq ($(MMU_STUB), 1)
 	BENDER_ARA_DEFS += --define MMU_STUB
 endif
+# EEW
+EEW ?= 8
 # Test macros
 RVV_TEST_MAGIC 			?= f0f0f0f0f0f0f0f0
 RVV_TEST_ARA_NR_LANES 	?= 2 4 #8
@@ -53,6 +55,7 @@ rvv-test-run: chs-sw-all $(RVV_TEST_ELF)
 	mkdir -p $(VSIM_ROOT)
 	BINARY=$(RVV_TEST_ELF) 					\
 	MMU_STUB=$(MMU_STUB) 					\
+    EEW=$(EEW)                              \
 		VSIM_ROOT=$(VSIM_ROOT) 				\
 		$(MAKE) chs-sim-clean chs-sim-run
 	RVV_TEST_NAME=$(RVV_TEST_NAME) $(MAKE) rvv-test-report
