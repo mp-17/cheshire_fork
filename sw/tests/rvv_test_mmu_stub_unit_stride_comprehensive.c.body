@@ -69,7 +69,7 @@ int main(void) {
       // Reset vl, vstart, reset exceptions.
       RVV_TEST_INIT(vl, avl);
       // Loop over vstart values.
-      for (uint64_t vstart_val = 0; vstart_val <= (VSTART_LIMIT_LOW || vstart_val >= VSTART_LIMIT_HIGH) && vstart_val < vl; vstart_val++) {
+      for (uint64_t vstart_val = 0; (vstart_val <= VSTART_LIMIT_LOW || vstart_val >= VSTART_LIMIT_HIGH) && vstart_val < vl; vstart_val++) {
         // Reset vl, vstart, reset exceptions.
         RVV_TEST_INIT(vl, avl);
         // Turn off exceptions
@@ -98,8 +98,7 @@ int main(void) {
         }
 
         // Get information about the next axi transfer
-        axi_burst_log_t axi_log =
-          get_unit_stride_bursts_wrap(address_store, vl, EEW, MEM_BUS_BYTE, vstart_val);
+        get_unit_stride_bursts_wrap(&axi_log, address_store, vl, EEW, MEM_BUS_BYTE, vstart_val);
 
         // Load the whole register
         _VLD(v0, address_load)
@@ -132,11 +131,11 @@ int main(void) {
         }
 
         // Get information about the next vstart
-        uint64_t body_elm_pre_exception = get_body_elm_pre_exception(axi_log, ex_lat);
+        uint64_t body_elm_pre_exception = get_body_elm_pre_exception(&axi_log, ex_lat);
         uint64_t vstart_post_ex = vstart_val + body_elm_pre_exception;
 
         // Check for illegal new vstart values
-        RVV_TEST_ASSERT(vstart_post_ex >= vstart_val && vstart_post_ex < vl)
+        RVV_TEST_ASSERT(vstart_post_ex >= vstart_val && (vstart_post_ex < vl || (param_stub_ex_ctrl == 2 && vstart_post_ex == vl)))
 
         // Store back the values
         _VST(v0, address_store)
@@ -167,8 +166,7 @@ int main(void) {
             // Recover the instruction
             // The following instructions resets the STUB counter for the exceptions, too!
             STUB_EX_OFF;
-            uint64_t *next_addr_store = address_store + vstart_read;
-            _VST(v0, next_addr_store)
+            _VST(v0, address_store)
             STUB_EX_ON;
             // Check pre-start values again
             for (uint64_t i = 0; i < vstart_val; i++) {
@@ -194,8 +192,10 @@ int main(void) {
         RVV_TEST_CLEANUP();
 
 #ifndef EXAUHSTIVE
-        // Jump from limit low to limit high
-        if (vstart_val == VSTART_LIMIT_LOW) vstart_val = VSTART_LIMIT_HIGH;
+        // Jump from limit low to limit high if limit high is higher than low
+        if ((VSTART_LIMIT_LOW) < (VSTART_LIMIT_HIGH))
+          if (vstart_val == VSTART_LIMIT_LOW)
+            vstart_val = VSTART_LIMIT_HIGH;
 #endif
 
         ret_cnt++;

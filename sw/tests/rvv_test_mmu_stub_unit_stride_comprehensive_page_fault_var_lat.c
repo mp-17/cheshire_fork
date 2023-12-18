@@ -7,7 +7,7 @@
 
 // Tunable parameters
 // param_stub_ex_ctrl. 0: no exceptions, 1: always exceptions, 2: random exceptions
-#define param_stub_ex_ctrl 2
+#define param_stub_ex_ctrl 1
 
 // param_stub_req_rsp_lat_ctrl. 0: fixed latency (== param_stub_req_rsp_lat), 1: random latency (max == param_stub_req_rsp_lat)
 #define param_stub_req_rsp_lat_ctrl 1
