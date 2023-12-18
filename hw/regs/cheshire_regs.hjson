@@ -166,5 +166,14 @@
       ]
     }
 
+    { name:     "rvv_debug_reg"
+      desc:     "Debug scratch register"
+      swaccess: "rw"
+      hwaccess: "none"
+      fields: [
+        { bits: "31:0", name: "rvv_debug_reg", desc: "Debug scratch register" }
+      ]
+    }
+
   ]
 }

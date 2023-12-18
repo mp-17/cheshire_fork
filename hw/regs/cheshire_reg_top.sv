@@ -167,6 +167,9 @@ module cheshire_reg_top #(
   logic [31:0] ara_virt_mem_en_qs;
   logic [31:0] ara_virt_mem_en_wd;
   logic ara_virt_mem_en_we;
+  logic [31:0] rvv_debug_reg_qs;
+  logic [31:0] rvv_debug_reg_wd;
+  logic rvv_debug_reg_we;
 
   // Register instances
 
@@ -1020,9 +1023,36 @@ module cheshire_reg_top #(
   );
 
 
+  // R[rvv_debug_reg]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("RW"),
+    .RESVAL  (32'h0)
+  ) u_rvv_debug_reg (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (rvv_debug_reg_we),
+    .wd     (rvv_debug_reg_wd),
+
+    // from internal hardware
+    .de     (1'b0),
+    .d      ('0  ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (),
+
+    // to register interface (read)
+    .qs     (rvv_debug_reg_qs)
+  );
 
 
-  logic [26:0] addr_hit;
+
+
+  logic [27:0] addr_hit;
   always_comb begin
     addr_hit = '0;
     addr_hit[ 0] = (reg_addr == CHESHIRE_SCRATCH_0_OFFSET);
@@ -1052,6 +1082,7 @@ module cheshire_reg_top #(
     addr_hit[24] = (reg_addr == CHESHIRE_STUB_NO_EX_LAT_OFFSET);
     addr_hit[25] = (reg_addr == CHESHIRE_STUB_REQ_RSP_LAT_OFFSET);
     addr_hit[26] = (reg_addr == CHESHIRE_ARA_VIRT_MEM_EN_OFFSET);
+    addr_hit[27] = (reg_addr == CHESHIRE_RVV_DEBUG_REG_OFFSET);
   end
 
   assign addrmiss = (reg_re || reg_we) ? ~|addr_hit : 1'b0 ;
@@ -1085,7 +1116,8 @@ module cheshire_reg_top #(
                (addr_hit[23] & (|(CHESHIRE_PERMIT[23] & ~reg_be))) |
                (addr_hit[24] & (|(CHESHIRE_PERMIT[24] & ~reg_be))) |
                (addr_hit[25] & (|(CHESHIRE_PERMIT[25] & ~reg_be))) |
-               (addr_hit[26] & (|(CHESHIRE_PERMIT[26] & ~reg_be)))));
+               (addr_hit[26] & (|(CHESHIRE_PERMIT[26] & ~reg_be))) |
+               (addr_hit[27] & (|(CHESHIRE_PERMIT[27] & ~reg_be)))));
   end
 
   assign scratch_0_we = addr_hit[0] & reg_we & !reg_error;
@@ -1187,6 +1219,9 @@ module cheshire_reg_top #(
 
   assign ara_virt_mem_en_we = addr_hit[26] & reg_we & !reg_error;
   assign ara_virt_mem_en_wd = reg_wdata[31:0];
+
+  assign rvv_debug_reg_we = addr_hit[27] & reg_we & !reg_error;
+  assign rvv_debug_reg_wd = reg_wdata[31:0];
 
   // Read data return
   always_comb begin
@@ -1311,6 +1346,10 @@ module cheshire_reg_top #(
 
       addr_hit[26]: begin
         reg_rdata_next[31:0] = ara_virt_mem_en_qs;
+      end
+
+      addr_hit[27]: begin
+        reg_rdata_next[31:0] = rvv_debug_reg_qs;
       end
 
       default: begin

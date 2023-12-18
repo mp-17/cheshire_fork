@@ -134,6 +134,9 @@ extern "C" {
 // Ara, STUB - Enable virtual memory requests
 #define CHESHIRE_ARA_VIRT_MEM_EN_REG_OFFSET 0x68
 
+// Debug scratch register
+#define CHESHIRE_RVV_DEBUG_REG_REG_OFFSET 0x6c
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
