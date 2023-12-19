@@ -42,6 +42,17 @@
 #define __VLD(vreg,eew,address_load)  asm volatile ("vle"#eew".v "#vreg", (%0)"  : "+&r"(address_load));
 #define __VST(vreg,eew,address_store) asm volatile ("vse"#eew".v "#vreg", (%0)"  : "+&r"(address_store));
 
+///////////////////////
+// Reshuffle helpers //
+///////////////////////
+
+#define VSETVLI(vl, avl, eew, lmul) { asm volatile("vsetvli  %0, %1, e"#eew", m"#lmul", ta, ma \n\t" : "=r" (vl) :"r" (avl) ); }
+
+#define _VSETVLI_64(vl, avl) { VSETVLI(vl, avl, 64, 8); }
+#define _VSETVLI_32(vl, avl) { VSETVLI(vl, avl, 32, 4); }
+#define _VSETVLI_16(vl, avl) { VSETVLI(vl, avl, 16, 2); }
+#define _VSETVLI_8(vl, avl)  { VSETVLI(vl, avl, 8,  1); }
+
 //////////////////
 // Return codes //
 //////////////////
