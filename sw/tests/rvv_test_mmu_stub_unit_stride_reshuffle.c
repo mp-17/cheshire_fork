@@ -30,6 +30,16 @@
 // Derived parameters
 uint64_t stub_req_rsp_lat = 10;
 
+// If lanes == 8 and eew == 8, these vectors are too large to be instantiated in the stack.
+// In all the other cases, the stack is the preferred choice since everything outside of the
+// stack should be preloaded with the slow JTAG, and the simulation time increases
+#if !((ARA_NR_LANES < 8) || (EEW > 8))
+    // Helper variables and arrays
+    _DTYPE array_load    [VLMAX/(EEW/8)];
+    _DTYPE array_store_0 [VLMAX/(EEW/8)];
+    _DTYPE array_store_1 [VLMAX/(EEW/8)];
+#endif
+
 int main(void) {
 
     // This initialization is controlled through "defines" in the various
@@ -44,14 +54,17 @@ int main(void) {
     uint64_t vl, vstart_read;
     vcsr_dump_t vcsr_state = {0};
 
+// See note above
+#if (ARA_NR_LANES < 8) || (EEW > 8)
     // Helper variables and arrays
-    uint64_t* array_load    [VLMAX];
-    uint64_t* array_store_0 [VLMAX];
-    uint64_t* array_store_1 [VLMAX];
+    _DTYPE array_load    [VLMAX/(EEW/8)];
+    _DTYPE array_store_0 [VLMAX/(EEW/8)];
+    _DTYPE array_store_1 [VLMAX/(EEW/8)];
+#endif
 
-    uint64_t* address_load    = array_load;
-    uint64_t* address_store_0 = array_store_0;
-    uint64_t* address_store_1 = array_store_1;
+    _DTYPE* address_load    = array_load;
+    _DTYPE* address_store_0 = array_store_0;
+    _DTYPE* address_store_1 = array_store_1;
 
     // Enalbe RVV
     enable_rvv();
@@ -63,7 +76,7 @@ int main(void) {
     //////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////
 
-    for (uint64_t ew = 3; ew < 4; ew++) {
+    for (uint64_t ew = 0; ew < 4; ew++) {
       // Loop through different avl, from 0 to avlmax
       for (uint64_t avl = 0; avl <= VL_LIMIT_LOW; avl++) {
         // Reset vl, vstart, reset exceptions.
@@ -93,8 +106,6 @@ int main(void) {
           // Force V8 reshuffle
           asm volatile("vadd.vv v24, v8, v8");
 
-          *rf_rvv_debug_reg = 0xE0000001;
-
           // Init memory
           for (uint64_t i = 0; i < vl; i++) {
             address_store_0[i] = INIT_NONZERO_VAL_ST_0;
@@ -107,27 +118,25 @@ int main(void) {
             address_load[i]  = vl + vstart_val + i + MAGIC_NUM;
           }
 
-          *rf_rvv_debug_reg = 0xE0000002;
-
-
           // Setup vstart
           asm volatile("csrs vstart, %0" :: "r"(vstart_val));
 
           // Load the whole register
           _VLD(v0, address_load)
 
-          *rf_rvv_debug_reg = 0xE0000003;
+          *rf_rvv_debug_reg = 0xF0000001;
 
           // Check that vstart was reset at zero
           vstart_read = -1;
           asm volatile("csrr %0, vstart" : "=r"(vstart_read));
           ASSERT_EQ(vstart_read, 0)
-          *rf_rvv_debug_reg = 0xE0000004;
+
+          *rf_rvv_debug_reg = 0xF0000002;
+
           // Check that there was no exception
           RVV_TEST_ASSERT_EXCEPTION(0)
           RVV_TEST_CLEAN_EXCEPTION()
 
-          *rf_rvv_debug_reg = 0xE0000005;
 
           // Store
           _VST(v0, address_store_0)
@@ -137,31 +146,39 @@ int main(void) {
 
           _VST(v8, address_store_1)
 
-          *rf_rvv_debug_reg = 0xE0000006;
+          *rf_rvv_debug_reg = 0xF0000003;
+
           // Load test - prestart
           for (uint64_t i = 0; i < vstart_val; i++) {
             ASSERT_EQ(address_store_0[i], INIT_NONZERO_VAL_V0)
           }
-          *rf_rvv_debug_reg = 0xE0000007;
+          *rf_rvv_debug_reg = 0xF0000004;
           // Load test - body
           for (uint64_t i = vstart_val; i < vl; i++) {
             ASSERT_EQ(address_store_0[i], address_load[i])
           }
-          *rf_rvv_debug_reg = 0xE0000008;
+          *rf_rvv_debug_reg = 0xF0000005;
 
           // Store test - prestart
           for (uint64_t i = 0; i < vstart_val; i++) {
             ASSERT_EQ(address_store_1[i], INIT_NONZERO_VAL_ST_1)
           }
-          *rf_rvv_debug_reg = 0xE0000009;
+          *rf_rvv_debug_reg = 0xF0000006;
           // Store test - body
           for (uint64_t i = vstart_val; i < vl; i++) {
             ASSERT_EQ(address_store_1[i], INIT_NONZERO_VAL_V8)
           }
-          *rf_rvv_debug_reg = 0xE000000a;
+          *rf_rvv_debug_reg = 0xF0000007;
 
           // Clean-up
           RVV_TEST_CLEANUP();
+
+#ifndef EXAUHSTIVE
+        // Jump from limit low to limit high if limit high is higher than low
+        if ((VSTART_LIMIT_LOW) < (VSTART_LIMIT_HIGH))
+          if (vstart_val == VSTART_LIMIT_LOW)
+            vstart_val = VSTART_LIMIT_HIGH;
+#endif
 
           ret_cnt++;
         }
