@@ -133,7 +133,7 @@
     { name:     "stub_ex_en"
       desc:     "STUB - Exception enable"
       swaccess: "rw"
-      hwaccess: "none"
+      hwaccess: "hro"
       fields: [
         { bits: "31:0", name: "stub_ex_en", desc: "STUB - Exception enable - Every request to the STUB will throw an exception" }
       ]
@@ -142,7 +142,7 @@
     { name:     "stub_no_ex_lat"
       desc:     "STUB - How many requests we answer before throwing an exception"
       swaccess: "rw"
-      hwaccess: "none"
+      hwaccess: "hro"
       fields: [
         { bits: "31:0", name: "stub_no_ex_lat", desc: "STUB - How many requests we answer before throwing an exception" }
       ]
@@ -151,7 +151,7 @@
     { name:     "stub_req_rsp_lat"
       desc:     "STUB - Fixed latency from mmu-request to mmu-response"
       swaccess: "rw"
-      hwaccess: "none"
+      hwaccess: "hro"
       fields: [
         { bits: "31:0", name: "stub_req_rsp_lat", desc: "STUB - Fixed latency from mmu-request to mmu-response" }
       ]
@@ -160,7 +160,7 @@
     { name:     "ara_virt_mem_en"
       desc:     "Ara, STUB - Enable virtual memory requests"
       swaccess: "rw"
-      hwaccess: "none"
+      hwaccess: "hro"
       fields: [
         { bits: "31:0", name: "ara_virt_mem_en", desc: "Ara, STUB - Enable virtual memory requests" }
       ]

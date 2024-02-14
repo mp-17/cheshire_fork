@@ -695,10 +695,11 @@ module cheshire_soc import cheshire_pkg::*; #(
     logic ex_en;
     logic [31:0] no_ex_lat;
     logic [31:0] req_rsp_lat;
-    assign virt_mem_en = i_regs.u_ara_virt_mem_en.q[0];
-    assign ex_en       = i_regs.u_stub_ex_en.q[0];
-    assign no_ex_lat   = i_regs.u_stub_no_ex_lat.q;
-    assign req_rsp_lat = i_regs.u_stub_req_rsp_lat.q;
+
+    assign virt_mem_en = reg_reg2hw.ara_virt_mem_en[0];
+    assign ex_en       = reg_reg2hw.stub_ex_en[0];
+    assign no_ex_lat   = reg_reg2hw.stub_no_ex_lat;
+    assign req_rsp_lat = reg_reg2hw.stub_req_rsp_lat;
 
     ara #(
       .NrLanes      ( `ARA_NR_LANES          ),
@@ -1172,6 +1173,7 @@ module cheshire_soc import cheshire_pkg::*; #(
   /////////////////////
 
   cheshire_reg_pkg::cheshire_hw2reg_t reg_hw2reg;
+  cheshire_reg_pkg::cheshire_reg2hw_t reg_reg2hw;
 
   assign reg_hw2reg = '{
     boot_mode     : boot_mode_i,
@@ -1208,6 +1210,7 @@ module cheshire_soc import cheshire_pkg::*; #(
     .rst_ni,
     .reg_req_i  ( reg_out_req[RegOut.regs] ),
     .reg_rsp_o  ( reg_out_rsp[RegOut.regs] ),
+    .reg2hw     ( reg_reg2hw ),
     .hw2reg     ( reg_hw2reg ),
     .devmode_i  ( 1'b1 )
   );

@@ -14,6 +14,22 @@ package cheshire_reg_pkg;
   ////////////////////////////
 
   typedef struct packed {
+    logic [31:0] q;
+  } cheshire_reg2hw_stub_ex_en_reg_t;
+
+  typedef struct packed {
+    logic [31:0] q;
+  } cheshire_reg2hw_stub_no_ex_lat_reg_t;
+
+  typedef struct packed {
+    logic [31:0] q;
+  } cheshire_reg2hw_stub_req_rsp_lat_reg_t;
+
+  typedef struct packed {
+    logic [31:0] q;
+  } cheshire_reg2hw_ara_virt_mem_en_reg_t;
+
+  typedef struct packed {
     logic [1:0]  d;
   } cheshire_hw2reg_boot_mode_reg_t;
 
@@ -83,6 +99,14 @@ package cheshire_reg_pkg;
   typedef struct packed {
     logic [31:0] d;
   } cheshire_hw2reg_num_harts_reg_t;
+
+  // Register -> HW type
+  typedef struct packed {
+    cheshire_reg2hw_stub_ex_en_reg_t stub_ex_en; // [127:96]
+    cheshire_reg2hw_stub_no_ex_lat_reg_t stub_no_ex_lat; // [95:64]
+    cheshire_reg2hw_stub_req_rsp_lat_reg_t stub_req_rsp_lat; // [63:32]
+    cheshire_reg2hw_ara_virt_mem_en_reg_t ara_virt_mem_en; // [31:0]
+  } cheshire_reg2hw_t;
 
   // HW -> register type
   typedef struct packed {

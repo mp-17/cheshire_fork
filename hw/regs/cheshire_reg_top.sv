@@ -17,6 +17,7 @@ module cheshire_reg_top #(
   input  reg_req_t reg_req_i,
   output reg_rsp_t reg_rsp_o,
   // To HW
+  output cheshire_reg_pkg::cheshire_reg2hw_t reg2hw, // Write
   input  cheshire_reg_pkg::cheshire_hw2reg_t hw2reg, // Read
 
 
@@ -935,7 +936,7 @@ module cheshire_reg_top #(
 
     // to internal hardware
     .qe     (),
-    .q      (),
+    .q      (reg2hw.stub_ex_en.q ),
 
     // to register interface (read)
     .qs     (stub_ex_en_qs)
@@ -962,7 +963,7 @@ module cheshire_reg_top #(
 
     // to internal hardware
     .qe     (),
-    .q      (),
+    .q      (reg2hw.stub_no_ex_lat.q ),
 
     // to register interface (read)
     .qs     (stub_no_ex_lat_qs)
@@ -989,7 +990,7 @@ module cheshire_reg_top #(
 
     // to internal hardware
     .qe     (),
-    .q      (),
+    .q      (reg2hw.stub_req_rsp_lat.q ),
 
     // to register interface (read)
     .qs     (stub_req_rsp_lat_qs)
@@ -1016,7 +1017,7 @@ module cheshire_reg_top #(
 
     // to internal hardware
     .qe     (),
-    .q      (),
+    .q      (reg2hw.ara_virt_mem_en.q ),
 
     // to register interface (read)
     .qs     (ara_virt_mem_en_qs)
@@ -1381,6 +1382,7 @@ module cheshire_reg_top_intf
   input logic rst_ni,
   REG_BUS.in  regbus_slave,
   // To HW
+  output cheshire_reg_pkg::cheshire_reg2hw_t reg2hw, // Write
   input  cheshire_reg_pkg::cheshire_hw2reg_t hw2reg, // Read
   // Config
   input devmode_i // If 1, explicit error return for unmapped register access
@@ -1414,6 +1416,7 @@ module cheshire_reg_top_intf
     .rst_ni,
     .reg_req_i(s_reg_req),
     .reg_rsp_o(s_reg_rsp),
+    .reg2hw, // Write
     .hw2reg, // Read
     .devmode_i
   );
