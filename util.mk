@@ -14,6 +14,10 @@ MMU_STUB ?= 1
 ifeq ($(MMU_STUB), 1)
 	BENDER_ARA_DEFS += --define MMU_STUB
 endif
+MMU_REQ_GEN ?= 1
+ifeq ($(MMU_REQ_GEN), 1)
+	BENDER_ARA_DEFS += --define MMU_REQ_GEN
+endif
 # EEW
 EEW ?= 8
 # Test macros

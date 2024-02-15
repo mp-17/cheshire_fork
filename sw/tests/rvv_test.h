@@ -66,11 +66,13 @@
 ///////////////////////
 
 #define INIT_RVV_TEST_SOC_REGFILE \
-volatile uint32_t *rf_stub_ex_en     = reg32(&__base_regs, CHESHIRE_STUB_EX_EN_REG_OFFSET);       \
-volatile uint32_t *rf_stub_no_ex_lat = reg32(&__base_regs, CHESHIRE_STUB_NO_EX_LAT_REG_OFFSET);   \
-volatile uint32_t *rf_req_rsp_lat    = reg32(&__base_regs, CHESHIRE_STUB_REQ_RSP_LAT_REG_OFFSET); \
-volatile uint32_t *rf_virt_mem_en    = reg32(&__base_regs, CHESHIRE_ARA_VIRT_MEM_EN_REG_OFFSET);  \
-volatile uint32_t *rf_rvv_debug_reg  = reg32(&__base_regs, CHESHIRE_RVV_DEBUG_REG_REG_OFFSET);
+volatile uint32_t *rf_stub_ex_en      = reg32(&__base_regs, CHESHIRE_STUB_EX_EN_REG_OFFSET);       \
+volatile uint32_t *rf_stub_no_ex_lat  = reg32(&__base_regs, CHESHIRE_STUB_NO_EX_LAT_REG_OFFSET);   \
+volatile uint32_t *rf_req_rsp_lat     = reg32(&__base_regs, CHESHIRE_STUB_REQ_RSP_LAT_REG_OFFSET); \
+volatile uint32_t *rf_virt_mem_en     = reg32(&__base_regs, CHESHIRE_ARA_VIRT_MEM_EN_REG_OFFSET);  \
+volatile uint32_t *rf_rvv_debug_reg   = reg32(&__base_regs, CHESHIRE_RVV_DEBUG_REG_REG_OFFSET);    \
+volatile uint32_t *rf_mmu_req_gen_en  = reg32(&__base_regs, CHESHIRE_MMU_REQ_GEN_EN_REG_OFFSET);   \
+volatile uint32_t *rf_mmu_req_gen_lat = reg32(&__base_regs, CHESHIRE_MMU_REQ_GEN_LAT_REG_OFFSET);
 
 //////////////////////
 // Print facilities //
@@ -105,6 +107,10 @@ volatile uint32_t *rf_rvv_debug_reg  = reg32(&__base_regs, CHESHIRE_RVV_DEBUG_RE
 #define STUB_REQ_RSP_LAT(lat) *rf_req_rsp_lat = lat;
 // Exception latency (per transaction)
 #define STUB_NO_EX_LAT(lat) *rf_stub_no_ex_lat = lat;
+// Enable MMU req gen
+#define MMU_REQ_GEN_EN(val) *rf_mmu_req_gen_en = val;
+// MMU req gen ans-to-req latency
+#define MMU_REQ_GEN_LAT(lat) *rf_mmu_req_gen_lat = lat;
 
 ///////////////
 // RVV Tests //

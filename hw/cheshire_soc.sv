@@ -594,15 +594,15 @@ module cheshire_soc import cheshire_pkg::*; #(
     logic                          en_ld_st_translation_cva6_acc;
 
     // MMU ports
-    ariane_pkg::exception_t        mmu_misaligned_ex_acc_cva6;
-    logic                          mmu_req_acc_cva6;
-    logic [riscv::VLEN-1:0]        mmu_vaddr_acc_cva6;
-    logic                          mmu_is_store_acc_cva6;
-    logic                          mmu_dtlb_hit_cva6_acc;
-    logic [riscv::PPNW-1:0]        mmu_dtlb_ppn_cva6_acc;
-    logic                          mmu_valid_cva6_acc;
-    logic [riscv::PLEN-1:0]        mmu_paddr_cva6_acc;
-    ariane_pkg::exception_t        mmu_exception_cva6_acc;
+    ariane_pkg::exception_t mmu_misaligned_ex_acc_cva6, dbg_mmu_stub_misaligned_ex, dbg_mmu_req_gen_misaligned_ex;
+    logic                   mmu_req_acc_cva6, dbg_mmu_stub_req, dbg_mmu_req_gen_req;
+    logic [riscv::VLEN-1:0] mmu_vaddr_acc_cva6, dbg_mmu_stub_vaddr, dbg_mmu_req_gen_vaddr;
+    logic                   mmu_is_store_acc_cva6, dbg_mmu_stub_is_store, dbg_mmu_req_gen_is_store;
+    logic                   mmu_dtlb_hit_cva6_acc, dbg_mmu_stub_dtlb_hit, dbg_mmu_req_gen_dtlb_hit;
+    logic [riscv::PPNW-1:0] mmu_dtlb_ppn_cva6_acc, dbg_mmu_stub_dtlb_ppn, dbg_mmu_req_gen_dtlb_ppn;
+    logic                   mmu_valid_cva6_acc, dbg_mmu_stub_valid, dbg_mmu_req_gen_valid;
+    logic [riscv::PLEN-1:0] mmu_paddr_cva6_acc, dbg_mmu_stub_paddr, dbg_mmu_req_gen_paddr;
+    ariane_pkg::exception_t mmu_exception_cva6_acc, dbg_mmu_stub_exception, dbg_mmu_req_gen_exception;
 
     // Currently, we support only one core
     cva6 #(
@@ -632,31 +632,50 @@ module cheshire_soc import cheshire_pkg::*; #(
       // Accelerator ports
       .cvxif_req_o      ( acc_req      ),
       .cvxif_resp_i     ( acc_resp     ),
-  `ifdef ARIANE_ACCELERATOR_PORT
+`ifdef ARIANE_ACCELERATOR_PORT
       // Invalidation requests
       .acc_cons_en_o    ( acc_cons_en  ),
       .inval_addr_i     ( inval_addr   ),
       .inval_valid_i    ( inval_valid  ),
       .inval_ready_o    ( inval_ready  ),
-  // `ifdef ACC_MMU_INTERFACE
-      // CSR output
-      .en_ld_st_translation_o   ( en_ld_st_translation_cva6_acc ),
-      // // MMU interface with accelerator
+`ifdef MMU_REQ_GEN
+      // CVA6 connects to the MMU req gen
+      .en_ld_st_translation_o   ( ),
+      .acc_mmu_misaligned_ex_i  ( dbg_mmu_req_gen_misaligned_ex ),
+      .acc_mmu_req_i            ( dbg_mmu_req_gen_req           ),
+      .acc_mmu_vaddr_i          ( dbg_mmu_req_gen_vaddr         ),
+      .acc_mmu_is_store_i       ( dbg_mmu_req_gen_is_store      ),
+      .acc_mmu_dtlb_hit_o       ( ),
+      .acc_mmu_dtlb_ppn_o       ( ),
+      .acc_mmu_valid_o          ( dbg_mmu_req_gen_valid         ),
+      .acc_mmu_paddr_o          ( ),
+      .acc_mmu_exception_o      ( ),
+`elsif MMU_STUB
+      // Ara is unavailable
+      .en_ld_st_translation_o   ( ),
       .acc_mmu_misaligned_ex_i  ( '0 ),
       .acc_mmu_req_i            ( '0 ),
       .acc_mmu_vaddr_i          ( '0 ),
       .acc_mmu_is_store_i       ( '0 ),
-      // .acc_mmu_misaligned_ex_i  ( mmu_misaligned_ex_acc_cva6 ),
-      // .acc_mmu_req_i            ( mmu_req_acc_cva6           ),
-      // .acc_mmu_vaddr_i          ( mmu_vaddr_acc_cva6         ),
-      // .acc_mmu_is_store_i       ( mmu_is_store_acc_cva6      ),
-      // .acc_mmu_dtlb_hit_o       ( mmu_dtlb_hit_cva6_acc      ),
-      // .acc_mmu_dtlb_ppn_o       ( mmu_dtlb_ppn_cva6_acc      ),
-      // .acc_mmu_valid_o          ( mmu_valid_cva6_acc         ),
-      // .acc_mmu_paddr_o          ( mmu_paddr_cva6_acc         ),
-      // .acc_mmu_exception_o      ( mmu_exception_cva6_acc     ),
-  // `endif // ACC_MMU_INTERFACE
-  `endif // ARIANE_ACCELERATOR_PORT
+      .acc_mmu_dtlb_hit_o       ( ),
+      .acc_mmu_dtlb_ppn_o       ( ),
+      .acc_mmu_valid_o          ( ),
+      .acc_mmu_paddr_o          ( ),
+      .acc_mmu_exception_o      ( ),
+`else
+      // No debug. Ara and CVA6 are both present.
+      .en_ld_st_translation_o   ( en_ld_st_translation_cva6_acc ),
+      .acc_mmu_misaligned_ex_i  ( mmu_misaligned_ex_acc_cva6    ),
+      .acc_mmu_req_i            ( mmu_req_acc_cva6              ),
+      .acc_mmu_vaddr_i          ( mmu_vaddr_acc_cva6            ),
+      .acc_mmu_is_store_i       ( mmu_is_store_acc_cva6         ),
+      .acc_mmu_dtlb_hit_o       ( mmu_dtlb_hit_cva6_acc         ),
+      .acc_mmu_dtlb_ppn_o       ( mmu_dtlb_ppn_cva6_acc         ),
+      .acc_mmu_valid_o          ( mmu_valid_cva6_acc            ),
+      .acc_mmu_paddr_o          ( mmu_paddr_cva6_acc            ),
+      .acc_mmu_exception_o      ( mmu_exception_cva6_acc        ),
+`endif // ACC_MMU_INTERFACE
+`endif // ARIANE_ACCELERATOR_PORT
       // AXI interface
       .axi_req_o        ( core_out_req ),
       .axi_resp_i       ( core_out_rsp )
@@ -690,16 +709,20 @@ module cheshire_soc import cheshire_pkg::*; #(
     axi_mst_req_t     axi_ara_narrow_req;
     axi_mst_rsp_t     axi_ara_narrow_resp;
 
-    // SoC-level regfile helpers for STUB and Ara
-    logic virt_mem_en;
-    logic ex_en;
-    logic [31:0] no_ex_lat;
-    logic [31:0] req_rsp_lat;
+    // SoC-level regfile helpers for STUB, MMU_REQ_GEN, and Ara
+    logic        soc_csr_virt_mem_en;
+    logic        soc_csr_ex_en;
+    logic [31:0] soc_csr_no_ex_lat;
+    logic [31:0] soc_csr_req_rsp_lat;
+    logic        soc_csr_mmu_req_en;
+    logic [5:0]  soc_csr_mmu_req_lat;
 
-    assign virt_mem_en = reg_reg2hw.ara_virt_mem_en[0];
-    assign ex_en       = reg_reg2hw.stub_ex_en[0];
-    assign no_ex_lat   = reg_reg2hw.stub_no_ex_lat;
-    assign req_rsp_lat = reg_reg2hw.stub_req_rsp_lat;
+    assign soc_csr_virt_mem_en = reg_reg2hw.ara_virt_mem_en[0];
+    assign soc_csr_ex_en       = reg_reg2hw.stub_ex_en[0];
+    assign soc_csr_no_ex_lat   = reg_reg2hw.stub_no_ex_lat;
+    assign soc_csr_req_rsp_lat = reg_reg2hw.stub_req_rsp_lat;
+    assign soc_csr_mmu_req_en  = reg_reg2hw.mmu_req_gen_en[0];
+    assign soc_csr_mmu_req_lat = reg_reg2hw.mmu_req_gen_lat[5:0];
 
     ara #(
       .NrLanes      ( `ARA_NR_LANES          ),
@@ -718,19 +741,43 @@ module cheshire_soc import cheshire_pkg::*; #(
       .scan_enable_i   ( 1'b0              ),
       .scan_data_i     ( 1'b0              ),
       .scan_data_o     ( /* Unused */      ),
-  // `ifdef ACC_MMU_INTERFACE
-      // .en_ld_st_translation_i ( en_ld_st_translation_cva6_acc ),
-      .en_ld_st_translation_i ( virt_mem_en                ),
-      .mmu_misaligned_ex_o    ( mmu_misaligned_ex_acc_cva6 ),
-      .mmu_req_o              ( mmu_req_acc_cva6           ),
-      .mmu_vaddr_o            ( mmu_vaddr_acc_cva6         ),
-      .mmu_is_store_o         ( mmu_is_store_acc_cva6      ),
-      .mmu_dtlb_hit_i         ( mmu_dtlb_hit_cva6_acc      ),
-      .mmu_dtlb_ppn_i         ( mmu_dtlb_ppn_cva6_acc      ),
-      .mmu_valid_i            ( mmu_valid_cva6_acc         ),
-      .mmu_paddr_i            ( mmu_paddr_cva6_acc         ),
-      .mmu_exception_i        ( mmu_exception_cva6_acc     ),
-  // `endif // ACC_MMU_INTERFACE
+`ifdef MMU_STUB
+      // Ara connects with the stub
+      .en_ld_st_translation_i ( soc_csr_virt_mem_en        ),
+      .mmu_misaligned_ex_o    ( dbg_mmu_stub_misaligned_ex ),
+      .mmu_req_o              ( dbg_mmu_stub_req           ),
+      .mmu_vaddr_o            ( dbg_mmu_stub_vaddr         ),
+      .mmu_is_store_o         ( dbg_mmu_stub_is_store      ),
+      .mmu_dtlb_hit_i         ( dbg_mmu_stub_dtlb_hit      ),
+      .mmu_dtlb_ppn_i         ( dbg_mmu_stub_dtlb_ppn      ),
+      .mmu_valid_i            ( dbg_mmu_stub_valid         ),
+      .mmu_paddr_i            ( dbg_mmu_stub_paddr         ),
+      .mmu_exception_i        ( dbg_mmu_stub_exception     ),
+`elsif MMU_REQ_GEN
+      // CVA6 is unavailable. Don't connect to anything.
+      .en_ld_st_translation_i ( '0 ),
+      .mmu_misaligned_ex_o    (  ),
+      .mmu_req_o              (  ),
+      .mmu_vaddr_o            (  ),
+      .mmu_is_store_o         (  ),
+      .mmu_dtlb_hit_i         ( '0 ),
+      .mmu_dtlb_ppn_i         ( '0 ),
+      .mmu_valid_i            ( '0 ),
+      .mmu_paddr_i            ( '0 ),
+      .mmu_exception_i        ( '0 ),
+`else
+      // No debug. Ara and CVA6 are connected normally.
+      .en_ld_st_translation_i ( en_ld_st_translation_cva6_acc ),
+      .mmu_misaligned_ex_o    ( mmu_misaligned_ex_acc_cva6    ),
+      .mmu_req_o              ( mmu_req_acc_cva6              ),
+      .mmu_vaddr_o            ( mmu_vaddr_acc_cva6            ),
+      .mmu_is_store_o         ( mmu_is_store_acc_cva6         ),
+      .mmu_dtlb_hit_i         ( mmu_dtlb_hit_cva6_acc         ),
+      .mmu_dtlb_ppn_i         ( mmu_dtlb_ppn_cva6_acc         ),
+      .mmu_valid_i            ( mmu_valid_cva6_acc            ),
+      .mmu_paddr_i            ( mmu_paddr_cva6_acc            ),
+      .mmu_exception_i        ( mmu_exception_cva6_acc        ),
+`endif // MMU_STUB
       .acc_req_i       ( acc_req           ),
       .acc_resp_o      ( acc_resp          ),
       .axi_req_o       ( axi_ara_wide_req  ),
@@ -743,21 +790,21 @@ module cheshire_soc import cheshire_pkg::*; #(
     $info("MMU STUB enabled.");
 
     mmu_stub i_mmu_stub (
-      .ex_en_i                ( ex_en                       ),
-      .no_ex_lat_i            ( no_ex_lat                   ),
-      .req_rsp_lat_i          ( req_rsp_lat                 ),
+      .ex_en_i                ( soc_csr_ex_en               ),
+      .no_ex_lat_i            ( soc_csr_no_ex_lat           ),
+      .req_rsp_lat_i          ( soc_csr_req_rsp_lat         ),
       .clk_i                  ( clk_i                       ),
       .rst_ni                 ( rst_ni                      ),
-      .en_ld_st_translation_i ( virt_mem_en                 ),
-      .misaligned_ex_i        ( mmu_misaligned_ex_acc_cva6  ),
-      .req_i                  ( mmu_req_acc_cva6            ),
-      .vaddr_i                ( mmu_vaddr_acc_cva6          ),
-      .is_store_i             ( mmu_is_store_acc_cva6       ),
-      .dtlb_hit_o             ( mmu_dtlb_hit_cva6_acc       ),
-      .dtlb_ppn_o             ( mmu_dtlb_ppn_cva6_acc       ),
-      .valid_o                ( mmu_valid_cva6_acc          ),
-      .paddr_o                ( mmu_paddr_cva6_acc          ),
-      .exception_o            ( mmu_exception_cva6_acc      )
+      .en_ld_st_translation_i ( soc_csr_virt_mem_en         ),
+      .misaligned_ex_i        ( dbg_mmu_stub_misaligned_ex  ),
+      .req_i                  ( dbg_mmu_stub_req            ),
+      .vaddr_i                ( dbg_mmu_stub_vaddr          ),
+      .is_store_i             ( dbg_mmu_stub_is_store       ),
+      .dtlb_hit_o             ( dbg_mmu_stub_dtlb_hit       ),
+      .dtlb_ppn_o             ( dbg_mmu_stub_dtlb_ppn       ),
+      .valid_o                ( dbg_mmu_stub_valid          ),
+      .paddr_o                ( dbg_mmu_stub_paddr          ),
+      .exception_o            ( dbg_mmu_stub_exception      )
     );
 `else // !MMU_STUB
     // TODO: route these to CVA6
@@ -767,6 +814,24 @@ module cheshire_soc import cheshire_pkg::*; #(
     assign mmu_paddr_cva6_acc     = '0;
     assign mmu_exception_cva6_acc = '0;
 `endif // MMU_STUB
+
+
+`ifdef MMU_REQ_GEN
+    $info("MMU REQ GEN ENABLED.");
+
+    mmu_req_gen i_mmu_req_gen (
+      .clk_i                  (clk_i                        ),
+      .rst_ni                 (rst_ni                       ),
+      .mmu_req_en_i           (soc_csr_mmu_req_en           ),
+      .mmu_req_lat_i          (soc_csr_mmu_req_lat          ),
+      .acc_mmu_misaligned_ex_o(dbg_mmu_req_gen_misaligned_ex),
+      .acc_mmu_req_o          (dbg_mmu_req_gen_req          ),
+      .acc_mmu_vaddr_o        (dbg_mmu_req_gen_vaddr        ),
+      .acc_mmu_is_store_o     (dbg_mmu_req_gen_is_store     ),
+      .acc_mmu_valid_i        (dbg_mmu_req_gen_valid        )
+    );
+`else
+`endif
 
     // Issue invalidations to CVA6 L1D$
     axi_inval_filter #(

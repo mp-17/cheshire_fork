@@ -175,5 +175,23 @@
       ]
     }
 
+    { name:     "mmu_req_gen_en"
+      desc:     "CVA6 MMU request generator - Enable"
+      swaccess: "rw"
+      hwaccess: "hro"
+      fields: [
+        { bits: "31:0", name: "mmu_req_gen_en", desc: "CVA6 MMU request generator - Enable" }
+      ]
+    }
+
+    { name:     "mmu_req_gen_lat"
+      desc:     "CVA6 MMU request generator - Ans to new req latency"
+      swaccess: "rw"
+      hwaccess: "hro"
+      fields: [
+        { bits: "31:0", name: "mmu_req_gen_lat", desc: "CVA6 MMU request generator - Ans to new req latency" }
+      ]
+    }
+
   ]
 }

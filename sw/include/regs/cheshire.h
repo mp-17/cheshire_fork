@@ -137,6 +137,12 @@ extern "C" {
 // Debug scratch register
 #define CHESHIRE_RVV_DEBUG_REG_REG_OFFSET 0x6c
 
+// CVA6 MMU request generator - Enable
+#define CHESHIRE_MMU_REQ_GEN_EN_REG_OFFSET 0x70
+
+// CVA6 MMU request generator - Ans to new req latency
+#define CHESHIRE_MMU_REQ_GEN_LAT_REG_OFFSET 0x74
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

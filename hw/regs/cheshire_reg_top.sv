@@ -171,6 +171,12 @@ module cheshire_reg_top #(
   logic [31:0] rvv_debug_reg_qs;
   logic [31:0] rvv_debug_reg_wd;
   logic rvv_debug_reg_we;
+  logic [31:0] mmu_req_gen_en_qs;
+  logic [31:0] mmu_req_gen_en_wd;
+  logic mmu_req_gen_en_we;
+  logic [31:0] mmu_req_gen_lat_qs;
+  logic [31:0] mmu_req_gen_lat_wd;
+  logic mmu_req_gen_lat_we;
 
   // Register instances
 
@@ -1051,9 +1057,63 @@ module cheshire_reg_top #(
   );
 
 
+  // R[mmu_req_gen_en]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("RW"),
+    .RESVAL  (32'h0)
+  ) u_mmu_req_gen_en (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (mmu_req_gen_en_we),
+    .wd     (mmu_req_gen_en_wd),
+
+    // from internal hardware
+    .de     (1'b0),
+    .d      ('0  ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.mmu_req_gen_en.q ),
+
+    // to register interface (read)
+    .qs     (mmu_req_gen_en_qs)
+  );
 
 
-  logic [27:0] addr_hit;
+  // R[mmu_req_gen_lat]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("RW"),
+    .RESVAL  (32'h0)
+  ) u_mmu_req_gen_lat (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (mmu_req_gen_lat_we),
+    .wd     (mmu_req_gen_lat_wd),
+
+    // from internal hardware
+    .de     (1'b0),
+    .d      ('0  ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.mmu_req_gen_lat.q ),
+
+    // to register interface (read)
+    .qs     (mmu_req_gen_lat_qs)
+  );
+
+
+
+
+  logic [29:0] addr_hit;
   always_comb begin
     addr_hit = '0;
     addr_hit[ 0] = (reg_addr == CHESHIRE_SCRATCH_0_OFFSET);
@@ -1084,6 +1144,8 @@ module cheshire_reg_top #(
     addr_hit[25] = (reg_addr == CHESHIRE_STUB_REQ_RSP_LAT_OFFSET);
     addr_hit[26] = (reg_addr == CHESHIRE_ARA_VIRT_MEM_EN_OFFSET);
     addr_hit[27] = (reg_addr == CHESHIRE_RVV_DEBUG_REG_OFFSET);
+    addr_hit[28] = (reg_addr == CHESHIRE_MMU_REQ_GEN_EN_OFFSET);
+    addr_hit[29] = (reg_addr == CHESHIRE_MMU_REQ_GEN_LAT_OFFSET);
   end
 
   assign addrmiss = (reg_re || reg_we) ? ~|addr_hit : 1'b0 ;
@@ -1118,7 +1180,9 @@ module cheshire_reg_top #(
                (addr_hit[24] & (|(CHESHIRE_PERMIT[24] & ~reg_be))) |
                (addr_hit[25] & (|(CHESHIRE_PERMIT[25] & ~reg_be))) |
                (addr_hit[26] & (|(CHESHIRE_PERMIT[26] & ~reg_be))) |
-               (addr_hit[27] & (|(CHESHIRE_PERMIT[27] & ~reg_be)))));
+               (addr_hit[27] & (|(CHESHIRE_PERMIT[27] & ~reg_be))) |
+               (addr_hit[28] & (|(CHESHIRE_PERMIT[28] & ~reg_be))) |
+               (addr_hit[29] & (|(CHESHIRE_PERMIT[29] & ~reg_be)))));
   end
 
   assign scratch_0_we = addr_hit[0] & reg_we & !reg_error;
@@ -1223,6 +1287,12 @@ module cheshire_reg_top #(
 
   assign rvv_debug_reg_we = addr_hit[27] & reg_we & !reg_error;
   assign rvv_debug_reg_wd = reg_wdata[31:0];
+
+  assign mmu_req_gen_en_we = addr_hit[28] & reg_we & !reg_error;
+  assign mmu_req_gen_en_wd = reg_wdata[31:0];
+
+  assign mmu_req_gen_lat_we = addr_hit[29] & reg_we & !reg_error;
+  assign mmu_req_gen_lat_wd = reg_wdata[31:0];
 
   // Read data return
   always_comb begin
@@ -1351,6 +1421,14 @@ module cheshire_reg_top #(
 
       addr_hit[27]: begin
         reg_rdata_next[31:0] = rvv_debug_reg_qs;
+      end
+
+      addr_hit[28]: begin
+        reg_rdata_next[31:0] = mmu_req_gen_en_qs;
+      end
+
+      addr_hit[29]: begin
+        reg_rdata_next[31:0] = mmu_req_gen_lat_qs;
       end
 
       default: begin

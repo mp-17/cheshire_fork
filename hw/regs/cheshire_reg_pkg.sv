@@ -30,6 +30,14 @@ package cheshire_reg_pkg;
   } cheshire_reg2hw_ara_virt_mem_en_reg_t;
 
   typedef struct packed {
+    logic [31:0] q;
+  } cheshire_reg2hw_mmu_req_gen_en_reg_t;
+
+  typedef struct packed {
+    logic [31:0] q;
+  } cheshire_reg2hw_mmu_req_gen_lat_reg_t;
+
+  typedef struct packed {
     logic [1:0]  d;
   } cheshire_hw2reg_boot_mode_reg_t;
 
@@ -102,10 +110,12 @@ package cheshire_reg_pkg;
 
   // Register -> HW type
   typedef struct packed {
-    cheshire_reg2hw_stub_ex_en_reg_t stub_ex_en; // [127:96]
-    cheshire_reg2hw_stub_no_ex_lat_reg_t stub_no_ex_lat; // [95:64]
-    cheshire_reg2hw_stub_req_rsp_lat_reg_t stub_req_rsp_lat; // [63:32]
-    cheshire_reg2hw_ara_virt_mem_en_reg_t ara_virt_mem_en; // [31:0]
+    cheshire_reg2hw_stub_ex_en_reg_t stub_ex_en; // [191:160]
+    cheshire_reg2hw_stub_no_ex_lat_reg_t stub_no_ex_lat; // [159:128]
+    cheshire_reg2hw_stub_req_rsp_lat_reg_t stub_req_rsp_lat; // [127:96]
+    cheshire_reg2hw_ara_virt_mem_en_reg_t ara_virt_mem_en; // [95:64]
+    cheshire_reg2hw_mmu_req_gen_en_reg_t mmu_req_gen_en; // [63:32]
+    cheshire_reg2hw_mmu_req_gen_lat_reg_t mmu_req_gen_lat; // [31:0]
   } cheshire_reg2hw_t;
 
   // HW -> register type
@@ -148,6 +158,8 @@ package cheshire_reg_pkg;
   parameter logic [BlockAw-1:0] CHESHIRE_STUB_REQ_RSP_LAT_OFFSET = 7'h 64;
   parameter logic [BlockAw-1:0] CHESHIRE_ARA_VIRT_MEM_EN_OFFSET = 7'h 68;
   parameter logic [BlockAw-1:0] CHESHIRE_RVV_DEBUG_REG_OFFSET = 7'h 6c;
+  parameter logic [BlockAw-1:0] CHESHIRE_MMU_REQ_GEN_EN_OFFSET = 7'h 70;
+  parameter logic [BlockAw-1:0] CHESHIRE_MMU_REQ_GEN_LAT_OFFSET = 7'h 74;
 
   // Reset values for hwext registers and their fields
   parameter logic [1:0] CHESHIRE_BOOT_MODE_RESVAL = 2'h 0;
@@ -187,11 +199,13 @@ package cheshire_reg_pkg;
     CHESHIRE_STUB_NO_EX_LAT,
     CHESHIRE_STUB_REQ_RSP_LAT,
     CHESHIRE_ARA_VIRT_MEM_EN,
-    CHESHIRE_RVV_DEBUG_REG
+    CHESHIRE_RVV_DEBUG_REG,
+    CHESHIRE_MMU_REQ_GEN_EN,
+    CHESHIRE_MMU_REQ_GEN_LAT
   } cheshire_id_e;
 
   // Register width information to check illegal writes
-  parameter logic [3:0] CHESHIRE_PERMIT [28] = '{
+  parameter logic [3:0] CHESHIRE_PERMIT [30] = '{
     4'b 1111, // index[ 0] CHESHIRE_SCRATCH_0
     4'b 1111, // index[ 1] CHESHIRE_SCRATCH_1
     4'b 1111, // index[ 2] CHESHIRE_SCRATCH_2
@@ -219,7 +233,9 @@ package cheshire_reg_pkg;
     4'b 1111, // index[24] CHESHIRE_STUB_NO_EX_LAT
     4'b 1111, // index[25] CHESHIRE_STUB_REQ_RSP_LAT
     4'b 1111, // index[26] CHESHIRE_ARA_VIRT_MEM_EN
-    4'b 1111  // index[27] CHESHIRE_RVV_DEBUG_REG
+    4'b 1111, // index[27] CHESHIRE_RVV_DEBUG_REG
+    4'b 1111, // index[28] CHESHIRE_MMU_REQ_GEN_EN
+    4'b 1111  // index[29] CHESHIRE_MMU_REQ_GEN_LAT
   };
 
 endpackage
