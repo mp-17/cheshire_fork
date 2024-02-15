@@ -59,7 +59,7 @@ rvv-test-run: chs-sw-all $(RVV_TEST_ELF)
 	mkdir -p $(VSIM_ROOT)
 	BINARY=$(RVV_TEST_ELF) 					\
 	MMU_STUB=$(MMU_STUB) 					\
-    EEW=$(EEW)                              \
+	EEW=$(EEW)                              \
 		VSIM_ROOT=$(VSIM_ROOT) 				\
 		$(MAKE) chs-sim-clean chs-sim-run
 	RVV_TEST_NAME=$(RVV_TEST_NAME) $(MAKE) rvv-test-report
