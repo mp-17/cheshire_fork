@@ -19,6 +19,8 @@ int main(void) {
     uint64_t vl;
     vcsr_dump_t vcsr_state = {0};
 
+    RVV_TEST_CLEAN_EXCEPTION();
+
     // Helper variables and arrays
     // None for this test
 
@@ -67,6 +69,10 @@ int main(void) {
     // END OF TESTS
     //////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////
+
+#if (FPGA == 1)
+  printf("Test SUCCESS!\n");
+#endif
 
   return 0;
 }

@@ -12,7 +12,7 @@
 #include "encoding.h"
 #include "rvv_test.h"
 
-#ifdef EXAHUSTIVE
+#if (FPGA == 1)
 #define VL_LIMIT_LOW      VLMAX
 #define VSTART_LIMIT_LOW  vl + 1
 #define VSTART_LIMIT_HIGH 0
@@ -41,6 +41,9 @@ uint64_t stub_req_rsp_lat = 10;
 #endif
 
 int main(void) {
+
+    // Clean the exception variable
+    RVV_TEST_CLEAN_EXCEPTION();
 
     // This initialization is controlled through "defines" in the various
     // derived tests.
@@ -190,6 +193,10 @@ int main(void) {
     // END OF TESTS
     //////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////
+
+#if (FPGA == 1)
+    printf("Test SUCCESS!\n");
+#endif
 
     // If we did not return before, the test passed
     return RET_CODE_SUCCESS;

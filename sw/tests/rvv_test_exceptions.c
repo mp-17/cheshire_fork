@@ -28,6 +28,7 @@ int main(void) {
     uint8_t byte;
     uint64_t vstart_read;
 
+    RVV_TEST_CLEAN_EXCEPTION();
 
     // Enalbe RVV
     enable_rvv();
@@ -185,6 +186,10 @@ int main(void) {
     // END OF TESTS
     //////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////
+
+#if (FPGA == 1)
+    printf("Test SUCCESS!\n");
+#endif
 
   return 0;
 }

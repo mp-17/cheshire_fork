@@ -10,6 +10,10 @@
 
 #include "regs/cheshire.h"
 
+#if (FPGA == 1)
+#include "printf.h"
+#endif
+
 /////////////////
 // SEW and EEW //
 /////////////////
@@ -116,7 +120,12 @@ volatile uint32_t *rf_mmu_req_gen_lat = reg32(&__base_regs, CHESHIRE_MMU_REQ_GEN
 // RVV Tests //
 ///////////////
 
+#if (FPGA == 1)
+#define FAIL { printf("FAIL. retval: \d\n", ret_cnt + 1); return ret_cnt + 1; }
+#else
 #define FAIL { return ret_cnt + 1; }
+#endif
+
 #define ASSERT_EQ(var, gold) if (var != gold) FAIL
 
 // Helper test macros

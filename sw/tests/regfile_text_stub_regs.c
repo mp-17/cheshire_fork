@@ -51,5 +51,9 @@ int main(void) {
   PRINT_CHAR(*rf_req_rsp_lat);
 #endif
 
+#if (FPGA == 1)
+  printf("Test SUCCESS!\n");
+#endif
+
   return 0;
 }

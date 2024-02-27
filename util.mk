@@ -18,11 +18,13 @@ MMU_REQ_GEN ?= 1
 ifeq ($(MMU_REQ_GEN), 1)
 	BENDER_ARA_DEFS += --define MMU_REQ_GEN
 endif
+# FPGA (it influences sw only)
+FPGA ?= 0
 # EEW
 EEW ?= 8
 # Test macros
 RVV_TEST_MAGIC 			?= f0f0f0f0f0f0f0f0
-RVV_TEST_ARA_NR_LANES 	?= 2 4 #8
+RVV_TEST_ARA_NR_LANES 	?= 2 4 8
 # Align to AxiDataWidth of VLSU
 ALIGN_VSTORES := $(shell echo "32 * $(ARA_NR_LANES) / 8" | bc -l | sed -E "s/\..+//g")
 
@@ -60,6 +62,7 @@ rvv-test-run: chs-sw-all $(RVV_TEST_ELF)
 	BINARY=$(RVV_TEST_ELF) 					\
 	MMU_STUB=$(MMU_STUB) 					\
 	EEW=$(EEW)                              \
+	FPGA=$(FPGA)                            \
 		VSIM_ROOT=$(VSIM_ROOT) 				\
 		$(MAKE) chs-sim-clean chs-sim-run
 	RVV_TEST_NAME=$(RVV_TEST_NAME) $(MAKE) rvv-test-report
@@ -212,6 +215,9 @@ all:
 # Complete fpga run
 util-fpga-run:
 # 	NOTE: these targets must run sequentially
+	$(MAKE) -j1 chs-linux-clean
+	$(MAKE) -j1 chs-linux-img
+	$(MAKE) -j1 chs-xil-flash
 	$(MAKE) -j1 chs-linux-clean chs-linux-img chs-xil-flash chs-xil-program
 
 # Quick workaround for cva6-sdk not finding the DTB/FDT in this repo
