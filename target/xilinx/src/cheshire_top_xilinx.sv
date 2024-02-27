@@ -204,7 +204,7 @@ module cheshire_top_xilinx
   (* dont_touch = "yes" *) wire rst_n;
 
   ///////////////////
-  // GPIOs         // 
+  // GPIOs         //
   ///////////////////
 
   // Tie off signals if no switches on the board
@@ -282,7 +282,7 @@ module cheshire_top_xilinx
     .probe_out1(vio_boot_mode),
     .probe_out2(vio_boot_mode_sel),
     .probe_out3(xvio_mmu_exception),
-    .probe_out4(xvio_en_ld_st_translation)    
+    .probe_out4(xvio_en_ld_st_translation)
   );
 `else
   assign vio_reset = '0;
@@ -520,8 +520,6 @@ module cheshire_top_xilinx
     .reg_ext_req_t      ( reg_req_t ),
     .reg_ext_rsp_t      ( reg_req_t )
   ) i_cheshire_soc (
-    .xvio_en_ld_st_translation_i ( xvio_en_ld_st_translation ),
-    .xvio_mmu_exception_i ( xvio_mmu_exception ),
     .clk_i              ( soc_clk ),
     .rst_ni             ( rst_n   ),
     .test_mode_i        ( testmode_i ),
