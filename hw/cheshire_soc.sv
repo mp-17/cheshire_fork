@@ -806,13 +806,6 @@ module cheshire_soc import cheshire_pkg::*; #(
       .paddr_o                ( dbg_mmu_stub_paddr          ),
       .exception_o            ( dbg_mmu_stub_exception      )
     );
-`else // !MMU_STUB
-    // TODO: route these to CVA6
-    assign mmu_dtlb_hit_cva6_acc  = '0;
-    assign mmu_dtlb_ppn_cva6_acc  = '0;
-    assign mmu_valid_cva6_acc     = '0;
-    assign mmu_paddr_cva6_acc     = '0;
-    assign mmu_exception_cva6_acc = '0;
 `endif // MMU_STUB
 
 
@@ -830,7 +823,6 @@ module cheshire_soc import cheshire_pkg::*; #(
       .acc_mmu_is_store_o     (dbg_mmu_req_gen_is_store     ),
       .acc_mmu_valid_i        (dbg_mmu_req_gen_valid        )
     );
-`else
 `endif
 
     // Issue invalidations to CVA6 L1D$
