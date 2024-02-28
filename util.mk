@@ -9,15 +9,8 @@
 #################
 
 ## NOTE: this is very much not the correct way to do it, but time is tight...
+## NOTE2: DO NOT initialize here bender defs. Use the makefrag in target/common instead
 
-MMU_STUB ?= 1
-ifeq ($(MMU_STUB), 1)
-	BENDER_ARA_DEFS += --define MMU_STUB
-endif
-MMU_REQ_GEN ?= 1
-ifeq ($(MMU_REQ_GEN), 1)
-	BENDER_ARA_DEFS += --define MMU_REQ_GEN
-endif
 # FPGA (it influences sw only)
 FPGA ?= 0
 # EEW
@@ -60,7 +53,6 @@ rvv-test-run: chs-sw-all $(RVV_TEST_ELF)
 	mkdir -p $(RVV_TEST_RESULT_DIR_LANES)
 	mkdir -p $(VSIM_ROOT)
 	BINARY=$(RVV_TEST_ELF) 					\
-	MMU_STUB=$(MMU_STUB) 					\
 	EEW=$(EEW)                              \
 	FPGA=$(FPGA)                            \
 		VSIM_ROOT=$(VSIM_ROOT) 				\
