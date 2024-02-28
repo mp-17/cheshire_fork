@@ -270,8 +270,6 @@ module cheshire_top_xilinx
   ///////////////////
   // VIOs          //
   ///////////////////
-  logic       xvio_mmu_exception;
-  logic       xvio_en_ld_st_translation;
   logic       vio_reset, vio_boot_mode_sel;
   logic [1:0] boot_mode, vio_boot_mode;
 
@@ -281,8 +279,6 @@ module cheshire_top_xilinx
     .probe_out0(vio_reset),
     .probe_out1(vio_boot_mode),
     .probe_out2(vio_boot_mode_sel),
-    .probe_out3(xvio_mmu_exception),
-    .probe_out4(xvio_en_ld_st_translation)
   );
 `else
   assign vio_reset = '0;
