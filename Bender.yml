@@ -20,15 +20,15 @@ dependencies:
   clint:                    { git: "https://github.com/pulp-platform/clint.git",                  version: 0.2.0 }
   common_cells:             { git: "https://github.com/pulp-platform/common_cells.git",           version: 1.29.0 }
   common_verification:      { git: "https://github.com/pulp-platform/common_verification.git",    version: 0.2.0  }
-  cva6:                     { git: "https://github.com/MaistoV/cva6_fork.git",                rev: "ara_cheshire" }
-  ara:                      { git: "https://github.com/MaistoV/ara_fork.git",                 rev: "ara_cheshire" }
+  cva6:                     { git: "https://github.com/mp-17/cva6.git",                           rev: 1d11ee1cee7a3198608dbc9ba4a66bff38b6cb21 } # mp/pulpv1_os
+  ara:                      { git: "https://github.com/mp-17/ara.git",                            rev: 7facc3081d378d486340a6f886da830e5a54c302 } # mp/pulpv1_os
   iDMA:                     { git: "https://github.com/pulp-platform/iDMA.git",                   rev: 437ffa9    }  # TODO: master commit; use next release once out
   opentitan_peripherals:    { git: "https://github.com/pulp-platform/opentitan_peripherals.git",  version: 0.4.0  }
   register_interface:       { git: "https://github.com/pulp-platform/register_interface.git",     version: =0.4.1 }
   riscv-dbg:                { git: "https://github.com/pulp-platform/riscv-dbg.git",              version: 0.8.0  }
   serial_link:              { git: "https://github.com/pulp-platform/serial_link.git",            version: 1.1.0  }
   clic:                     { git: "https://github.com/pulp-platform/clic.git",                   version: 2.0.0  }
-  irq_router:               { git: "https://github.com/pulp-platform/irq_router.git",             rev: =0.0.1-beta.1    }  # TODO: master commit; use next release once out
+  irq_router:               { git: "https://github.com/pulp-platform/irq_router.git",             version: =0.0.1-beta.1    }  # TODO: master commit; use next release once out
 
 export_include_dirs:
   - hw/include

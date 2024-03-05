@@ -15,10 +15,10 @@ packages:
     - apb
     - register_interface
   ara:
-    revision: null
+    revision: 7facc3081d378d486340a6f886da830e5a54c302
     version: null
     source:
-      Path: /scratch/mperotti/processor/vincheshire/working_dir/ara
+      Git: https://github.com/mp-17/ara.git
     dependencies:
     - apb
     - axi
@@ -46,8 +46,8 @@ packages:
     - register_interface
     - tech_cells_generic
   axi_riscv_atomics:
-    revision: 0ac3a78fe342c5a5b9b10bff49d58897f773059e
-    version: 0.8.2
+    revision: c3c3f2b65071841035c4e081c61c9b7be801d749
+    version: 0.8.1
     source:
       Git: https://github.com/pulp-platform/axi_riscv_atomics.git
     dependencies:
@@ -94,20 +94,20 @@ packages:
       Git: https://github.com/pulp-platform/common_verification.git
     dependencies: []
   cva6:
-    revision: null
+    revision: 1d11ee1cee7a3198608dbc9ba4a66bff38b6cb21
     version: null
     source:
-      Path: /scratch/mperotti/processor/vincheshire/working_dir/cva6
+      Git: https://github.com/mp-17/cva6.git
     dependencies:
     - axi
     - common_cells
     - fpnew
     - tech_cells_generic
   fpnew:
-    revision: 3116391bf66660f806b45e212b9949c528b4e270
-    version: 0.7.0
+    revision: f231041c610f270ffc03cbdac38739ddb6426572
+    version: null
     source:
-      Git: https://github.com/openhwgroup/cvfpu.git
+      Git: https://github.com/pulp-platform/cvfpu.git
     dependencies:
     - common_cells
     - fpu_div_sqrt_mvp
@@ -157,16 +157,16 @@ packages:
     - common_cells
     - common_verification
   riscv-dbg:
-    revision: 138d74bcaa90c70180c12215db3776813d2a95f2
-    version: 0.8.0
+    revision: 358f90110220adf7a083f8b65d157e836d706236
+    version: 0.8.1
     source:
       Git: https://github.com/pulp-platform/riscv-dbg.git
     dependencies:
     - common_cells
     - tech_cells_generic
   serial_link:
-    revision: 77bec1aebd92b2ebea9962814f2370d5d48390c3
-    version: 1.1.0
+    revision: 5a25f5a71074f1ebb6de7b5280f2b16924bcc666
+    version: 1.1.1
     source:
       Git: https://github.com/pulp-platform/serial_link.git
     dependencies:
