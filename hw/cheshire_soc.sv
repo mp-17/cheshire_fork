@@ -710,12 +710,12 @@ module cheshire_soc import cheshire_pkg::*; #(
     axi_mst_rsp_t     axi_ara_narrow_resp;
 
     // SoC-level regfile helpers for STUB, MMU_REQ_GEN, and Ara
-    logic        soc_csr_virt_mem_en;
-    logic        soc_csr_ex_en;
+    (* dont_touch = "yes" *) (* mark_debug = "true" *) logic soc_csr_virt_mem_en;
+    (* dont_touch = "yes" *) (* mark_debug = "true" *) logic soc_csr_ex_en;
     logic [31:0] soc_csr_no_ex_lat;
     logic [31:0] soc_csr_req_rsp_lat;
-    logic        soc_csr_mmu_req_en;
-    logic [5:0]  soc_csr_mmu_req_lat;
+    (* dont_touch = "yes" *) (* mark_debug = "true" *) logic        soc_csr_mmu_req_en;
+    (* dont_touch = "yes" *) (* mark_debug = "true" *) logic [5:0]  soc_csr_mmu_req_lat;
 
     assign soc_csr_virt_mem_en = reg_reg2hw.ara_virt_mem_en[0];
     assign soc_csr_ex_en       = reg_reg2hw.stub_ex_en[0];

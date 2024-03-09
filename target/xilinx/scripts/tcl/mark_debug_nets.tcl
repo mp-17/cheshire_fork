@@ -17,10 +17,6 @@ set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[
 set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/csr_regfile_i/mtval_q*/Q  ]]
 set_property MARK_DEBUG 1 [get_nets -of [get_pins i_cheshire_soc/gen_cva6_cores[0].i_core_cva6/csr_regfile_i/cycle_q*/Q  ]]
 
-# SoC-level regfile nets
-set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/soc_csr_virt_mem_en*]
-set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/soc_csr_ex_en*      ]
-
 if { $::env(ARA) eq "1" } {
   # TODO?: unpack these to probe only the necessary signals
   set_property MARK_DEBUG 1 [get_nets i_cheshire_soc/gen_cva6_cores[0].i_ara/acc_req_i* ]
