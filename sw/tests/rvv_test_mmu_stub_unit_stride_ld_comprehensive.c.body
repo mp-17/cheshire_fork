@@ -13,12 +13,14 @@
 #include "encoding.h"
 #include "rvv_test.h"
 
-#if (FPGA == 1)
-#define VL_LIMIT_LOW      VLMAX
+#if (EXTENSIVE_TEST == 1)
+#define VL_LIMIT_LOW      ELMMAX + 1
+#define VL_LIMIT_HIGH     0
 #define VSTART_LIMIT_LOW  vl + 1
 #define VSTART_LIMIT_HIGH 0
 #else
 #define VL_LIMIT_LOW      3*ARA_NR_LANES + 1
+#define VL_LIMIT_HIGH     ELMMAX - (3*ARA_NR_LANES + 1)
 #define VSTART_LIMIT_LOW  2*ARA_NR_LANES + 1
 #define VSTART_LIMIT_HIGH vl - 2*ARA_NR_LANES - 1
 #endif
@@ -48,9 +50,9 @@ int main(void) {
     vcsr_dump_t vcsr_state = {0};
 
     // Helper variables and arrays
-    _DTYPE array_load [VLMAX];
-    _DTYPE array_store_0 [VLMAX];
-    _DTYPE array_store_1 [VLMAX];
+    _DTYPE array_load [ELMMAX];
+    _DTYPE array_store_0 [ELMMAX];
+    _DTYPE array_store_1 [ELMMAX];
     _DTYPE* address_load = array_load;
     _DTYPE* address_store_0 = array_store_0;
     _DTYPE* address_store_1 = array_store_1;
@@ -70,9 +72,10 @@ int main(void) {
     //////////////////////////////////////////////////////////////////
 
     // Loop through different avl, from 0 to avlmax
-    for (uint64_t avl = 1; avl <= VL_LIMIT_LOW; avl++) {
+    for (uint64_t avl = 1; (avl <= VL_LIMIT_LOW || avl >= VL_LIMIT_HIGH) && avl <= ELMMAX + 1; avl++) {
       // Reset vl, vstart, reset exceptions.
       RVV_TEST_INIT(vl, avl);
+
       // Loop over vstart values. Also test vstart > vl.
       for (uint64_t vstart_val = 0; (vstart_val <= VSTART_LIMIT_LOW || vstart_val >= VSTART_LIMIT_HIGH) && vstart_val < vl; vstart_val++) {
         // Reset vl, vstart, reset exceptions.
@@ -134,6 +137,7 @@ int main(void) {
 
         // Setup vstart
         asm volatile("csrs vstart, %0" :: "r"(vstart_val));
+
         // Load the whole register
         _VLD(v0, address_load)
 
@@ -209,15 +213,18 @@ int main(void) {
         // Clean-up
         RVV_TEST_CLEANUP();
 
-#ifndef EXAUHSTIVE
         // Jump from limit low to limit high if limit high is higher than low
         if ((VSTART_LIMIT_LOW) < (VSTART_LIMIT_HIGH))
           if (vstart_val == VSTART_LIMIT_LOW)
             vstart_val = VSTART_LIMIT_HIGH;
-#endif
 
         ret_cnt++;
       }
+
+      // Jump from limit low to limit high if limit high is higher than low
+      if ((VL_LIMIT_LOW) < (VL_LIMIT_HIGH))
+        if (avl == VL_LIMIT_LOW)
+          avl = VL_LIMIT_HIGH;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -226,7 +233,7 @@ int main(void) {
     //////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////
 
-#if (FPGA == 1)
+#if (PRINTF == 1)
     printf("Test SUCCESS!\n");
 #endif
 

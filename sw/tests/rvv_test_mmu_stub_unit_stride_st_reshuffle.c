@@ -53,19 +53,10 @@ uint64_t stub_req_rsp_lat = 10;
 int check_byte_arr(const void* arr, uint64_t start_byte, uint64_t end_byte, int64_t gold,  uint64_t gold_size) {
   const uint8_t* mem_bytes = (const uint8_t*)arr;
 
-#if (PRINTF == 1)
-    printf("start_byte: %d\r\n", start_byte);
-    printf("end_byte: %d\r\n", end_byte);
-#endif
-
   // Iterate over each byte of the array
   for (uint64_t i = start_byte; i < end_byte; i++) {
     // Dynamically calculate the expected byte
     uint8_t expected_byte = (gold >> ((i % gold_size) * 8)) & 0xFF;
-#if (PRINTF == 1)
-    printf("expected_byte: %x\r\n", expected_byte);
-    printf("mem_bytes[%d]: %x\r\n", i, mem_bytes[i]);
-#endif
     if (expected_byte != mem_bytes[i]) return 0;
   }
   // Everything's good
@@ -112,11 +103,25 @@ int main(void) {
     //////////////////////////////////////////////////////////////////
 
     for (uint64_t ew = 0; ew < 4; ew++) {
+
+#if (PRINTF == 1)
+    printf("EW: %d\r\n", ew);
+#endif
+
       // Loop through different avl, from 0 to avlmax
       for (uint64_t avl = 0; (avl <= VL_LIMIT_LOW || avl >= VL_LIMIT_HIGH) && avl <= ELMMAX; avl++) {
         // Reset vl, vstart, reset exceptions.
         RVV_TEST_INIT(vl, avl);
+
+#if (PRINTF == 1)
+    printf("avl: %d\r\n", avl);
+#endif
+
         for (uint64_t vstart_val = 0; (vstart_val <= VSTART_LIMIT_LOW || vstart_val >= VSTART_LIMIT_HIGH) && vstart_val < vl; vstart_val++) {
+
+#if (PRINTF == 1)
+    printf("vstart: %d\r\n", vstart_val);
+#endif
 
           // Calculate vl and vstart byte in memory for fixed EEW
           // Original encoding of vregs, before shuffling
@@ -131,12 +136,6 @@ int main(void) {
           RVV_TEST_INIT(vl, avl);
           // Random latency
           STUB_REQ_RSP_LAT((stub_req_rsp_lat++ % MAX_LAT_P2) + 1);
-
-#if (PRINTF == 1)
-    printf("EWP: %d\r\n", ew);
-    printf("avl: %d\r\n", avl);
-    printf("vstart: %d\r\n", vstart_val);
-#endif
 
           // Set up the source EEW and reset v0 and v8 with same encoding
           switch(ew) {
@@ -169,9 +168,6 @@ int main(void) {
             address_load[i]  = vl + vstart_val + MAGIC_NUM;
           }
 
-          // Force V8 reshuffle with target EEW
-          asm volatile("vadd.vv v24, v8, v8");
-
           // Setup vstart
           asm volatile("csrs vstart, %0" :: "r"(vstart_val));
           // Force a load-triggered reshuffle when vstart >= 0
@@ -192,7 +188,7 @@ int main(void) {
           // Setup vstart
           asm volatile("csrs vstart, %0" :: "r"(vstart_val));
 
-          // Store v8 (no reshuffle here)
+          // Store v8 (force reshuffle)
           _VST(v8, address_store_1)
 
           // Load test - prestart

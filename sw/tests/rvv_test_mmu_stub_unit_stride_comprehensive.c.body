@@ -13,12 +13,14 @@
 #include "encoding.h"
 #include "rvv_test.h"
 
-#if (FPGA == 1)
-#define VL_LIMIT_LOW      VLMAX
+#if (EXTENSIVE_TEST == 1)
+#define VL_LIMIT_LOW      ELMMAX + 1
+#define VL_LIMIT_HIGH     0
 #define VSTART_LIMIT_LOW  vl + 1
 #define VSTART_LIMIT_HIGH 0
 #else
 #define VL_LIMIT_LOW      3*ARA_NR_LANES + 1
+#define VL_LIMIT_HIGH     ELMMAX - (3*ARA_NR_LANES + 1)
 #define VSTART_LIMIT_LOW  2*ARA_NR_LANES + 1
 #define VSTART_LIMIT_HIGH vl - 2*ARA_NR_LANES - 1
 #endif
@@ -45,8 +47,8 @@ int main(void) {
     vcsr_dump_t vcsr_state = {0};
 
     // Helper variables and arrays
-    _DTYPE array_load [VLMAX];
-    _DTYPE array_store [VLMAX];
+    _DTYPE array_load [ELMMAX];
+    _DTYPE array_store [ELMMAX];
     _DTYPE* address_load = array_load;
     _DTYPE* address_store = array_store;
 
@@ -65,11 +67,18 @@ int main(void) {
     //////////////////////////////////////////////////////////////////
 
     // Loop through different avl
-    for (uint64_t avl = 1; avl <= VL_LIMIT_LOW; avl++) {
+    for (uint64_t avl = 1; (avl <= VL_LIMIT_LOW || avl >= VL_LIMIT_HIGH) && avl <= ELMMAX + 1; avl++) {
       // Reset vl, vstart, reset exceptions.
       RVV_TEST_INIT(vl, avl);
+
       // Loop over vstart values.
       for (uint64_t vstart_val = 0; (vstart_val <= VSTART_LIMIT_LOW || vstart_val >= VSTART_LIMIT_HIGH) && vstart_val < vl; vstart_val++) {
+
+#if (PRINTF == 1)
+    printf("avl = %d\r\n", avl);
+    printf("vstart = %d\r\n", vstart_val);
+#endif
+
         // Reset vl, vstart, reset exceptions.
         RVV_TEST_INIT(vl, avl);
         // Turn off exceptions
@@ -89,6 +98,10 @@ int main(void) {
             return RET_CODE_WRONG_CASE;
         }
 
+#if (PRINTF == 1)
+    printf("A\r\n");
+#endif
+
         // Init memory
         for (uint64_t i = 0; i < vl; i++) {
           address_store[i] = INIT_NONZERO_VAL_ST;
@@ -104,6 +117,10 @@ int main(void) {
         _VLD(v0, address_load)
         // Setup vstart
         asm volatile("csrs vstart, %0" :: "r"(vstart_val));
+
+#if (PRINTF == 1)
+    printf("B\r\n");
+#endif
 
         // Setup STUB behavior
         uint64_t ex_lat;
@@ -134,16 +151,32 @@ int main(void) {
         uint64_t body_elm_pre_exception = get_body_elm_pre_exception(&axi_log, ex_lat);
         uint64_t vstart_post_ex = vstart_val + body_elm_pre_exception;
 
+#if (PRINTF == 1)
+    printf("C\r\n");
+#endif
+
         // Check for illegal new vstart values
         RVV_TEST_ASSERT(vstart_post_ex >= vstart_val && (vstart_post_ex < vl || (param_stub_ex_ctrl == 2 && vstart_post_ex == vl)))
 
+#if (PRINTF == 1)
+    printf("C1\r\n");
+#endif
+
         // Store back the values
         _VST(v0, address_store)
+
+#if (PRINTF == 1)
+    printf("D\r\n");
+#endif
 
         // Check pre-start values
         for (uint64_t i = 0; i < vstart_val; i++) {
           ASSERT_EQ(address_store[i], INIT_NONZERO_VAL_ST)
         }
+
+#if (PRINTF == 1)
+    printf("E\r\n");
+#endif
 
         // Check if we had an exception on this transaction
         if (param_stub_ex_ctrl == 1 || (param_stub_ex_ctrl == 2 && ex_lat < axi_log.bursts)) {
@@ -151,10 +184,19 @@ int main(void) {
             for (uint64_t i = vstart_val; i < vstart_post_ex; i++) {
               ASSERT_EQ(address_store[i], address_load[i])
             }
+#if (PRINTF == 1)
+    printf("F\r\n");
+#endif
+
             // Check that the body, after the exception, was untouched in memory
             for (uint64_t i = vstart_post_ex; i < vl; i++) {
               ASSERT_EQ(address_store[i], INIT_NONZERO_VAL_ST)
             }
+
+#if (PRINTF == 1)
+    printf("G\r\n");
+#endif
+
             // Check that the new vstart is correct
             vstart_read = -1;
             asm volatile("csrr %0, vstart" : "=r"(vstart_read));
@@ -162,6 +204,10 @@ int main(void) {
             // Check the exception
             RVV_TEST_ASSERT_EXCEPTION_EXTENDED(1, axi_log.burst_start_addr[ex_lat], CAUSE_STORE_PAGE_FAULT)
             RVV_TEST_CLEAN_EXCEPTION()
+
+#if (PRINTF == 1)
+    printf("H\r\n");
+#endif
 
             // Recover the instruction
             // The following instructions resets the STUB counter for the exceptions, too!
@@ -172,6 +218,10 @@ int main(void) {
             for (uint64_t i = 0; i < vstart_val; i++) {
               ASSERT_EQ(address_store[i], INIT_NONZERO_VAL_ST)
             }
+#if (PRINTF == 1)
+    printf("I\r\n");
+#endif
+
         }
 
         // No exception (or just-recovered-from-an-exception) area
@@ -179,6 +229,10 @@ int main(void) {
         for (uint64_t i = vstart_val; i < vl; i++) {
           ASSERT_EQ(address_store[i], address_load[i])
         }
+#if (PRINTF == 1)
+    printf("J\r\n");
+#endif
+
         // Check that vstart was reset at zero
         vstart_read = -1;
 
@@ -188,18 +242,24 @@ int main(void) {
         RVV_TEST_ASSERT_EXCEPTION(0)
         RVV_TEST_CLEAN_EXCEPTION()
 
+#if (PRINTF == 1)
+    printf("K\r\n");
+#endif
+
         // Clean-up
         RVV_TEST_CLEANUP();
 
-#ifndef EXAUHSTIVE
         // Jump from limit low to limit high if limit high is higher than low
         if ((VSTART_LIMIT_LOW) < (VSTART_LIMIT_HIGH))
           if (vstart_val == VSTART_LIMIT_LOW)
             vstart_val = VSTART_LIMIT_HIGH;
-#endif
 
         ret_cnt++;
       }
+      // Jump from limit low to limit high if limit high is higher than low
+      if ((VL_LIMIT_LOW) < (VL_LIMIT_HIGH))
+        if (avl == VL_LIMIT_LOW)
+          avl = VL_LIMIT_HIGH;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -208,8 +268,8 @@ int main(void) {
     //////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////
 
-#if (FPGA == 1)
-    printf("Test SUCCESS!\n");
+#if (PRINTF == 1)
+    printf("Test SUCCESS!\r\n");
 #endif
 
     // If we did not return before, the test passed

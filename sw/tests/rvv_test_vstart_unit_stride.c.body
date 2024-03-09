@@ -143,7 +143,7 @@ int main(void) {
       ret_cnt++;
     }
 
-#if (FPGA == 1)
+#if (PRINTF == 1)
     printf("Test SUCCESS!\n");
 #endif
 

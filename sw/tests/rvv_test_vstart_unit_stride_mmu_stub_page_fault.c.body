@@ -49,7 +49,7 @@ int main(void) {
     enable_rvv();
     vcsr_dump ( vcsr_state );
 
-#if (FPGA == 1)
+#if (PRINTF == 1)
     printf("1\n");
 #endif
 
@@ -70,10 +70,6 @@ int main(void) {
 
     RVV_TEST_CLEANUP();
 
-#if (FPGA == 1)
-    printf("2\n");
-#endif
-
     // //////////////////////////////////////////////////////////////////
     // // TEST: Exception generation: vector store
     // //////////////////////////////////////////////////////////////////
@@ -84,10 +80,6 @@ int main(void) {
     RVV_TEST_CLEAN_EXCEPTION()
 
     RVV_TEST_CLEANUP();
-
-#if (FPGA == 1)
-    printf("3\n");
-#endif
 
     //////////////////////////////////////////////////////////////////
     // TEST: Exception generation and non-zero vstart: vector load
@@ -108,10 +100,6 @@ int main(void) {
       RVV_TEST_ASSERT_EXCEPTION_EXTENDED(1, address_load + vstart_val, CAUSE_LOAD_PAGE_FAULT)
       RVV_TEST_CLEAN_EXCEPTION()
 
-#if (FPGA == 1)
-    printf("4\n");
-#endif
-
       vstart_read = -1;
       asm volatile ("csrr  %0, vstart"  : "=r"(vstart_read) );
       RVV_TEST_ASSERT ( vstart_read == vstart_val )
@@ -119,10 +107,6 @@ int main(void) {
       RVV_TEST_CLEANUP();
       ret_cnt++;
     }
-
-#if (FPGA == 1)
-    printf("5\n");
-#endif
 
     //////////////////////////////////////////////////////////////////
     // TEST: Exception generation and non-zero vstart: vector store
@@ -144,10 +128,6 @@ int main(void) {
       RVV_TEST_ASSERT_EXCEPTION_EXTENDED(1, address_store + vstart_val, CAUSE_STORE_PAGE_FAULT)
       RVV_TEST_CLEAN_EXCEPTION()
 
-#if (FPGA == 1)
-    printf("6\n");
-#endif
-
       vstart_read = -1;
       asm volatile ("csrr  %0, vstart"  : "=r"(vstart_read) );
       RVV_TEST_ASSERT( vstart_read == vstart_val );
@@ -156,7 +136,7 @@ int main(void) {
       ret_cnt++;
     }
 
-#if (FPGA == 1)
+#if (PRINTF == 1)
     printf("Test SUCCESS!\n");
 #endif
 

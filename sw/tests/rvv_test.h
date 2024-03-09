@@ -10,7 +10,7 @@
 
 #include "regs/cheshire.h"
 
-#if (FPGA == 1)
+#if (PRINTF == 1)
 #include "printf.h"
 #endif
 
@@ -21,18 +21,22 @@
 // Public defines
 #if EEW == 64
 #define _DTYPE                   __DTYPE(64)
+#define _VSETVLI(vl,avl)          _VSETVLI_64(vl, avl)
 #define _VLD(vreg,address_load)  __VLD(vreg,64,address_load)
 #define _VST(vreg,address_store) __VST(vreg,64,address_store)
 #elif EEW == 32
 #define _DTYPE                   __DTYPE(32)
+#define _VSETVLI(vl,avl)          _VSETVLI_32(vl, avl)
 #define _VLD(vreg,address_load)  __VLD(vreg,32,address_load)
 #define _VST(vreg,address_store) __VST(vreg,32,address_store)
 #elif EEW == 16
 #define _DTYPE                   __DTYPE(16)
+#define _VSETVLI(vl,avl)          _VSETVLI_16(vl, avl)
 #define _VLD(vreg,address_load)  __VLD(vreg,16,address_load)
 #define _VST(vreg,address_store) __VST(vreg,16,address_store)
 #elif EEW == 8
 #define _DTYPE                   __DTYPE(8)
+#define _VSETVLI(vl,avl)          _VSETVLI_8(vl, avl)
 #define _VLD(vreg,address_load)  __VLD(vreg,8,address_load)
 #define _VST(vreg,address_store) __VST(vreg,8,address_store)
 #else
@@ -53,9 +57,9 @@
 #define VSETVLI(vl, avl, eew, lmul) { asm volatile("vsetvli  %0, %1, e"#eew", m"#lmul", ta, ma \n\t" : "=r" (vl) :"r" (avl) ); }
 
 #define _VSETVLI_64(vl, avl) { VSETVLI(vl, avl, 64, 8); }
-#define _VSETVLI_32(vl, avl) { VSETVLI(vl, avl, 32, 4); }
-#define _VSETVLI_16(vl, avl) { VSETVLI(vl, avl, 16, 2); }
-#define _VSETVLI_8(vl, avl)  { VSETVLI(vl, avl, 8,  1); }
+#define _VSETVLI_32(vl, avl) { VSETVLI(vl, avl, 32, 8); }
+#define _VSETVLI_16(vl, avl) { VSETVLI(vl, avl, 16, 8); }
+#define _VSETVLI_8(vl, avl)  { VSETVLI(vl, avl, 8,  8); }
 
 //////////////////
 // Return codes //
@@ -120,13 +124,15 @@ volatile uint32_t *rf_mmu_req_gen_lat = reg32(&__base_regs, CHESHIRE_MMU_REQ_GEN
 // RVV Tests //
 ///////////////
 
-#if (FPGA == 1)
+#if (PRINTF == 1)
 #define FAIL { printf("FAIL. retval: \d\n", ret_cnt + 1); return ret_cnt + 1; }
 #else
 #define FAIL { return ret_cnt + 1; }
 #endif
 
 #define ASSERT_EQ(var, gold) if (var != gold) FAIL
+#define ASSERT_TRUE(val)  { if (!val) FAIL };
+#define ASSERT_FALSE(val) { if ( val) FAIL };
 
 // Helper test macros
 #define RVV_TEST_INIT(vl, avl)            vl = reset_v_state ( avl ); exception = 0;
@@ -143,6 +149,8 @@ volatile uint32_t *rf_mmu_req_gen_lat = reg32(&__base_regs, CHESHIRE_MMU_REQ_GEN
 #define RVV_TEST_CLEAN_EXCEPTION()        exception = 0; mtval = 0; mcause = 0;
 
 #define VLMAX (1024 * ARA_NR_LANES)
+#define VLBMAX VLMAX
+#define ELMMAX VLMAX / (EEW / 8)
 #ifndef RVV_TEST_AVL
   #define RVV_TEST_AVL(EEW) (VLMAX / (EEW))
 #endif
