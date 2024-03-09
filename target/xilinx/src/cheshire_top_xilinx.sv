@@ -278,7 +278,7 @@ module cheshire_top_xilinx
     .clk(soc_clk),
     .probe_out0(vio_reset),
     .probe_out1(vio_boot_mode),
-    .probe_out2(vio_boot_mode_sel),
+    .probe_out2(vio_boot_mode_sel)
   );
 `else
   assign vio_reset = '0;
