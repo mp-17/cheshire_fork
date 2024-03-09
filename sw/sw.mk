@@ -25,7 +25,7 @@ CHS_SW_DISK_SIZE ?= 16M #VCU128 flash is 2GB (ug1302/Quad SPI Flash Memory)
 
 CHS_SW_FLAGS   ?= -g -DOT_PLATFORM_RV32 -march=rv64gcv_zifencei -mabi=lp64d -mstrict-align -O0 -Wall -Wextra -static -ffunction-sections -fdata-sections -frandom-seed=cheshire -fuse-linker-plugin -flto -Wl,-flto
 CHS_SW_CCFLAGS ?= $(CHS_SW_FLAGS) -ggdb -mcmodel=medany -mexplicit-relocs -fno-builtin -fverbose-asm -pipe
-CHS_SW_CCFLAGS += -DRVV_TEST_MAGIC=0x$(RVV_TEST_MAGIC) -DARA_NR_LANES=$(ARA_NR_LANES) -DEEW=$(EEW) -DALIGN_VSTORES=$(ALIGN_VSTORES) -DFPGA=$(FPGA)
+CHS_SW_CCFLAGS += -DRVV_TEST_MAGIC=0x$(RVV_TEST_MAGIC) -DARA_NR_LANES=$(ARA_NR_LANES) -DEEW=$(EEW) -DALIGN_VSTORES=$(ALIGN_VSTORES) -DFPGA=$(FPGA) -DPRINTF=$(PRINTF) -DEXTENSIVE_TEST=$(EXTENSIVE_TEST)
 CHS_SW_LDFLAGS ?= $(CHS_SW_FLAGS) -nostartfiles -Wl,--gc-sections -Wl,-L$(CHS_SW_LD_DIR)
 CHS_SW_ARFLAGS ?= --plugin=$(CHS_SW_LTOPLUG)
 

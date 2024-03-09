@@ -12,7 +12,9 @@
 ## NOTE2: DO NOT initialize here bender defs. Use the makefrag in target/common instead
 
 # FPGA (it influences sw only)
-FPGA ?= 0
+FPGA           ?= 1
+EXTENSIVE_TEST ?= 1
+PRINTF         ?= 1
 # EEW
 EEW ?= 8
 # Test macros
@@ -55,7 +57,9 @@ rvv-test-run: chs-sw-all $(RVV_TEST_ELF)
 	BINARY=$(RVV_TEST_ELF) 					\
 	EEW=$(EEW)                              \
 	FPGA=$(FPGA)                            \
-		VSIM_ROOT=$(VSIM_ROOT) 				\
+	EXTENSIVE_TEST=$(EXTENSIVE_TEST)        \
+	PRINTF=$(PRINTF)                        \
+	VSIM_ROOT=$(VSIM_ROOT) 					\
 		$(MAKE) chs-sim-clean chs-sim-run
 	RVV_TEST_NAME=$(RVV_TEST_NAME) $(MAKE) rvv-test-report
 
