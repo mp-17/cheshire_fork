@@ -254,6 +254,9 @@ int main(void) {
       }
     }
 
+    // Clean-up the SoC CSRs
+    RESET_SOC_CSR;
+
     //////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////
     // END OF TESTS
@@ -261,7 +264,7 @@ int main(void) {
     //////////////////////////////////////////////////////////////////
 
 #if (PRINTF == 1)
-    printf("Test SUCCESS!\n");
+    printf("Test SUCCESS!\r\n");
 #endif
 
     // If we did not return before, the test passed

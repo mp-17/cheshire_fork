@@ -119,6 +119,14 @@ volatile uint32_t *rf_mmu_req_gen_lat = reg32(&__base_regs, CHESHIRE_MMU_REQ_GEN
 #define MMU_REQ_GEN_EN(val) *rf_mmu_req_gen_en = val;
 // MMU req gen ans-to-req latency
 #define MMU_REQ_GEN_LAT(lat) *rf_mmu_req_gen_lat = lat;
+// Reset SoC-CSRs
+#define RESET_SOC_CSR *rf_virt_mem_en     = 0; \
+                      *rf_stub_ex_en      = 0; \
+                      *rf_req_rsp_lat     = 0; \
+                      *rf_stub_no_ex_lat  = 0; \
+                      *rf_mmu_req_gen_en  = 0; \
+                      *rf_mmu_req_gen_lat = 0; \
+                      *rf_rvv_debug_reg   = 0;
 
 ///////////////
 // RVV Tests //
@@ -315,11 +323,15 @@ axi_burst_log_t* get_unit_stride_bursts(axi_burst_log_t *axi_log, uint64_t addr,
 // Get the number of bursts per vector unit-stride AXI memory operation and the number of elements per burst.
 // This function calculates the effective vl and address from vl, addr, and vstart, some other helpers,
 // and then fall through the real function.
-void get_unit_stride_bursts_wrap(axi_burst_log_t *axi_log, uint64_t addr, uint64_t vl, uint64_t ew, uint64_t mem_bus_byte, uint64_t vstart) {
+void get_unit_stride_bursts_wrap(axi_burst_log_t *axi_log, uint64_t addr, uint64_t vl, uint64_t ew, uint64_t mem_bus_byte, uint64_t vstart, uint8_t is_store) {
   // Encode ew [bits] in a [byte] exponent
   uint64_t enc_ew = (31 - __builtin_clz(ew)) - 3;
+  // Is this memory operation misaligned?
+  uint64_t is_misaligned = addr & (mem_bus_byte - 1);
+  // Calculate the effective memory bus width. Misaligned or vstart>0 stores get a reduced BW.
+  uint64_t eff_mem_bus_byte = (is_store && (is_misaligned || (vstart > 0))) ? (ew >> 3) : mem_bus_byte;
   // Find log2 byte alignment
-  uint64_t log2_balign = (31 - __builtin_clz(mem_bus_byte));
+  uint64_t log2_balign = (31 - __builtin_clz(eff_mem_bus_byte));
   // Effective starting address
   uint64_t eff_addr = addr + (vstart << enc_ew);
   uint64_t eff_vl   = vl - vstart;

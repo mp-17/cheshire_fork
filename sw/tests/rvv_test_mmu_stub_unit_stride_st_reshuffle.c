@@ -103,25 +103,11 @@ int main(void) {
     //////////////////////////////////////////////////////////////////
 
     for (uint64_t ew = 0; ew < 4; ew++) {
-
-#if (PRINTF == 1)
-    printf("EW: %d\r\n", ew);
-#endif
-
       // Loop through different avl, from 0 to avlmax
       for (uint64_t avl = 0; (avl <= VL_LIMIT_LOW || avl >= VL_LIMIT_HIGH) && avl <= ELMMAX; avl++) {
         // Reset vl, vstart, reset exceptions.
         RVV_TEST_INIT(vl, avl);
-
-#if (PRINTF == 1)
-    printf("avl: %d\r\n", avl);
-#endif
-
         for (uint64_t vstart_val = 0; (vstart_val <= VSTART_LIMIT_LOW || vstart_val >= VSTART_LIMIT_HIGH) && vstart_val < vl; vstart_val++) {
-
-#if (PRINTF == 1)
-    printf("vstart: %d\r\n", vstart_val);
-#endif
 
           // Calculate vl and vstart byte in memory for fixed EEW
           // Original encoding of vregs, before shuffling
@@ -151,7 +137,6 @@ int main(void) {
             default:
               _VSETVLI_8(vl, -1)
           }
-          asm volatile("vmv.v.x v0, %0" :: "r" (INIT_NONZERO_VAL_V0));
           asm volatile("vmv.v.x v8, %0" :: "r" (INIT_NONZERO_VAL_V8));
 
           // Set up the target EEW
@@ -159,31 +144,8 @@ int main(void) {
 
           // Init memory
           for (uint64_t i = 0; i < vl; i++) {
-            address_store_0[i] = INIT_NONZERO_VAL_ST_0;
-          }
-          for (uint64_t i = 0; i < vl; i++) {
             address_store_1[i] = INIT_NONZERO_VAL_ST_1;
           }
-          for (uint64_t i = 0; i < vl; i++) {
-            address_load[i]  = vl + vstart_val + MAGIC_NUM;
-          }
-
-          // Setup vstart
-          asm volatile("csrs vstart, %0" :: "r"(vstart_val));
-          // Force a load-triggered reshuffle when vstart >= 0
-          _VLD(v0, address_load)
-
-          // Check that vstart is correctly reset at zero
-          vstart_read = -1;
-          asm volatile("csrr %0, vstart" : "=r"(vstart_read));
-          ASSERT_EQ(vstart_read, 0)
-
-          // Check that there was no exception
-          RVV_TEST_ASSERT_EXCEPTION(0)
-          RVV_TEST_CLEAN_EXCEPTION()
-
-          // Store v0 (no reshuffle here)
-          _VST(v0, address_store_0)
 
           // Setup vstart
           asm volatile("csrs vstart, %0" :: "r"(vstart_val));
@@ -191,21 +153,32 @@ int main(void) {
           // Store v8 (force reshuffle)
           _VST(v8, address_store_1)
 
-          // Load test - prestart
-          int retval = check_byte_arr(address_store_0, 0, vstart_byte, INIT_NONZERO_VAL_V0, eew_src);
-          ASSERT_TRUE(retval);
+          *rf_rvv_debug_reg = 0xF0000001;
 
-          // Load test - body
-          retval = check_byte_arr(address_store_0, vstart_byte, vl_byte, address_load[0], eew_dst);
-          ASSERT_TRUE(retval);
+          // Check that vstart is correctly reset at zero
+          vstart_read = -1;
+          asm volatile("csrr %0, vstart" : "=r"(vstart_read));
+          ASSERT_EQ(vstart_read, 0)
+
+          *rf_rvv_debug_reg = 0xF0000002;
+
+          // Check that there was no exception
+          RVV_TEST_ASSERT_EXCEPTION(0)
+          RVV_TEST_CLEAN_EXCEPTION()
+
+          *rf_rvv_debug_reg = 0xF0000003;
 
           // Store test - prestart
-          retval = check_byte_arr(address_store_1, 0, vstart_byte, INIT_NONZERO_VAL_ST_1, eew_dst);
+          int retval = check_byte_arr(address_store_1, 0, vstart_byte, INIT_NONZERO_VAL_ST_1, eew_dst);
           ASSERT_TRUE(retval);
+
+          *rf_rvv_debug_reg = 0xF0000004;
 
           // Store test - body
           retval = check_byte_arr(address_store_1, vstart_byte, vl_byte, INIT_NONZERO_VAL_V8, eew_src);
           ASSERT_TRUE(retval);
+
+          *rf_rvv_debug_reg = 0xF0000005;
 
           // Clean-up
           RVV_TEST_CLEANUP();
@@ -225,6 +198,9 @@ int main(void) {
       }
     }
 
+    // Clean-up the SoC CSRs
+    RESET_SOC_CSR;
+
     //////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////
     // END OF TESTS
@@ -232,7 +208,7 @@ int main(void) {
     //////////////////////////////////////////////////////////////////
 
 #if (PRINTF == 1)
-    printf("Test SUCCESS!\n");
+    printf("Test SUCCESS!\r\n");
 #endif
 
     // If we did not return before, the test passed

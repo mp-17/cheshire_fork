@@ -143,8 +143,11 @@ int main(void) {
       ret_cnt++;
     }
 
+    // Clean-up the SoC CSRs
+    RESET_SOC_CSR;
+
 #if (PRINTF == 1)
-    printf("Test SUCCESS!\n");
+    printf("Test SUCCESS!\r\n");
 #endif
 
     return 0;

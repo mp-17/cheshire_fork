@@ -51,8 +51,11 @@ int main(void) {
   PRINT_CHAR(*rf_req_rsp_lat);
 #endif
 
+  // Clean-up the SoC CSRs
+  RESET_SOC_CSR;
+
 #if (PRINTF == 1)
-  printf("Test SUCCESS!\n");
+  printf("Test SUCCESS!\r\n");
 #endif
 
   return 0;

@@ -108,7 +108,7 @@ int main(void) {
         asm volatile("vmv.v.x v8, %0" :: "r" (INIT_NONZERO_VAL_V8));
 
         // Get information about the next axi transfer
-        get_unit_stride_bursts_wrap(&axi_log, address_load, vl, EEW, MEM_BUS_BYTE, vstart_val);
+        get_unit_stride_bursts_wrap(&axi_log, address_load, vl, EEW, MEM_BUS_BYTE, vstart_val, 0);
 
         // Setup STUB behavior
         uint64_t ex_lat;
@@ -227,6 +227,9 @@ int main(void) {
           avl = VL_LIMIT_HIGH;
     }
 
+    // Clean-up the SoC CSRs
+    RESET_SOC_CSR;
+
     //////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////
     // END OF TESTS
@@ -234,7 +237,7 @@ int main(void) {
     //////////////////////////////////////////////////////////////////
 
 #if (PRINTF == 1)
-    printf("Test SUCCESS!\n");
+    printf("Test SUCCESS!\r\n");
 #endif
 
     // If we did not return before, the test passed

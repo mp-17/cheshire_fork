@@ -53,19 +53,10 @@ uint64_t stub_req_rsp_lat = 10;
 int check_byte_arr(const void* arr, uint64_t start_byte, uint64_t end_byte, int64_t gold,  uint64_t gold_size) {
   const uint8_t* mem_bytes = (const uint8_t*)arr;
 
-#if (PRINTF == 1)
-    printf("start_byte: %d\r\n", start_byte);
-    printf("end_byte: %d\r\n", end_byte);
-#endif
-
   // Iterate over each byte of the array
   for (uint64_t i = start_byte; i < end_byte; i++) {
     // Dynamically calculate the expected byte
     uint8_t expected_byte = (gold >> ((i % gold_size) * 8)) & 0xFF;
-#if (PRINTF == 1)
-    printf("expected_byte: %x\r\n", expected_byte);
-    printf("mem_bytes[%d]: %x\r\n", i, mem_bytes[i]);
-#endif
     if (expected_byte != mem_bytes[i]) return 0;
   }
   // Everything's good
@@ -131,12 +122,6 @@ int main(void) {
           RVV_TEST_INIT(vl, avl);
           // Random latency
           STUB_REQ_RSP_LAT((stub_req_rsp_lat++ % MAX_LAT_P2) + 1);
-
-#if (PRINTF == 1)
-    printf("EWP: %d\r\n", ew);
-    printf("avl: %d\r\n", avl);
-    printf("vstart: %d\r\n", vstart_val);
-#endif
 
           // Set up the source EEW and reset v0 and v8 with same encoding
           switch(ew) {
@@ -229,6 +214,9 @@ int main(void) {
       }
     }
 
+    // Clean-up the SoC CSRs
+    RESET_SOC_CSR;
+
     //////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////
     // END OF TESTS
@@ -236,7 +224,7 @@ int main(void) {
     //////////////////////////////////////////////////////////////////
 
 #if (PRINTF == 1)
-    printf("Test SUCCESS!\n");
+    printf("Test SUCCESS!\r\n");
 #endif
 
     // If we did not return before, the test passed

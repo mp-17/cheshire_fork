@@ -49,10 +49,6 @@ int main(void) {
     enable_rvv();
     vcsr_dump ( vcsr_state );
 
-#if (PRINTF == 1)
-    printf("1\n");
-#endif
-
     //////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////
     // START OF TESTS
@@ -136,8 +132,11 @@ int main(void) {
       ret_cnt++;
     }
 
+    // Clean-up the SoC CSRs
+    RESET_SOC_CSR;
+
 #if (PRINTF == 1)
-    printf("Test SUCCESS!\n");
+    printf("Test SUCCESS!\r\n");
 #endif
 
     return 0;
